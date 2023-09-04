@@ -417,6 +417,43 @@ sendTLSRequest()
   return 1;
 }
 
+
+## get Server URL
+getServURL()
+{
+    buildType=$(getBuildType)
+
+    if [ -f $PERSISTENT_PATH/swupdate.conf ] && [ $buildType != "prod" ] ; then
+        urlString=`grep -v '^[[:space:]]*#' $PERSISTENT_PATH/swupdate.conf`
+        if [ $? -ne 0 ]; then
+            urlString=""
+        else
+            echo $urlString
+            return
+        fi
+    fi
+
+    urlString=`tr181 -D Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.FWUpdate.AutoExcluded.XconfUrl 2>&1 > /dev/null`
+    if [ "$urlString" ] && [ $buildType != "prod" ] ; then
+        CLOUD_URL=$urlString
+    else
+        case $buildType in
+        "qa" )
+            # QA server URL
+            CLOUD_URL="https://ccpxcb-dt-a001-q.dt.ccp.cable.comcast.com:8095/xconf/swu/stb/";;
+        * )
+            CLOUD_URL="https://xconf.xcal.tv/xconf/swu/stb/";;   # Pdn server URL
+        esac
+
+        urlString=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.XconfUrl 2>&1 > /dev/null)
+        if [ "$urlString" ]; then
+            CLOUD_URL="$urlString/xconf/swu/stb"
+        fi
+    fi
+
+    echo $CLOUD_URL
+}
+
 getRequestType()
 {
     if [ "$1" == "$XCONFDEFAULT" ]; then
