@@ -197,8 +197,18 @@ getOptOutStatus()
 #MTLS Upload Check
 checkXpkiMtlsBasedLogUpload()
 {
-   useXpkiMtlsLogupload=$(check_MtlsBasedLogUpload)
-   uploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
+    if [ "$DEVICE_TYPE" = "broadband" ]; then
+        dycredpath="/nvram/lxy"
+    else
+        dycredpath="/opt/lxy"
+    fi
+
+    if [ -d $dycredpath ] && [ -f /usr/bin/rdkssacli ] && [ -f /opt/certs/devicecert_1.pk12 -o -f /etc/ssl/certs/staticXpkiCrt.pk12 ]; then
+        useXpkiMtlsLogupload="true"
+    else
+        useXpkiMtlsLogupload="false"
+    fi
+    uploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
 }
 
 
