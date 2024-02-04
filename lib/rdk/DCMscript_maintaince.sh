@@ -43,6 +43,10 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
+if [ -f $RDK_PATH/exec_curl_mtls.sh ]; then
+	source $RDK_PATH/exec_curl_mtls.sh
+fi
+
 eventSender()
 {
     if [ -f $IARM_EVENT_BINARY_LOCATION/IARM_event_sender ];
@@ -111,6 +115,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Qt/lib:/usr/local/lib
 TELEMETRY_PATH="/opt/.telemetry"
 SORTED_PATTERN_CONF_FILE="$TELEMETRY_PATH/dca_temp_file.conf"
 DCMFLAG="/tmp/.DCMSettingsFlag"
+HTTP_CODE="/tmp/dcm_http_code"
+rm -rf $HTTP_CODE
 
 #setting TLS value only for Yocto builds
 TLS=""
@@ -448,34 +454,13 @@ sendTLSDCMRequest()
         if [ "$useXpkiMtlsLogupload" == "true" ]; then
             msg_tls_source="mTLS certificate from xPKI"
             dcmLog "Connect with $msg_tls_source"
-            CURL_CMD="curl $TLS --cert-type P12 --cert /opt/certs/devicecert_1.pk12:$(/usr/bin/rdkssacli "{STOR=GET,SRC=kquhqtoczcbx,DST=/dev/stdout}") -w '%{http_code} %{remote_ip} %{remote_port}\n' --connect-timeout $CURL_TLS_TIMEOUT -m $timeout -o  \"$FILENAME\" '$HTTPS_URL$JSONSTR'"
-        elif [ -f /etc/ssl/certs/staticXpkiCrt.pk12 ]; then
-            msg_tls_source="mTLS xpki static cert"
-            dcmLog "Connect with $msg_tls_source"
-            if [ ! -f /usr/bin/GetConfigFile ]; then
-                dcmLog "Error: GetConfigFile Not Found"
-                exit 127
-            fi
-            ID="/tmp/.cfgStaticxpki"
-            if [ ! -f "$ID" ]; then
-                GetConfigFile $ID
-            fi
-            if [ ! -f "$ID" ]; then
-                dcmLog "Error: Getconfig file failed"
-            fi
-            CURL_CMD="curl $TLS --cert-type P12 --cert /etc/ssl/certs/staticXpkiCrt.pk12:$(cat $ID) -w '%{http_code} %{remote_ip} %{remote_port}\n' --connect-timeout $CURL_TLS_TIMEOUT -m $timeout -o  \"$FILENAME\" '$HTTPS_URL$JSONSTR'"
-            UPTIME=$(cut -d' ' -f1 /proc/uptime)
-            dcmLog "xPKIStaticCert: /etc/ssl/certs/staticDeviceCert.pk12 uptime $UPTIME seconds"
-            if [ -f /lib/rdk/t2Shared_api.sh ]; then
-                t2ValNotify "SYS_INFO_xPKI_Static_Fallback" "xPKIStaticCert: /etc/ssl/certs/staticDeviceCert.pk12 uptime $UPTIME seconds,$0"
-            fi
+            CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' --connect-timeout $CURL_TLS_TIMEOUT -m $timeout -o  \"$FILENAME\" '$HTTPS_URL$JSONSTR'" 
         fi
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
         CURL_CMD="$CURL_CMD --cert-status"
     fi
-    dcmLog "$msg_tls_source CURL_CMD: `echo "$CURL_CMD" | sed -e 's#devicecert_1.*-w#devicecert_1.pk12<hidden key> -w#g' | sed -e 's#staticXpkiCrt.*-w#staticXpkiCrt.pk12<hidden key> -w#g'`"
-    eval $CURL_CMD > $CURL_INFO
-    TLSRet=$?
+    TLSRet=` exec_curl_mtls "$CURL_CMD" "dcmLog"`
+    cat $HTTP_CODE > $CURL_INFO
     FQDN=`echo "$HTTPS_URL" | awk -F/ '{print $3}'`
     http_code=$(awk '{print $1}' $CURL_INFO)
     server_ip=$(awk '{print $2}' $CURL_INFO)
