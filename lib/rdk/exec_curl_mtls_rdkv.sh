@@ -21,7 +21,7 @@ getConfigFile_id2="/tmp/.cfgStaticxpki"
 
 exec_curl_mtls () {
         CURL_ARGS=$1
-	curl_log=$2
+        curl_log=$2
         TLSRet=1
         for certnum in 0 1 2 ; do
             eval cert="\$certlist$certnum"
@@ -72,10 +72,11 @@ exec_curl_mtls () {
             if [ -f $HTTP_CODE ] ; then
                 http_code=$(awk '{print $1}' $HTTP_CODE )
                 if [ "x$http_code" == "x200" ] && [ "x$TLSRet" == "x0" ] ; then
-                    $curl_log "curl connection success with ret=$TLSRet http_code=$http_code"
+                    break
+                elif [ "x$http_code" == "x304" ] ; then
                     break
                 elif [ "x$http_code" == "x404" ] ; then
-                    $curl_log "HTTP Response code received is 404"
+                    $curl_log "HTTP response code received $http_code"
                     break
                 else
                     case $TLSRet in
