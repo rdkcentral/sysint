@@ -169,8 +169,9 @@ checkAndEnterStateRed()
     fi
 
     #Enter state red on ssl or cert errors
+    #HTTP code 495 - Expired client certs not in servers allow list
     case $curlReturnValue in
-    35|51|53|54|58|59|60|64|66|77|80|82|83|90|91)
+    35|51|53|54|58|59|60|64|66|77|80|82|83|90|91|495)
         rm -f $DIRECT_BLOCK_FILENAME
         rm -f $CB_BLOCK_FILENAME
         touch $stateRedFlag
