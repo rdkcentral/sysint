@@ -21,5 +21,7 @@
 Description=Log Rotation Timer Service (R)
 
 [Service]
+Type=forking
 SyslogIdentifier=logrotate
-ExecStart=/lib/rdk/logRotateDaemon.sh
+ExecStart=/usr/sbin/logrotate -s /tmp/logrotatedata.status /etc/logrotatedata.conf
+Restart=always
