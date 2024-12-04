@@ -1,0 +1,335 @@
+#!/bin/sh
+##############################################################################
+# If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+
+PATH=/usr/local/bin:/usr/bin:/bin:/sbin
+#$1 <start/stop/restart/mount/umount>
+DEV_FILE=$2
+MOUNT_PATH=$3
+
+. /etc/include.properties
+. /etc/device.properties
+
+if [ -f /etc/env_setup.sh ]; then
+    . /etc/env_setup.sh
+fi
+
+TIMESTAMP=`date "+%m-%d-%y-%I-%M-%S%p"`
+SDCARD_TSBMOUNT_FLAG="/tmp/sdCardTsb_mounted"
+SDCARD_APPMOUNT_FLAG="/tmp/sdCardApp_mounted"
+SDCARD_TSBCORRUPT_FLAG="/tmp/sdCardTsb_corrupted"
+SDCARD_APPCORRUPT_FLAG="/tmp/sdCardApp_corrupted"
+TSB_MOUNT_PATH=${TSB_MOUNT_PATH:-"/media/tsb"}
+
+sdcard_mount_check() {
+        # check sdcard mount partitions
+        echo "Checking SDCARD mount partitions.."
+        SD_CARD_PATH=`cat  /proc/mounts | grep $MOUNT_PATH`
+
+        if [ "$SD_CARD_PATH" != "" ]; then
+            echo "SDCARD is mounted on $SD_CARD_PATH partition"
+            if [ "$MOUNT_PATH" == "$TSB_MOUNT_PATH" ]; then
+                touch $SDCARD_TSBMOUNT_FLAG
+            elif [ "$MOUNT_PATH" == "/media/apps" ]; then
+                touch $SDCARD_APPMOUNT_FLAG
+            fi
+        else
+                echo "SDCARd is not mounted..!!!"
+        fi
+}
+
+sdcard_read_check() {
+    # check for sdcard content in /media/ folder
+    echo "Checking SDCARD $MOUNT_PATH read /write access..."
+
+    if [ -f "${SDCARD_TSBMOUNT_FLAG}" ] || [ -f "${SDCARD_APPMOUNT_FLAG}" ]; then
+            ls -l $MOUNT_PATH > /tmp/sdcard_files 2>&1 &
+            PID=$!
+            sleep 2
+            isRunning=`ps -ef | grep ${PID} | grep -v grep`
+            if [ "$isRunning" != "" ]; then
+                if [ "$MOUNT_PATH" == "$TSB_MOUNT_PATH" ]; then
+                    touch $SDCARD_TSBCORRUPT_FLAG
+                    echo "Unable to perform read/write SDCARD $MOUNT_PATH path corrupted..."
+                elif [ "$MOUNT_PATH" == "/media/apps" ]; then
+                    touch $SDCARD_APPCORRUPT_FLAG
+                    echo "Unable to perform read/write SDCARD $MOUNT_PATH path corrupted..."
+                fi
+                kill ${PID}
+            else
+                echo "SDCARD is working fine..."
+            fi
+            rm /tmp/sdcard_files
+    fi
+}
+
+mount_SDCard()
+{
+  i="0"
+  if [ -b $DEV_FILE ]; then
+    # ------- Check SD Card mount information -----#
+    checkmount=`mount | grep -i $DEV_FILE`
+
+    if [ ! "$checkmount" ]; then
+      echo "SD card is not mounted."
+      mount_opts="noatime,nodiratime,data=writeback"
+
+      # Check to see if the partition has journaling available
+      dumpe2fs -h $DEV_FILE | grep -o has_journal > /dev/null
+
+      has_journal=$?
+
+      if [ "$has_journal" == "0" ] && [ "x$SD_CARD_USE_JOURNAL" == "xtrue" ]; then
+        mount_opts="noatime,nodiratime,data=journal"
+      fi
+
+      while true; do
+        echo "Now mounting ..."
+        mkdir -p $MOUNT_PATH 2> /dev/null
+        mount -t ext4 -O $mount_opts $DEV_FILE $MOUNT_PATH
+        ret=$?
+        #echo $ret
+        if [ "$ret" == "0" ]; then
+          if [ "$MOUNT_PATH" == "$TSB_MOUNT_PATH" ]; then
+            if [ -d $MOUNT_PATH/OCAP_MSV/0/0/DEFAULT_RECORDING_VOLUME/dvr/chunks ]; then
+                echo "Clearing the TSB chunks."
+                rm -f $MOUNT_PATH/OCAP_MSV/0/0/DEFAULT_RECORDING_VOLUME/dvr/chunks/*
+            fi
+          fi
+          vol=`date +%H-%M-%S`
+          echo "SUCCESS-$vol" >$MOUNT_PATH/mountStatus.txt
+          if [ "$MOUNT_PATH" == "$TSB_MOUNT_PATH" ]; then
+            mkdir -p $MOUNT_PATH/OCAP_MSV/0/0/DEFAULT_RECORDING_VOLUME/dvr/chunks
+          fi
+          echo "Mount successful."
+          break;
+        else
+          echo "Mount failed."
+          echo "Retring: $i."
+
+          if [ "$i" == "5" ]; then
+              echo "Failed to umount after maximum retries : $i."
+
+              exit -1
+          fi
+          i=$[$i+1]
+        fi
+        sleep 5
+      done
+    else
+      echo "SD card is already mounted in $MOUNT_PATH. Trying to remount"
+      rm -f $MOUNT_PATH/mountStatus.txt
+
+      mount_opts="remount,data=writeback"
+      if [ "$has_journal" == "0" ] && [ "x$SD_CARD_USE_JOURNAL" == "xtrue" ]; then
+        mount_opts="remount,data=journal"
+      fi
+
+      mount -o $mount_opts $DEV_FILE $MOUNT_PATH
+      ret=$?
+      if [ "$ret" == "0" ]; then
+          mkdir -p $MOUNT_PATH/OCAP_MSV/0/0/DEFAULT_RECORDING_VOLUME/dvr/chunks
+          vol=`date +%H-%M-%S`
+          echo "SUCCESS-$vol" >$MOUNT_PATH/mountStatus.txt
+          echo "ReMount successful."
+          exit 0
+      else
+          echo "ReMount failed."
+          exit -1
+      fi
+    fi
+  fi
+}
+
+
+create_Ext4_FileSystem()
+{
+  if [ -b $DEV_FILE ]; then
+    checkmount=`mount | grep -i $DEV_FILE`
+    if [ "$checkmount" ]; then
+       umount $MOUNT_PATH
+    fi
+
+    # set default to not use journaling
+    mount_opts="^has_journal"
+
+    if [ "x$SD_CARD_USE_JOURNAL" == "xtrue" ]; then
+      echo "[$DEV_FILE]: Forcing journaling support"
+      mount_opts="has_journal"
+    fi
+
+    #--- Create ext4 file system without journal ---
+    mkfs.ext4 -t ext4 -O $mount_opts $DEV_FILE
+    if [ "$mount_opts" == "has_journal" ]; then
+      echo "Created ext4 with enabled journal."
+    else
+      echo "Created ext4 with disabled journal."
+    fi
+
+  fi
+}
+
+fix_FileSystem_error()
+{
+  if [ -b $DEV_FILE ]; then
+    # --------- Check file system ----------
+    ret=`mount | grep -i $DEV_FILE`
+    if [ "$ret" ]; then
+      umount $MOUNT_PATH
+      utmp=$?
+      if [ "$utmp" == "0" ]; then
+          echo "Umount Successful"
+      else
+          echo "Umount Unsuccessful; Won't run filesystem check..."
+	  return
+      fi
+    fi
+    echo "Fix file system : Start"
+    e2fsck -p $DEV_FILE
+    # if e2fsck failed to fix the filesystem
+    # all we can do is format it.
+    ret_code=$?
+    # if filesystem can't be fixed format it
+    if [ $ret_code -eq 4 ] || [ $ret_code -eq 8 ]
+    then
+        echo "data loss, e2fsck return $ret_code. Partition for $MOUNT_PATH will be formatted"
+        create_Ext4_FileSystem
+    fi
+    echo "Fix file system : Done"
+  fi
+}
+
+umount_SDcard()
+{
+  i="0"
+  # ------- Check SD Card infromation -----#
+  while true; do
+
+    umount $DEV_FILE
+    ret=$?
+    if [ $ret -eq 0 ]; then
+      echo "Umount successful $ret."
+      break;
+    else
+      echo "Fail to umount $ret."
+      echo "Retring: $i."
+
+      if [ $i -eq 10 ]; then
+        echo "Failed to umount, retried: $i."
+        break
+      fi
+      i=$[$i+1]
+    fi
+    sleep 5
+  done
+
+}
+
+start_function()
+{
+   create_Ext4_FileSystem
+   fix_FileSystem_error
+
+   # Cleanup legacy: if softlink present, then delete.
+   if [  -h /opt/data ]; then
+       rm -rf /opt/data
+   fi
+}
+
+
+stop_function()
+{
+    umount_function
+}
+
+mount_function()
+{
+  fix_FileSystem_error
+  mount_SDCard
+  sdcard_mount_check
+  sdcard_read_check
+}
+
+umount_function()
+{
+  umount_SDcard
+}
+
+filesystem_function()
+{
+  fix_FileSystem_error
+}
+
+deepsleep_function()
+{
+    DEV_FILE=$SD_CARD_APP_PART
+    MOUNT_PATH=$SD_CARD_APP_MOUNT_PATH
+    if [ "$DEV_FILE" != "" ] && [ "$MOUNT_PATH" != "" ]; then
+    if [ "$1" = "ON" ]; then
+            echo "Box going to DEEPSLEEP. Unmount apps partition"
+            umount_function
+    elif [ "$1" = "OFF" ]; then
+            echo "Box waking up from DEEPSLEEP. Mount apps partition"
+            mount_function
+    fi
+    fi
+}
+
+## Main App ##
+#--------------
+case $1 in
+    "start")
+        echo "Calling start_function()"
+        start_function
+        ;;
+   "stop")
+        echo "Calling stop_function()"
+        stop_function
+        ;;
+   "mount")
+        echo "Calling mount_function()"
+        mount_function
+        ;;
+   "umount")
+        echo "Calling umount_function()"
+        umount_function
+        ;;
+   "filesystem")
+        echo "Calling filesystem_function()"
+        filesystem_function 
+        ;;
+   "restart")
+        echo "Calling restart_function()"
+        stop_function
+        start_function
+        ;;
+   "deepsleep")
+        echo "Calling deepsleep_function()"
+        deepsleep_function $2
+        ;;
+    *)
+
+      echo "Usage: $0 {start|stop|restart|mount|umount}"
+      ;;
+esac
+
+
+
+

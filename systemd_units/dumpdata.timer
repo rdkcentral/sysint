@@ -1,0 +1,9 @@
+[Unit]
+Description=Dump dummy data
+
+[Timer]
+OnBootSec=900s
+Unit=dumpdata.service
+
+[Install]
+WantedBy=multi-user.target

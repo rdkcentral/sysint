@@ -1,0 +1,79 @@
+#!/bin/sh
+##############################################################################
+# If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+
+OOPS_PART_VOLUME_SIZE="100KiB"
+. /etc/device.properties
+
+###################################################
+# If boops is installed we will use for oop capture
+[ -f /lib/rdk/boops.sh ] && exit 0
+###################################################
+
+#Check for OOPS Module is MMC or UBI.
+
+if [ "$MMC_OOPS_ENABLE" = "true" ];then
+
+	block_size=512
+
+        if [ "$DEVICE_CLASS" = "EMMC" ]; then
+		modprobe oops_mmc partition_start_block=$OOPS_MMC_START partition_size=$OOPS_MMC_SIZE mmc_blksz=$block_size
+		exit 0
+	else
+	        mtInfo=`mount_emmc_loop EMMC0.NON_VOL.NON_CRIT nomount =100K`
+		address=`echo $mtInfo | cut -d " " -f2`
+		size=`echo $mtInfo | cut -d " " -f3`
+		address=$(printf "0x%X" `expr $(($address)) / $block_size`)
+		echo $address
+		echo $size
+
+		modprobe oops_mmc partition_start_block=$address partition_size=$size mmc_blksz=$block_size
+		exit 0
+	fi
+
+else
+
+     
+	ubi_location="ubi0"
+	ubi_dev_num="0"
+	vol=""
+
+	if [ "$UBI_DEV_NUM" ]; then
+		ubi_location="ubi$UBI_DEV_NUM"
+		ubi_dev_num="$UBI_DEV_NUM"
+	fi
+
+	ubinfo /dev/$ubi_location -N oops_dump 2>/dev/null || ubimkvol /dev/$ubi_location -s $OOPS_PART_VOLUME_SIZE -N oops_dump
+	if [ -e  /dev/$ubi_location ]; then
+		vol=`ubinfo /dev/$ubi_location -N oops_dump | grep Volume | cut -d' ' -f5`
+		if [ "$vol" == "" ];then
+			echo "oops_dump ubi volume can't be created"
+			exit 0
+		fi
+	fi 
+
+	if [ ! -f /etc/os-release ]; then
+		modprobe oops_ubi ubi_dev_num=$ubi_dev_num ubi_vol=$vol ubi_vol_size=102400
+		exit 0
+	else
+		modprobe oops_ubi ubi_dev_num=$ubi_dev_num ubi_vol=$vol ubi_vol_size=102400
+		exit 0
+	fi
+fi

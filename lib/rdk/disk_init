@@ -1,0 +1,159 @@
+#!/bin/sh
+##############################################################################
+# If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+
+PATH=/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin
+
+# call platform specific prepare_sdcard before doing anything else
+if [ -f /lib/rdk/prepare_sdcard ]; then
+    sh /lib/rdk/prepare_sdcard
+fi
+
+SCRATCHPAD_SIZE=250 #MB
+
+# sane default values, device.properties should overwrite this most of the time
+SD_CARD_MOUNT_PATH=/media/tsb
+SD_CARD_APP_MOUNT_PATH=/media/apps
+SD_CARD_DEVICE=/dev/mmcblk0 # device used for tsb as well app storage
+SD_CARD_TSB_PART=${SD_CARD_DEVICE}p1
+SD_CARD_APP_PART=${SD_CARD_DEVICE}p2
+
+. /etc/include.properties
+. /etc/device.properties
+. /etc/rfc.properties
+
+# Adding a condition check for EMMC based device class types
+# to use different device node for TSB and APP partitions
+if [ "$DEVICE_CLASS" = "EMMC" ]; then
+    SD_CARD_APP_PART=$APP_PART
+    SD_CARD_MOUNT_PATH=$TSB_MOUNT_PATH
+    SD_CARD_APP_MOUNT_PATH=$APP_MOUNT_PATH
+fi
+
+ensure_correct_partitions()
+{
+    if [ -b $SD_CARD_TSB_PART ]
+    then
+        if [ ! -b $SD_CARD_APP_PART ]
+        then
+            #find the first and last sector of parition number 1
+            part1_start_sector=`sfdisk --unit S -d ${SD_CARD_DEVICE} | grep ${SD_CARD_TSB_PART} | tr -s " " |  tr -d "," | cut -d " " -f4`
+            part1_size=`sfdisk --unit S -d ${SD_CARD_DEVICE} | grep ${SD_CARD_TSB_PART} | tr -s " " |  tr -d "," | cut -d " " -f6`
+            part2_start_sector=0
+
+            # assuming 1 sector is equal to 512 bytes
+            ((scratchpad_size_sectors=$SCRATCHPAD_SIZE * 1024 * 1024 / 512))
+            ((part1_size=$part1_size-$scratchpad_size_sectors))
+            ((part2_start_sector=$part1_start_sector+$part1_size))
+
+            echo "creating new parition for cdl scratchpad"
+            echo "$part1_start_sector,$part1_size" | sfdisk --unit S -N 1 ${SD_CARD_DEVICE}
+            # find number of paritions on the device
+            nr_partitions=`sfdisk --unit S -d ${SD_CARD_DEVICE} | grep ${SD_CARD_DEVICE}p | wc -l`
+            # sometimes we get all four paritions even though there is only one
+            # but the additonal parititions will have zero start and end sectors
+            if [ $nr_partitions -gt 1 ]
+            then
+                echo "starting use of existing parition number 2 with valid size"
+                echo "$part2_start_sector,$scratchpad_size_sectors" | sfdisk --unit S -N 2 ${SD_CARD_DEVICE}
+            else
+                echo "partition 2 is being added"
+                echo "$part2_start_sector,$scratchpad_size_sectors" | sfdisk --unit S -a ${SD_CARD_DEVICE}
+            fi
+            # if we don't reboot partition is not available to kernel, we can solve this by including partprobe
+            # but that will waste flash space for an operatio that happens probably once a few years.
+            if [ ! -b $SD_CARD_APP_PART ]
+            then
+                echo "apps partition $SD_CARD_APP_PART not available yet. will not be used, despite RFC being enabled"
+            fi
+        fi
+    fi
+}
+
+start_function()
+{
+
+     ensure_correct_partitions #check and repartition if needed
+
+     # FixMe:
+     # When disk_checkcV2 script tries to fix any filesystem error using e2fsck utility it see's previous 
+     # mount time (last write time) as future time and consider it as issue which cannot be fixed and  throws  error.
+     # So it formats the App partition on seeing error code returned from e2fsck.
+     # This two commands workaround this issue by mounting and umounting the partition. This should be removed 
+     # once the impacted devices have fixed their systemd-timesyncd.
+
+    
+     mount $SD_CARD_APP_PART $SD_CARD_APP_MOUNT_PATH
+    
+
+     touch $SD_CARD_APP_MOUNT_PATH/testFile
+     if [ $? -ne 0 ]; then
+         umount $SD_CARD_APP_MOUNT_PATH
+         /lib/rdk/disk_checkV2 start $SD_CARD_APP_PART $SD_CARD_APP_MOUNT_PATH
+     else
+         rm -f $SD_CARD_APP_MOUNT_PATH/testFile
+         umount $SD_CARD_APP_MOUNT_PATH
+     fi
+
+     #fix any filesystem errors and mount app partition
+     /lib/rdk/disk_checkV2 mount $SD_CARD_APP_PART $SD_CARD_APP_MOUNT_PATH
+     #fix any filesystem errors and mount app partition
+     rm -rf $SD_CARD_APP_MOUNT_PATH/OCAP_MSV
+     echo "Clearing $SD_CARD_APP_MOUNT_PATH/lost+found/*"
+     rm -rf "$SD_CARD_APP_MOUNT_PATH/lost+found/*"
+    
+     #Format the SD/EMMC card partition only if filesystem is corrupted.
+     echo "Checking $SD_CARD_TSB_PART filesystem for errors..."
+     /lib/rdk/disk_checkV2 filesystem $SD_CARD_TSB_PART $SD_CARD_MOUNT_PATH
+     echo "Clearing $SD_CARD_MOUNT_PATH/lost+found/* after filesystem check"
+     rm -rf "$SD_CARD_MOUNT_PATH/lost+found/*"
+}
+
+
+stop_function()
+{
+    echo nothing to do
+}
+
+
+## Main App ##
+#--------------
+case $1 in
+    "start")
+        echo "Calling start_function()"
+        start_function
+        ;;
+   "stop")
+        echo "Calling stop_function()"
+        stop_function
+        ;;
+   "restart")
+        echo "Calling restart_function()"
+        stop_function
+        start_function
+        ;;
+    *)
+
+      echo "Usage: $0 {start|stop|restart}"
+      ;;
+esac
+
+
+

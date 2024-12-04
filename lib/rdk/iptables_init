@@ -1,0 +1,550 @@
+#!/bin/bash
+##############################################################################
+# If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+
+SCRIPTNAME=`basename $0`
+PATH=/usr/local/bin:/usr/bin:/bin:/sbin
+
+if [ -f /etc/init.d/init_utilities ]; then
+    . /etc/init.d/init_utilities
+fi
+
+if [ -f /lib/rdk/init-functions ]; then
+    . /lib/rdk/init-functions
+fi
+
+. /etc/include.properties
+. /etc/device.properties
+
+RFC_RAM_PATH=0;
+
+if [ -f  /etc/rfc.properties ]; then
+    . /etc/rfc.properties
+fi
+
+if [ -z $LOG_PATH ]; then
+    LOG_PATH="/opt/logs"
+fi
+
+if [ -z $RFC_RAM_PATH ]; then
+    RFC_RAM_PATH="/tmp/RFC"
+fi
+
+if [ -f /lib/rdk/utils.sh ]; then
+    . /lib/rdk/utils.sh
+fi
+
+MYLOG_FILE="$LOG_PATH/iptables.log"
+SSH_WHITE_LIST_FILE="$RFC_RAM_PATH/.RFC_SSHWhiteList.list"
+SNMP_WHITE_LIST_FILE="$RFC_RAM_PATH/.RFC_SNMPWhiteList.list"
+
+WAREHOUSE_ENV="$RAMDISK_PATH/warehouse_mode_active"
+
+REFRESH=$1
+
+##Dummy IP's to allow SSH.
+DUMMY_SSH_IPv4_LIST="192.168.1.1 \
+192.168.1.2 \
+192.168.1.3"
+
+##Dummy data to allow SNMP static IP's.
+DUMMY_SNMP_IPv4_LIST="192.168.1.1 \
+192.168.1.2 \
+192.168.1.3"
+
+##Dummy IP's to allow SSH.
+DUMMY_SSH_IPv6_LIST="ff0::226:86ff:febf:b187 \
+ff0::e004:caff:fe2c:9946 \
+ff0::c059:aaff:fe32:ed2f"
+
+##Dummy data to allow SNMP static IP's.
+DUMMY_SNMP_IPv6_LIST="ff0::226:86ff:febf:b187 \
+ff0::e004:caff:fe2c:9946 \
+ff0::c059:aaff:fe32:ed2f"
+
+RMF_STREAMER_PORTS="5000 8080"
+AUTH_SERVICE_PORTS="50050"
+FOG_PORTS="9080"
+
+MOCA_TARGETING_APP_PORTS="$RMF_STREAMER_PORTS $AUTH_SERVICE_PORTS $FOG_PORTS"
+
+#
+# Set this variable to 1 to enable debug by way of the DEBUG function below.
+#
+_DEBUG=0
+
+#
+# "DEBUG" echoes a line of debug information to a log file if _DEBUG equals 1.
+#
+DEBUG()
+{
+   # Save the current exit status and return it afterwards. This is to stop the
+   # "${_DEBUG} -eq 1" test from propagating a false error if debug isn't enabled.
+   local SAVE_EXIT_STATUS=$?
+
+   [ ${_DEBUG} -eq 1 ] && ( echo $@ >>/var/run/${SCRIPTNAME}_debug )
+
+   return $SAVE_EXIT_STATUS
+}
+
+if [ ! -f /etc/os-release ]; then
+     IPV6_BIN="/sbin/ip6tables -w "
+     IPV4_BIN="/sbin/iptables -w "
+     IPV6_BIN_PATH=/sbin/ip6tables
+     IPV4_BIN_PATH=/sbin/iptables
+else
+     IPV6_BIN="/usr/sbin/ip6tables -w "
+     IPV4_BIN="/usr/sbin/iptables -w "
+     IPV6_BIN_PATH=/usr/sbin/ip6tables
+     IPV4_BIN_PATH=/usr/sbin/iptables
+fi
+
+#####################################################################
+addStaticRules(){
+
+if [ -x $IPV4_BIN_PATH ]; then
+
+    $IPV4_BIN -t nat -A POSTROUTING -o $WAN_INTERFACE -j MASQUERADE
+    $IPV4_BIN -A INPUT -p tcp -s 127.0.0.1 --dport 111 -j ACCEPT
+    $IPV4_BIN -A INPUT -p udp -s 127.0.0.1 --dport 514 -j ACCEPT
+    if [ "$GATEWAY_IP" != "" ];then
+        $IPV4_BIN -A INPUT -p tcp ! -s $GATEWAY_IP --dport 111 -j DROP
+        $IPV4_BIN -A INPUT -p udp ! -s $GATEWAY_IP --dport 514 -j DROP
+    fi
+    $IPV4_BIN -A INPUT -s 192.168.100.0/24 -i $WAN_INTERFACE -j ACCEPT
+
+    $IPV4_BIN -N SSHDROPLOG
+    $IPV4_BIN -A SSHDROPLOG -j LOG --log-level 7 --log-prefix "SSH CONNECTION DROPPED: "
+    $IPV4_BIN -A SSHDROPLOG -j DROP
+
+    $IPV4_BIN -N StaticSshWhiteList
+    $IPV4_BIN -N DynamicSshWhiteList
+    $IPV4_BIN -t filter -A INPUT -p tcp -m tcp --dport 22 -j DynamicSshWhiteList
+    $IPV4_BIN -A DynamicSshWhiteList -j StaticSshWhiteList
+
+    # Enable ssh from static white listed source
+    ipTableLogging "Add the IPv4 SSH Static IP Addresses"
+    for jump_ip in $DUMMY_SSH_IPv4_LIST ; do
+         $IPV4_BIN -A StaticSshWhiteList -s $jump_ip -j ACCEPT
+         ipTableLogging "Appended the IPv4 $jump_ip in StaticSshWhiteList"
+    done
+
+    # Finish with adding SSH IPs.  Drop all other requests
+    $IPV4_BIN -A StaticSshWhiteList -j SSHDROPLOG
+
+
+    ## SNMP Static White List
+    $IPV4_BIN -N SNMPDROPLOG
+    $IPV4_BIN -A SNMPDROPLOG -j LOG --log-level 7 --log-prefix "SNMP DROP CONNECTION: "
+    $IPV4_BIN -A SNMPDROPLOG -j DROP
+
+    $IPV4_BIN -N SNMPACCEPTLOG
+    $IPV4_BIN -A SNMPACCEPTLOG -j LOG --log-level 7 --log-prefix "SNMP ACCEPT CONNECTION: "
+    $IPV4_BIN -A SNMPACCEPTLOG -j ACCEPT
+
+    $IPV4_BIN -N SNMPEndOfList
+    $IPV4_BIN -A SNMPEndOfList -j SNMPACCEPTLOG
+
+    $IPV4_BIN -N StaticSnmpV2WhiteList
+    $IPV4_BIN -N StaticSnmpV3WhiteList
+
+
+    ## SNMP Dynamic White List Support
+    $IPV4_BIN -N DynamicSnmpV2WhiteList
+    $IPV4_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 161 -j DynamicSnmpV2WhiteList
+    $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+
+    $IPV4_BIN -N DynamicSnmpV3WhiteList
+    $IPV4_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 10161 -j DynamicSnmpV3WhiteList
+    $IPV4_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
+
+    ipTableLogging "Add the IPv4 SNMP Static IP Addresses"
+    for snmp_ip in $DUMMY_SNMP_IPv4_LIST ; do
+        acceptStaticIPv4InputSNMPTraffic $snmp_ip
+    done
+
+    $IPV4_BIN -A StaticSnmpV2WhiteList -j SNMPEndOfList
+    $IPV4_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfList
+
+    $IPV4_BIN -I INPUT -p tcp --dport 9998 -j ACCEPT
+else
+    ipTableLogging "$IPV4_BIN_PATH not found OR box is in IPv6 mode- did not apply iptables rules"
+fi
+
+if [ -x $IPV6_BIN_PATH ]; then
+
+    $IPV6_BIN -N SSHDROPLOG
+    $IPV6_BIN -A SSHDROPLOG -j LOG --log-level 7 --log-prefix "SSH CONNECTION DROPPED: "
+    $IPV6_BIN -A SSHDROPLOG -j DROP
+
+    $IPV6_BIN -N StaticSshWhiteList
+    $IPV6_BIN -N DynamicSshWhiteList
+    $IPV6_BIN -t filter -A INPUT -p tcp -m tcp --dport 22 -j DynamicSshWhiteList
+    $IPV6_BIN -A DynamicSshWhiteList -j StaticSshWhiteList
+
+    ipTableLogging "Add the IPv6 SSH Static IP Addresses"
+    for jump_ip in $DUMMY_SSH_IPv6_LIST ; do
+          $IPV6_BIN -A StaticSshWhiteList -s $jump_ip -j ACCEPT
+          ipTableLogging "Appended the IPv6 $jump_ip in StaticSshWhiteList"
+    done
+    $IPV6_BIN -A StaticSshWhiteList -j SSHDROPLOG
+
+    ## SNMP Static White List
+    $IPV6_BIN -N SNMPDROPLOGV6
+    $IPV6_BIN -A SNMPDROPLOGV6 -j LOG --log-level 7 --log-prefix "SNMP DROP CONNECTION: "
+    $IPV6_BIN -A SNMPDROPLOGV6 -j DROP
+
+    $IPV6_BIN -N SNMPACCEPTLOGV6
+    $IPV6_BIN -A SNMPACCEPTLOGV6 -j LOG --log-level 7 --log-prefix "SNMP ACCEPT CONNECTION: "
+    $IPV6_BIN -A SNMPACCEPTLOGV6 -j ACCEPT
+
+    $IPV6_BIN -N SNMPEndOfListV6
+    $IPV6_BIN -A SNMPEndOfListV6 -j SNMPACCEPTLOGV6
+
+    $IPV6_BIN -N StaticSnmpV2WhiteList
+    $IPV6_BIN -N StaticSnmpV3WhiteList
+
+    ## SNMP Dynamic White List Support
+    $IPV6_BIN -N DynamicSnmpV2WhiteList
+    $IPV6_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 161 -j DynamicSnmpV2WhiteList
+    $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+
+    $IPV6_BIN -N DynamicSnmpV3WhiteList
+    $IPV6_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 10161 -j DynamicSnmpV3WhiteList
+    $IPV6_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
+
+
+
+    ipTableLogging "Add the IPv6 SNMP Static IP Addresses"
+    for snmp_ip in $DUMMY_SNMP_IPv6_LIST ; do
+        acceptStaticIPv6InputSNMPTraffic $snmp_ip
+    done
+
+    $IPV6_BIN -A StaticSnmpV2WhiteList -j SNMPEndOfListV6
+    $IPV6_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfListV6
+      
+else
+    ipTableLogging "$IPV6_BIN_PATH not found OR box is in IPv4 mode - did not apply ip6tables rules"
+fi
+}
+
+estbIp=""
+#####################################################################
+
+#####################################################################
+waitForIpAcquisition() {
+    # Wait for IP acquisition
+    loop=1
+    while [ $loop -eq 1 ]
+    do
+        estbIp=`getIPAddress`
+        if [ "X$estbIp" == "X" ]; then
+            sleep 5
+        else
+            if [ "$IPV6_ENABLED" = "true" ]; then
+                if [ "Y$estbIp" != "Y$DEFAULT_IP" ] && [ -f $WAREHOUSE_ENV ]; then
+                   loop=0
+                elif [ ! -f /tmp/estb_ipv4 ] && [ ! -f /tmp/estb_ipv6 ]; then
+                   sleep 5
+                elif [ "Y$estbIp" == "Y$DEFAULT_IP" ] && [ -f /tmp/estb_ipv4 ]; then
+                   sleep 5
+                else
+                   loop=0
+                fi
+            else
+                if [ "Y$estbIp" == "Y$DEFAULT_IP" ]; then
+                   sleep 5
+                else
+                   loop=0
+                fi
+            fi
+        fi
+    done
+}
+#####################################################################
+
+#####################################################################
+preventNeighOverflow() {
+    ## Start of changes for avoiding neighbourtable overflow
+    solmcast=$(awk '/'$WAN_INTERFACE'/ {print "ff02::1:ff" substr($0,27,2) ":" substr($0,29,4);}' /proc/net/if_inet6)
+
+    for line in ${solmcast}; do
+        $IPV6_BIN -A PREROUTING -t mangle -d $line -j ACCEPT
+    done
+    $IPV6_BIN -A PREROUTING -t mangle -p icmpv6 --icmpv6-type neighbor-solicitation -i $WAN_INTERFACE -d ff02::1:ff00:0/104 -j DROP 
+    if [ -x $IPV6_BIN_PATH ] && [ -f /tmp/estb_ipv4 ]; then
+        $IPV6_BIN -I INPUT -p ipv6-icmp --icmpv6-type router-advertisement -j DROP
+        ip -6 route del default
+    fi
+    ## End of changes for avoiding neighbour table overflow
+}
+#####################################################################
+
+#####################################################################
+addDynamicRules() {
+    if [ -f /tmp/estb_ipv4 ]; then
+        ## Use actual port number with --dport, instead of xxxx, yyyy.
+
+        ## Accept incoming tr069 traffic
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport xxxx -j ACCEPT
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+
+        ## Accept incoming DNCS traffic
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+
+        ## Webinspector ports: xxxx (qtwebkit), yyyy (WPE)
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport xxxx -j ACCEPT
+        $IPV4_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport yyyy -j ACCEPT
+    fi
+
+    #### SECURITY on eSTB side: DEFAULT RULES END ####
+    if [ -f /tmp/estb_ipv6 ]; then
+        ## Use actual port number with --dport, instead of xxxx, yyyy.
+        ## Accept incoming tr069 traffic
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport xxxx -j ACCEPT
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+        ## Accept incoming DNCS traffic
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p udp --dport xxxx -j ACCEPT
+
+        ## Webinspector ports: xxxx (qtwebkit), yyyy (WPE)
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport xxxx -j ACCEPT
+        $IPV6_BIN -A INPUT -i $WAN_INTERFACE -d $estbIp -p tcp --dport yyyy -j ACCEPT
+    fi
+}
+#####################################################################
+
+#####################################################################
+acceptStaticIPv4InputSNMPTraffic() {
+    ## Accept incoming SNMP v2 connections
+    if [ "$isV2Enabled" == "true" ]; then
+        $IPV4_BIN -A StaticSnmpV2WhiteList -s $1 -j ACCEPT
+    fi
+    # Not needed if v3 is disabled by RFC
+    if [ "$isV3Enabled" == "true" ]; then
+        ## Accept incoming SNMP v3 connections
+        $IPV4_BIN -A StaticSnmpV3WhiteList -s $1 -j ACCEPT
+    fi
+    if [ $LOGGING -eq 2 ]; then
+        ipTableLogging "Accept SNMP Traffic on Static IPv4: $1"
+    fi
+}
+#####################################################################
+
+#####################################################################
+acceptStaticIPv6InputSNMPTraffic() {
+    ## Accept incoming SNMP v2 connections
+    if [ "$isV2Enabled" == "true" ]; then
+        $IPV6_BIN -A StaticSnmpV2WhiteList -s $1 -j ACCEPT
+    fi
+    # Not needed if v3 is disabled by RFC
+    if [ "$isV3Enabled" == "true" ]; then
+        ## Accept incoming SNMP v3 connections
+        $IPV6_BIN -A StaticSnmpV3WhiteList -s $1 -j ACCEPT
+    fi
+    if [ $LOGGING -eq 2 ]; then
+        ipTableLogging "Accept SNMP Traffic on Static IPv6: $1"
+    fi
+}
+#####################################################################
+
+#####################################################################
+addWhiteListSNMPIPv4Traffic() {
+    ## Accept incoming SNMP v2 connections
+    if [ "$isV2Enabled" == "true" ]; then
+        $IPV4_BIN -A DynamicSnmpV2WhiteList -s $1 -j ACCEPT
+    fi
+
+    if [ "$isV3Enabled" == "true" ]; then
+        ## Accept incoming SNMP v3 connections
+        $IPV4_BIN -A DynamicSnmpV3WhiteList -s $1 -j ACCEPT
+    fi
+    ipTableLogging "$2) Dynamic SNMP IPv4 :: $1" 
+}
+#####################################################################
+
+#####################################################################
+addWhiteListSNMPIPv6Traffic() {
+    ## Accept incoming SNMP v2 connections
+    if [ "$isV2Enabled" == "true" ]; then
+        $IPV6_BIN -A DynamicSnmpV2WhiteList -s $1 -j ACCEPT
+    fi
+
+    if [ "$isV3Enabled" != "false" ]; then
+        ## Accept incoming SNMP v3 connections
+        $IPV6_BIN -A DynamicSnmpV3WhiteList -s $1 -j ACCEPT
+    fi
+    ipTableLogging "$2) Dynamic SNMP IPv6 :: $1" 
+}
+##################################################################
+# Set this variable to 1 to direct echo statements to MYLOG_FILE.
+# Set this variable to 2 to see the static IP addresses.
+##################################################################
+LOGGING=1
+#####################################################################
+
+#####################################################################
+ipTableLogging()
+{
+    if [ $LOGGING -gt 0 ]; then
+        echo "`/bin/timestamp` $1" >> $MYLOG_FILE
+    fi
+}
+#####################################################################
+# Starting Point 
+#####################################################################
+
+# External dependencies which are requied for this script to execute properly.
+commandsRequired="iptables ip6tables ip sleep getIPAddress basename expr read"
+for cmd in $commandsRequired; do
+    if ! command -v $cmd > /dev/null; then
+        echo "iptables_init script may not work properly because required '$cmd' is not found."
+    fi
+done
+
+isV3Enabled=true
+isV2Enabled=false
+
+if [ -z "$isV3Enabled" ]; then
+    echo "RFC configuration for SNMPv3 not available. Defaulting to SNMPv3 true."
+    isV3Enabled=true
+fi
+
+if [ -z "$isV2Enabled" ]; then
+    echo "RFC configuration for SNMPv2 not available. Defaulting to SNMPv2 true."
+    isV2Enabled=true
+fi
+
+echo "RFC Settings for SNMPv3 is : $isV3Enabled ."
+echo "RFC Settings for SNMPv2 is : $isV2Enabled ."
+
+if [ "x$REFRESH" == "xRefresh" ]; then
+    # Renew only firewall rules dependent on ESTB IP
+    waitForIpAcquisition
+    addDynamicRules
+
+elif [ "x$REFRESH" == "xSSH_Refresh" ]; then
+    count=0;
+    getSSH
+    ipTableLogging "Adding White List Servers for SSH"
+    if [ -f /tmp/estb_ipv4 ]; then
+        #Flush DynamicSshWhiteList chain
+        $IPV4_BIN -F DynamicSshWhiteList
+
+        if [ -f $SSH_WHITE_LIST_FILE ]; then
+            #Whitelist RFC SSH IP's
+            while read line
+            do
+               if $isForwardSSHEnable; then
+                 $IPV4_BIN -A DynamicSshWhiteList -s $line -j ACCEPT
+                 count=`expr $count + 1`
+                 ipTableLogging "$count) Dynamic SSH IPv4 :: $line"
+               fi
+            done < $SSH_WHITE_LIST_FILE
+        fi
+        ipTableLogging "Added $count IPv4 SSH White Listed IPs"
+        $IPV4_BIN -A DynamicSshWhiteList -j StaticSshWhiteList
+
+    elif [ -f /tmp/estb_ipv6 ]; then
+        #Flush DynamicSshWhiteList chain
+        $IPV6_BIN -F DynamicSshWhiteList
+
+        if [ -f $SSH_WHITE_LIST_FILE ]; then
+            #Whitelist RFC SSH IP's
+            while read line
+            do
+               if $isForwardSSHEnable; then
+                 $IPV6_BIN -A DynamicSshWhiteList -s $line -j ACCEPT
+                 count=`expr $count + 1`
+                 ipTableLogging "$count) Dynamic SSH IPv6 :: $line"
+               fi
+            done < $SSH_WHITE_LIST_FILE
+        fi
+        ipTableLogging "Added $count IPv6 SSH White Listed IPs"
+        $IPV6_BIN -A DynamicSshWhiteList -j StaticSshWhiteList
+    fi
+
+elif [ "x$REFRESH" == "xSNMP_Refresh" ]; then
+## SNMP Dynamic White List Support
+    count=0;
+    ipTableLogging "Adding White List Servers for SNMP"
+    if [ -f /tmp/estb_ipv4 ]; then
+        #Flush the White List Filter chains
+        $IPV4_BIN -F DynamicSnmpV2WhiteList
+        $IPV4_BIN -F DynamicSnmpV3WhiteList
+
+        if [ -f $SNMP_WHITE_LIST_FILE ]; then
+            #Whitelist RFC SNMP IP's
+            while read line
+            do
+                count=`expr $count + 1`
+                addWhiteListSNMPIPv4Traffic $line $count 
+            done < $SNMP_WHITE_LIST_FILE
+        fi 
+        ipTableLogging "Added $count IPv4 SNMP White Listed IPs"
+        $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+        $IPV4_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList 
+
+    elif [ -f /tmp/estb_ipv6 ]; then
+        #Flush the White List Filter chains
+        $IPV6_BIN -F DynamicSnmpV2WhiteList
+        $IPV6_BIN -F DynamicSnmpV3WhiteList
+
+        if [ -f $SNMP_WHITE_LIST_FILE ]; then
+            ipTableLogging "Add SNMP IPv6 :: $SNMP_WHITE_LIST_FILE"
+            #Whitelist RFC SNMP IP's
+            while read line
+            do
+                count=`expr $count + 1`
+                addWhiteListSNMPIPv6Traffic $line $count
+            done < $SNMP_WHITE_LIST_FILE
+        fi 
+        ipTableLogging "Added $count IPv6 SNMP White Listed IPs"
+        $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+        $IPV6_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
+    fi
+
+elif [ "x$REFRESH" == "xFinish" ]; then
+    if [ -x $IPV4_BIN_PATH ]; then
+            $IPV4_BIN -F SNMPEndOfList
+            $IPV4_BIN -A SNMPEndOfList -j SNMPDROPLOG
+    fi
+
+    if [ -x $IPV6_BIN_PATH ]; then
+            $IPV6_BIN -F SNMPEndOfListV6
+            $IPV6_BIN -A SNMPEndOfListV6 -j SNMPDROPLOGV6
+    fi
+    ipTableLogging "End of IP Table FireWall"
+else
+## All firewall rules needs to be added during boot-up
+    if [ $LOGGING -gt 0 ]; then
+        echo "`/bin/timestamp` Start IP Table FireWall" > $MYLOG_FILE  # Clear the File
+    fi
+
+    addStaticRules
+    waitForIpAcquisition
+    preventNeighOverflow
+    addDynamicRules
+
+    ipTableLogging "Done with Static and Dynamic Rules"
+fi

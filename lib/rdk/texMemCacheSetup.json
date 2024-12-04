@@ -1,0 +1,6 @@
+{"texMemCacheSetup":[
+{"imageType":"UI", "percentage":"50"},
+{"imageType":"menu", "percentage":"10"},
+{"imageType":"OnDemand", "percentage":"15"},
+{"imageType":"default", "percentage":"25"}
+]}
