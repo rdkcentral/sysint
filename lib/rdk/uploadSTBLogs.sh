@@ -56,6 +56,8 @@ MAC=`getMacAddressOnly`
 HOST_IP=`getIPAddress`
 DT=`date "+%m-%d-%y-%I-%M%p"`
 LOG_FILE=$MAC"_Logs_$DT.tgz"
+DRI_LOG_FILE=$MAC"_DRI_Logs_$DT.tgz"
+DRI_LOG_PATH="/opt/logs/drilogs"
 VERSION="version.txt"
 PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
 PREV_LOG_BACKUP_PATH="$LOG_PATH/PreviousLogs_backup/"
@@ -908,6 +910,18 @@ uploadLogOnReboot()
                 maintenance_error_flag=1
             else
                 maintenance_error_flag=0
+            fi
+        fi
+        if [ -d "$DRI_LOG_PATH" ]; then
+            uploadLog "Uploading DRI logs through HTTP to S3 Server:$DRI_LOG_FILE"
+            tar -zcvf $DRI_LOG_FILE $DRI_LOG_PATH/* >> $LOG_PATH/dcmscript.log  2>&1
+            sleep 60
+            driretval=$(HttpLogUpload $DRI_LOG_FILE)
+            if [ $driretval -ne 0 ];then
+                uploadLog "Uploading DRI Logs through HTTP Failed!!"
+            else
+                uploadLog "Uploading DRI Logs through HTTP Success..."
+                rm -rf $DRI_LOG_PATH
             fi
         fi
         clearOlderPacketCaptures
