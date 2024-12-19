@@ -319,8 +319,9 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "socprovisioning" ] || [ "$1" = "xcal-device" ] || [ "$1" = "vodClientApp" ] ||
     [ "$1" = "dvrsrc:src" ] || [ "$1" = "qsrc:src" ] ||
     [ "$1" = "qamsrc_bin-queu" ] || [ "$1" = "authservice" ] || [ "$1" = "named" ] ||
-    [ "$1" = "slave_callback" ]  || [ "$1" = "telemetry2_0" ] || [ "$1" = "WorkerPool::Thr" ]
-    [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || [ "$1" = "Monitor::IResou" ]; then
+    [ "$1" = "slave_callback" ]  || [ "$1" = "telemetry2_0" ] || [ "$1" = "WorkerPool::Thr" ] ||
+    [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || 
+    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ]; then
         dumpFile
         exit 0
 fi
