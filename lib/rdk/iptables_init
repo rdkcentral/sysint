@@ -242,11 +242,6 @@ if [ -x $IPV6_BIN_PATH ]; then
 
     $IPV6_BIN -A StaticSnmpV2WhiteList -j SNMPEndOfListV6
     $IPV6_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfListV6
-
-    ## Enable SSH for community DEV builds.
-    if [ "${COMMUNITY_BUILDS}" = "true" ] && [ "${BUILD_TYPE}" = "dev" ]; then
-        $IPV6_BIN -I INPUT -p tcp --dport 22 -j ACCEPT
-    fi
 else
     ipTableLogging "$IPV6_BIN_PATH not found OR box is in IPv4 mode - did not apply ip6tables rules"
 fi
