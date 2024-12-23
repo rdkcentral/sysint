@@ -169,7 +169,7 @@ if [ -x $IPV4_BIN_PATH ]; then
     ## SNMP Dynamic White List Support
     $IPV4_BIN -N DynamicSnmpV2WhiteList
     $IPV4_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 161 -j DynamicSnmpV2WhiteList
-    $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+    $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList
 
     $IPV4_BIN -N DynamicSnmpV3WhiteList
     $IPV4_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 10161 -j DynamicSnmpV3WhiteList
@@ -184,6 +184,11 @@ if [ -x $IPV4_BIN_PATH ]; then
     $IPV4_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfList
 
     $IPV4_BIN -I INPUT -p tcp --dport 9998 -j ACCEPT
+
+    ## Enable SSH for community DEV builds.
+    if [ "x${COMMUNITY_BUILDS}" = "xtrue" ] && [ "x${BUILD_TYPE}" = "xdev" ]; then
+        $IPV4_BIN -I INPUT -p tcp --dport 22 -j ACCEPT
+    fi
 else
     ipTableLogging "$IPV4_BIN_PATH not found OR box is in IPv6 mode- did not apply iptables rules"
 fi
@@ -224,13 +229,11 @@ if [ -x $IPV6_BIN_PATH ]; then
     ## SNMP Dynamic White List Support
     $IPV6_BIN -N DynamicSnmpV2WhiteList
     $IPV6_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 161 -j DynamicSnmpV2WhiteList
-    $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+    $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList
 
     $IPV6_BIN -N DynamicSnmpV3WhiteList
     $IPV6_BIN -t filter -A INPUT -i $WAN_INTERFACE -p udp -m udp  --dport 10161 -j DynamicSnmpV3WhiteList
     $IPV6_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
-
-
 
     ipTableLogging "Add the IPv6 SNMP Static IP Addresses"
     for snmp_ip in $DUMMY_SNMP_IPv6_LIST ; do
@@ -239,7 +242,11 @@ if [ -x $IPV6_BIN_PATH ]; then
 
     $IPV6_BIN -A StaticSnmpV2WhiteList -j SNMPEndOfListV6
     $IPV6_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfListV6
-      
+
+    ## Enable SSH for community DEV builds.
+    if [ "${COMMUNITY_BUILDS}" = "true" ] && [ "${BUILD_TYPE}" = "dev" ]; then
+        $IPV6_BIN -I INPUT -p tcp --dport 22 -j ACCEPT
+    fi
 else
     ipTableLogging "$IPV6_BIN_PATH not found OR box is in IPv4 mode - did not apply ip6tables rules"
 fi
@@ -288,7 +295,7 @@ preventNeighOverflow() {
     for line in ${solmcast}; do
         $IPV6_BIN -A PREROUTING -t mangle -d $line -j ACCEPT
     done
-    $IPV6_BIN -A PREROUTING -t mangle -p icmpv6 --icmpv6-type neighbor-solicitation -i $WAN_INTERFACE -d ff02::1:ff00:0/104 -j DROP 
+    $IPV6_BIN -A PREROUTING -t mangle -p icmpv6 --icmpv6-type neighbor-solicitation -i $WAN_INTERFACE -d ff02::1:ff00:0/104 -j DROP
     if [ -x $IPV6_BIN_PATH ] && [ -f /tmp/estb_ipv4 ]; then
         $IPV6_BIN -I INPUT -p ipv6-icmp --icmpv6-type router-advertisement -j DROP
         ip -6 route del default
@@ -379,7 +386,7 @@ addWhiteListSNMPIPv4Traffic() {
         ## Accept incoming SNMP v3 connections
         $IPV4_BIN -A DynamicSnmpV3WhiteList -s $1 -j ACCEPT
     fi
-    ipTableLogging "$2) Dynamic SNMP IPv4 :: $1" 
+    ipTableLogging "$2) Dynamic SNMP IPv4 :: $1"
 }
 #####################################################################
 
@@ -394,7 +401,7 @@ addWhiteListSNMPIPv6Traffic() {
         ## Accept incoming SNMP v3 connections
         $IPV6_BIN -A DynamicSnmpV3WhiteList -s $1 -j ACCEPT
     fi
-    ipTableLogging "$2) Dynamic SNMP IPv6 :: $1" 
+    ipTableLogging "$2) Dynamic SNMP IPv6 :: $1"
 }
 ##################################################################
 # Set this variable to 1 to direct echo statements to MYLOG_FILE.
@@ -411,7 +418,7 @@ ipTableLogging()
     fi
 }
 #####################################################################
-# Starting Point 
+# Starting Point
 #####################################################################
 
 # External dependencies which are requied for this script to execute properly.
@@ -498,12 +505,12 @@ elif [ "x$REFRESH" == "xSNMP_Refresh" ]; then
             while read line
             do
                 count=`expr $count + 1`
-                addWhiteListSNMPIPv4Traffic $line $count 
+                addWhiteListSNMPIPv4Traffic $line $count
             done < $SNMP_WHITE_LIST_FILE
-        fi 
+        fi
         ipTableLogging "Added $count IPv4 SNMP White Listed IPs"
-        $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
-        $IPV4_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList 
+        $IPV4_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList
+        $IPV4_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
 
     elif [ -f /tmp/estb_ipv6 ]; then
         #Flush the White List Filter chains
@@ -518,9 +525,9 @@ elif [ "x$REFRESH" == "xSNMP_Refresh" ]; then
                 count=`expr $count + 1`
                 addWhiteListSNMPIPv6Traffic $line $count
             done < $SNMP_WHITE_LIST_FILE
-        fi 
+        fi
         ipTableLogging "Added $count IPv6 SNMP White Listed IPs"
-        $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList 
+        $IPV6_BIN -A DynamicSnmpV2WhiteList -j StaticSnmpV2WhiteList
         $IPV6_BIN -A DynamicSnmpV3WhiteList -j StaticSnmpV3WhiteList
     fi
 
