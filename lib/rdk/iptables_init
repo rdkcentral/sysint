@@ -184,6 +184,10 @@ if [ -x $IPV4_BIN_PATH ]; then
     $IPV4_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfList
 
     $IPV4_BIN -I INPUT -p tcp --dport 9998 -j ACCEPT
+    ## Enable SSH for community DEV builds.
+    if [ "x${COMMUNITY_BUILDS}" = "xtrue" ] && [ "x${BUILD_TYPE}" = "xdev" ]; then
+        $IPV4_BIN -I INPUT -p tcp --dport 22 -j ACCEPT
+    fi
 else
     ipTableLogging "$IPV4_BIN_PATH not found OR box is in IPv6 mode- did not apply iptables rules"
 fi
@@ -239,7 +243,10 @@ if [ -x $IPV6_BIN_PATH ]; then
 
     $IPV6_BIN -A StaticSnmpV2WhiteList -j SNMPEndOfListV6
     $IPV6_BIN -A StaticSnmpV3WhiteList -j SNMPEndOfListV6
-      
+    ## Enable SSH for community DEV builds.
+    if [ "x${COMMUNITY_BUILDS}" = "xtrue" ] && [ "x${BUILD_TYPE}" = "xdev" ]; then
+        $IPV6_BIN -I INPUT -p tcp --dport 22 -s fe80::/10 -j ACCEPT
+    fi
 else
     ipTableLogging "$IPV6_BIN_PATH not found OR box is in IPv4 mode - did not apply ip6tables rules"
 fi
