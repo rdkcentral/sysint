@@ -37,7 +37,11 @@ fi
 MEMORY_LOG="/opt/logs/core_log.txt"
 
 if [ -f /etc/os-release ]; then
-	CORE_PATH=$CORE_PATH
+    if [ "$1" = "dnsmasq" ]; then
+       CORE_PATH="/tmp/data"
+    else
+       CORE_PATH=$CORE_PATH
+    fi
 fi
 
 if [ ! -d "$CORE_PATH" ]; then
