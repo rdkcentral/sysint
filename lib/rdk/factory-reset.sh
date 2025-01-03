@@ -131,6 +131,10 @@ fi
 # RFC data cleanup
 if [ -d /opt/RFC ]; then rm -rf /opt/RFC; fi
 if [ -d /opt/secure/RFC ]; then rm -rf /opt/secure/RFC; fi
+# Downloadable certs cleanup
+if [ -d /opt/dl/certs ]; then rm -rf /opt/dl/certs; fi
+# Downloadable creds cleanup
+if [ -d /opt/dl/lxy ]; then rm -rf /opt/dl/lxy; fi
 
 # clear systemd settings
 if [ -d /opt/systemd ]; then rm -rf /opt/systemd; fi
