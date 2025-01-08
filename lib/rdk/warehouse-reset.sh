@@ -170,6 +170,10 @@ if [ -d /opt/lib/bluetooth ]; then rm -rf /opt/lib/bluetooth; fi
 # RFC data cleanup
 if [ -d /opt/RFC ]; then rm -rf /opt/RFC; fi
 if [ -d /opt/secure/RFC ]; then rm -rf /opt/secure/RFC; fi
+# Downloadable certs cleanup
+if [ -d /opt/dl/certs ]; then rm -rf /opt/dl/certs; fi
+# Downloadable creds cleanup
+if [ -d /opt/dl/lxy ]; then rm -rf /opt/dl/lxy; fi
 #Removing the tmpfs files from XCONF
 rm -rf /tmp/device_initiated_snmp_cdl_in_progress
 rm -rf /tmp/device_initiated_rcdl_in_progress
