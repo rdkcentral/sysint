@@ -38,9 +38,9 @@ run_top_command() {
 if [ "$DEVICE_TYPE" = "mediaclient" ]; then
         top -b -o +%CPU | head -n 17 
 elif [ "$DEVICE_TYPE" = "hybrid" ]; then
-      top | awk '/load|Tasks|Cpu|Mem|Swap|COMMAND|rmfStreamer|Receiver|lighttpd|IARMDaemonMain|dsMgrMain|runPod|Main|nrdPluginApp|rdkbrowser2|rtrmfplayer|WPE|fogcli/ && !/grep|run.sh/' 
+      top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|rmfStreamer|Receiver|lighttpd|IARMDaemonMain|dsMgrMain|runPod|Main|nrdPluginApp|rdkbrowser2|rtrmfplayer|WPE|fogcli' | grep -vE 'grep|run.sh' 
 else
-     top | awk '/load|Tasks|Cpu|Mem|Swap|COMMAND|mpeos|Receiver|uimgr_main|lighttpd|IARMDaemonMain|dsMgrMain|Main|nrdPluginApp|fogcli/ && !/grep|run.sh/'
+     top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|mpeos|Receiver|uimgr_main|lighttpd|IARMDaemonMain|dsMgrMain|Main|nrdPluginApp|fogcli' | grep -vE 'grep|run.sh'
 fi
 }
 
@@ -84,7 +84,7 @@ fi
 	curr_count=`cat /tmp/.top_count`
         count=$(( curr_count + 1 ))
 	if [ $count -eq 6 ]; then
-		top -b -n1 | awk '!/grep|run.sh/'
+		top -b -n1 | grep -vE 'grep|run.sh'
 		cat /proc/meminfo
 		count=0
 	fi
