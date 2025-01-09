@@ -26,7 +26,6 @@
 . /etc/device.properties
 . /etc/env_setup.sh
 
-TOP_COUNT_FILE=/tmp/.top_count
 count=0
 
 log_disk_usage() {
@@ -81,13 +80,13 @@ fi
     log_disk_usage
     cpu_statistics
 
-    if [ -f "$TOP_COUNT_FILE" ]; then
-        curr_count=$(cat "$TOP_COUNT_FILE")
-        count=$((curr_count + 1))
-        if [ $count -eq 6 ]; then
-            top -b -n1 | awk '!/grep|run.sh/' 
-            cat /proc/meminfo 
-            count=0
-        fi
-    fi
-    echo "$count" > "$TOP_COUNT_FILE"
+    if [ -f /tmp/.top_count ]; then
+	curr_count=`cat /tmp/.top_count`
+        count=$(( curr_count + 1 ))
+	if [ $count -eq 6 ]; then
+		top -b -n1 | awk '!/grep|run.sh/'
+		cat /proc/meminfo
+		count=0
+	fi
+fi
+echo "$count" > /tmp/.top_count
