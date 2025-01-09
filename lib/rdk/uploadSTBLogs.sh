@@ -1008,6 +1008,18 @@ else
         fi
     done
 
+    #privcaymodes check
+    if [ "$DEVICE_TYPE" = "mediaclient" ]; then
+        privacyMode=$(getPrivacyControlMode uploadLog)
+        if [ "$privacyMode" = "DO_NOT_SHARE" ]; then
+            uploadLog "Privacy Mode is $privacyMode. Logupload is disabled"
+            #Empty the log files.
+            for f in $LOG_PATH/*; do  >$f; done
+            MAINT_LOGUPLOAD_COMPLETE=4
+            eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_COMPLETE
+            exit 0
+        fi
+    fi
     getOptOutStatus
     opt_out=$?
     if [ $opt_out -eq 1 ]; then
