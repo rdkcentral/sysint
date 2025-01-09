@@ -276,3 +276,9 @@ haveCoreToUpload()
         echo 'false'
     fi
 }
+
+getPrivacyControlMode()
+{
+    #Implement own logic to get the privicyMode settings
+    return
+}
