@@ -27,6 +27,7 @@
 . /etc/env_setup.sh
 
 TOP_COUNT_FILE=/tmp/.top_count
+count=0
 
 log_disk_usage() {
     echo "********** Disk Space Usage **********" 
