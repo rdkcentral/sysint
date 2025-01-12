@@ -33,7 +33,7 @@ if [ -f /lib/rdk/getSecureDumpStatus.sh ]; then
 fi
 
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    source /lib/rdk/t2Shared_api.sh
+    . /lib/rdk/t2Shared_api.sh
 fi
 
 # flag to indicate the call time (bootup call /runtime call by disk check script)
@@ -86,48 +86,6 @@ deleteMaxFile()
          echo "`/bin/timestamp` Emptying the file due to size issue `ls -l $maxFile`" >> /tmp/disk_cleanup.log
          cat /dev/null > $maxFile
     fi
-}
-
-check_jffs_garbage_collection_status()
-{
-    echo "`/bin/timestamp` In check_jffs_garbage_collection_status" >> /tmp/disk_cleanup.log
-
-    #Identify the complete JFFS partition of /opt for monitoring JFFS Garbage collection CPU cycles
-    jffs_block_num=`df -kh /opt | grep -v 'Filesystem' | awk '{print $1}'|sed 's/\/dev\/mtdblock//g'`
-    jffs_partition_name="jffs2_gcd_mtd""$jffs_block_num"
-    echo "`/bin/timestamp` jffs_partition_name=$jffs_partition_name" >> /tmp/disk_cleanup.log
-
-    #Get First CPU cycle of JFFS Garabage collection in seconds
-    old_jffs_sec=`top -b -n 1 | grep $jffs_partition_name | awk '{print $11}' | awk -F ':' '{print ($1 * 60) + $2 }'`
-
-    sleep 2
-
-    #Get Second CPU cycle of JFFS Garabage collection in seconds after sleep operation
-    new_jffs_sec=`top -b -n 1 | grep $jffs_partition_name | awk '{print $11}' | awk -F ':' '{print ($1 * 60) + $2 }'`
-
-    echo "`/bin/timestamp` before while: old_jffs_sec=$old_jffs_sec, new_jffs_sec=$new_jffs_sec" >> /tmp/disk_cleanup.log
-
-    #Check whether the JFFS2 Garbage collection is active on /opt between the 2 iterations of Total time CPU cycles
-    loop=`echo $old_jffs_sec $new_jffs_sec  | awk '{if ($1 == $2) print 0; else print 1}'`
-
-    #Loop only when the 2nd Iteration of Total time CPU usage is higher than 1st Iteration for JFFS2 Garbage collection
-    while [ $loop -eq 1 ]
-    do
-       #Store the Last Iteration of CPU cycle of JFFS Garabage for comparison with New iterative value
-       old_jffs_sec=`expr $new_jffs_sec`
-
-       sleep 2
-
-       #Get New CPU cycle of JFFS Garabage collection in seconds after sleep operation
-       new_jffs_sec=`top -b -n 1 | grep "jffs2_gcd_mtd4" | awk '{print $11}' | awk -F ':' '{print ($1 * 60) + $2 }'`
-
-       echo "`/bin/timestamp` in while: old_jffs_sec=$old_jffs_sec, new_jffs_sec=$new_jffs_sec" >> /tmp/disk_cleanup.log
-
-       # Check whether the JFFS2 Garbage collection is active on /opt between the 2 iterations of Total time CPU cycles
-       loop=`echo $old_jffs_sec $new_jffs_sec  | awk '{if ($1 == $2) print 0; else print 1}'`
-    done
-
-    echo "`/bin/timestamp` exiting check_jffs_garbage_collection_status" >> /tmp/disk_cleanup.log
 }
 
 disk_size_check()
@@ -210,35 +168,6 @@ wifiFWDumpsCleanup()
         fi
     fi
 }
-
-# Retain only the last packet capture
-clearOlderPacketCaptures()
-{
-    #Remove *.pcap files from /opt/logs
-    pcapCount=`ls $LOG_PATH/*.pcap* | wc -l`
-    ## Retain last packet capture
-    if [ $pcapCount -gt 0 ]; then
-        lastEasPcapCapture="$LOG_PATH/eas.pcap"
-        lastMocaPcapCapture="$LOG_PATH/moca.pcap"
-        ## Back up last packet capture
-        if [ -f $lastEasPcapCapture ]; then
-            mv $lastEasPcapCapture $lastEasPcapCapture.bkp
-        fi
-        if [ -f $lastMocaPcapCapture ]; then
-            mv $lastMocaPcapCapture $lastMocaPcapCapture.bkp
-        fi
-        rm -f $LOG_PATH/*.pcap
-        if [ -f $lastEasPcapCapture.bkp ]; then
-            mv $lastEasPcapCapture.bkp $lastEasPcapCapture
-        fi
-        if [ -f $lastMocaPcapCapture.bkp ]; then
-            mv $lastMocaPcapCapture.bkp $lastMocaPcapCapture
-        fi
-        rm -f $LOG_PATH/eas.pcap.*
-    fi
-    
-}
-
 
 oldLogsFolderCleanup()
 {
@@ -339,17 +268,6 @@ fi
         done < /tmp/.lsof_ouput
         echo "`/bin/timestamp` Memory After Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
     fi
-
-NetflixDiskcache="/opt/netflix/nrd/gibbon/diskcache"
-if [ -d "$NetflixDiskcache" ]; then
-    size=$(du -s /opt/netflix/nrd/gibbon/diskcache/ | awk '{print $1}')
-    # check if the used space is grater than 9MB (9216KB)
-    if [ $size -ge 9216 ]; then
-        # Delete all files under /opt/netflix/nrd/gibbon/diskcache
-        echo "`/bin/timestamp` Memory consumed is $size which is more than threshold(9216kb), so deleting content of $NetflixDiskcache" >> /tmp/disk_cleanup.log
-        rm -rf /opt/netflix/nrd/gibbon/diskcache/*
-    fi
-fi
 
 if [ $FLAG -eq 0 ]; then
      echo "`/bin/timestamp` Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
