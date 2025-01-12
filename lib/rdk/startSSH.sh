@@ -1,4 +1,4 @@
-#!/bin/busybox sh
+#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -47,7 +47,7 @@ fi
 WAREHOUSE_ENV="$RAMDISK_PATH/warehouse_mode_active"
 if [ -f /tmp/SSH.pid ]
 then
-   if [ -d /proc/`cat /tmp/SSH.pid` ]
+   if [ -d /proc/$(cat /tmp/SSH.pid) ]
    then
       echo "An instance of startSSH.sh is already running !!! Exiting !!!"
       exit 0
@@ -61,9 +61,9 @@ checkForInterface()
 {
    interface=$1
    if [ -f /tmp/estb_ipv6 ]; then
-       ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d'`
+       ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
    else 
-       ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d'`
+       ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
   fi
 }
 
