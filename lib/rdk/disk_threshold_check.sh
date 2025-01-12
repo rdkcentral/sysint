@@ -50,10 +50,10 @@ LOG_FILE=/tmp/disk_cleanup.log
 usep=0
 count=1
 
-echo "`/bin/timestamp` ---Received call to disk_threshold_check.sh ----" >> /tmp/disk_cleanup.log
+echo "$(/bin/timestamp) ---Received call to disk_threshold_check.sh ----" >> /tmp/disk_cleanup.log
 
 if [ -e /tmp/mnt/diska3/persistent ] && [ -f /usr/bin/file ] ; then
-    echo "`/bin/timestamp` Persistent location type - `file /tmp/mnt/diska3/persistent`" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Persistent location type - `file /tmp/mnt/diska3/persistent`" >> /tmp/disk_cleanup.log
 fi
 
 if [ -f /tmp/DiskCheck.pid ]
@@ -61,8 +61,8 @@ then
    pid=`cat /tmp/DiskCheck.pid`
    if [ -d /proc/$pid ]
    then
-      echo "`/bin/timestamp` An instance of disk_threshold_check.sh with pid $pid is already running.." >> /tmp/disk_cleanup.log
-      echo "`/bin/timestamp` Exiting script" >> /tmp/disk_cleanup.log
+      echo "$(/bin/timestamp) An instance of disk_threshold_check.sh with pid $pid is already running.." >> /tmp/disk_cleanup.log
+      echo "$(/bin/timestamp) Exiting script" >> /tmp/disk_cleanup.log
       exit 0
    fi
 fi
@@ -81,9 +81,9 @@ deleteMaxFile()
     #Don't delete the log file. Instead empty it.
     find $LOG_PATH -type f | xargs ls -S > /tmp/deletionList.txt
     maxFile=`head -n 1 /tmp/deletionList.txt`
-    echo "`/bin/timestamp` Max File: $maxFile" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Max File: $maxFile" >> /tmp/disk_cleanup.log
     if [ -f $maxFile ]; then
-         echo "`/bin/timestamp` Emptying the file due to size issue `ls -l $maxFile`" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Emptying the file due to size issue `ls -l $maxFile`" >> /tmp/disk_cleanup.log
          cat /dev/null > $maxFile
     fi
 }
@@ -94,10 +94,10 @@ disk_size_check()
 
    usep=`df -kh $WORK_PATH | grep -v "Filesystem" |awk '{print $5}'|sed 's/%//g'`
    if [ $usep -ge $DEFAULT_THRESHOLD_SIZE ] ; then
-         echo "`/bin/timestamp` $retryCount. Running out of space \"$partition ($usep%)\"" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) $retryCount. Running out of space \"$partition ($usep%)\"" >> /tmp/disk_cleanup.log
    else
-       echo "`/bin/timestamp` $retryCount. Completed the cleanup during the bootup/runtime at `Timestamp`" >> /tmp/disk_cleanup.log
-       echo "`/bin/timestamp` $WORK_PATH size $usep is OK to start" >> /tmp/disk_cleanup.log
+       echo "$(/bin/timestamp) $retryCount. Completed the cleanup during the bootup/runtime at `Timestamp`" >> /tmp/disk_cleanup.log
+       echo "$(/bin/timestamp) $WORK_PATH size $usep is OK to start" >> /tmp/disk_cleanup.log
        if [ $FLAG -eq 1 ];then
            if [ -f /tmp/disk_cleanup.log ] && [ ! -f /tmp/.standby ]; then
                 cat /tmp/disk_cleanup.log >> /opt/logs/disk_cleanup.log
@@ -114,7 +114,7 @@ dirCleanupWith_latestFileBackup()
    if [ -d "$path" ]; then
        # latest dump backup
        latestDump=`ls -t $path | head -n 1`
-       echo "`/bin/timestamp` Latest file: $latestDump" >> /tmp/disk_cleanup.log
+       echo "$(/bin/timestamp) Latest file: $latestDump" >> /tmp/disk_cleanup.log
        # place the latest dump back to the folder
        if [ "$latestDump" ]; then
             mv $path/$latestDump $PERSISTENT_PATH/
@@ -131,17 +131,17 @@ dumpsCleanup()
    # first time cleanup
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$CORE_BACK_PATH"
-   echo "`/bin/timestamp` Deleted all corefiles from the corefiles_back folder" >> /tmp/disk_cleanup.log
+   echo "$(/bin/timestamp) Deleted all corefiles from the corefiles_back folder" >> /tmp/disk_cleanup.log
    count=`counter $count`
    # second time cleanup
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$CORE_PATH"
-   echo "`/bin/timestamp` Deleted all corefiles from the corefiles folder" >> /tmp/disk_cleanup.log
+   echo "$(/bin/timestamp) Deleted all corefiles from the corefiles folder" >> /tmp/disk_cleanup.log
    # third time cleanup
    count=`counter $count`
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$MINIDUMPS_PATH"
-   echo "`/bin/timestamp` Deleted all minidumps from the minidumps folder" >> /tmp/disk_cleanup.log
+   echo "$(/bin/timestamp) Deleted all minidumps from the minidumps folder" >> /tmp/disk_cleanup.log
 }
 
 wifiFWDumpsCleanup()
@@ -150,7 +150,7 @@ wifiFWDumpsCleanup()
     wifi_fwdumps=`find $LOG_PATH/*-logbackup/ -type f -name "*.bin"`
     for dump in $wifi_fwdumps
     do
-        echo "`/bin/timestamp` Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
         rm -rf $dump
     done
 
@@ -159,10 +159,10 @@ wifiFWDumpsCleanup()
     if [ $usep -ge $DEFAULT_THRESHOLD_SIZE ] ; then
         wifi_fwdumps=`find $LOG_PATH/PreviousLogs*/ -type f -name "*.bin"`
         if [ -n "$wifi_fwdumps" ]; then
-            echo "`/bin/timestamp` Running out of space \"($usep%)\"". Hence deleting wifi driver firmware dumps from PreviousLogs folder >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) Running out of space \"($usep%)\"". Hence deleting wifi driver firmware dumps from PreviousLogs folder >> /tmp/disk_cleanup.log
             for dump in $wifi_fwdumps
             do
-                echo "`/bin/timestamp` Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
+                echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
                 rm -rf $dump
             done
         fi
@@ -176,9 +176,9 @@ oldLogsFolderCleanup()
     do                                     
        deleteFolder=`echo ${oldestFolder##* }`
        if [ "$deleteFolder" ] && [ -d "$deleteFolder" ];then
-            echo "`/bin/timestamp` Old Reboot Reasons Inside $deleteFolder ..!" >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) Old Reboot Reasons Inside $deleteFolder ..!" >> /tmp/disk_cleanup.log
             grep -irn "Reboot" $deleteFolder | grep -v disk_cleanup.log | grep -v dcmscript.log | grep -v dca_output.txt | grep -v top_log.txt >> /tmp/disk_cleanup.log
-            echo "`/bin/timestamp` Deleting the folder: $deleteFolder" >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) Deleting the folder: $deleteFolder" >> /tmp/disk_cleanup.log
             rm -rf $deleteFolder
             count=`counter $count`
             disk_size_check $count                         
@@ -196,37 +196,37 @@ logsCleanup()
 	 count=`counter $count`
          disk_size_check $count
          # delete older logs folder
-         echo "`/bin/timestamp` Deleting older reboot cycle logs from the log backup folder" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleting older reboot cycle logs from the log backup folder" >> /tmp/disk_cleanup.log
          oldLogsFolderCleanup
          count=`counter $count`
          disk_size_check $count
          find $LOG_PATH -name "*.txt.5" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.5" -exec rm -rf {} \;
-         echo "`/bin/timestamp` Deleted files with extensions *.txt.5 & *.log.5 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.5 & *.log.5 from $LOG_PATH" >> /tmp/disk_cleanup.log
          # 8th time cleanup
          count=`counter $count`
          disk_size_check $count
          find $LOG_PATH -name "*.txt.4" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.4" -exec rm -rf {} \;
-         echo "`/bin/timestamp` Deleted files with extensions *.txt.4 & *.log.4 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.4 & *.log.4 from $LOG_PATH" >> /tmp/disk_cleanup.log
          # 9th time cleanup
          count=`counter $count`
          disk_size_check $count
          find $LOG_PATH -name "*.txt.3" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.3" -exec rm -rf {} \;
-         echo "`/bin/timestamp` Deleted files with extensions *.txt.3 & *.log.3 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.3 & *.log.3 from $LOG_PATH" >> /tmp/disk_cleanup.log
          # 10th time cleanup
          count=`counter $count`
          disk_size_check $count
          find $LOG_PATH -name "*.txt.2" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.2" -exec rm -rf {} \;
-         echo "`/bin/timestamp` Deleted files with extensions *.txt.2 & *.log.2 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.2 & *.log.2 from $LOG_PATH" >> /tmp/disk_cleanup.log
          # 11th time cleanup
          count=`counter $count`
          disk_size_check $count
          find $LOG_PATH -name "*.txt.1" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.1" -exec rm -rf {} \;
-         echo "`/bin/timestamp` Deleted files with extensions *.txt.1 & *.log.1 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.1 & *.log.1 from $LOG_PATH" >> /tmp/disk_cleanup.log
 
 }
 
@@ -242,7 +242,7 @@ reduceFolderSize()
     while [ $optSize -gt $size ]
     do
        oldFile=`ls -t $path | tail -1`
-       echo "`/bin/timestamp` Old File: $oldFile" >> /tmp/disk_cleanup.log
+       echo "$(/bin/timestamp) Old File: $oldFile" >> /tmp/disk_cleanup.log
        if [ -f $path/$oldFile ]; then rm -rf $path/$oldFile; fi
        optSize=`du -k $path | awk '{print $1}'| sed 's/[^0-9]*//g'`
        sleep 2
@@ -254,23 +254,23 @@ command=`which lsof`
 if [ "$command" ];then
      lsof +L1 | grep "logs.*\(deleted\)" > /tmp/.lsof_ouput
 else
-     echo "`/bin/timestamp` Missing the binary lsof" >> /tmp/disk_cleanup.log
+     echo "$(/bin/timestamp) Missing the binary lsof" >> /tmp/disk_cleanup.log
 fi
 
-    echo "`/bin/timestamp` Memory Before Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Memory Before Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
     if [ -s /tmp/.lsof_ouput ];then
-        echo "`/bin/timestamp` We have open FDs even after deleting the files: `cat /tmp/.lsof_ouput`" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) We have open FDs even after deleting the files: `cat /tmp/.lsof_ouput`" >> /tmp/disk_cleanup.log
         while read line; do
             pid=`echo $line | awk '{print $2}'`
             openFD=`echo $line | awk '{print $4}' | tr -cd [:digit:]`
-            echo "`/bin/timestamp` " /proc/$pid/fd/$openFD >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) " /proc/$pid/fd/$openFD >> /tmp/disk_cleanup.log
             :> /proc/$pid/fd/$openFD
         done < /tmp/.lsof_ouput
-        echo "`/bin/timestamp` Memory After Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) Memory After Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
     fi
 
 if [ $FLAG -eq 0 ]; then
-     echo "`/bin/timestamp` Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
+     echo "$(/bin/timestamp) Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
    
      # BOOTUP cleanup
      
@@ -282,7 +282,7 @@ if [ $FLAG -eq 0 ]; then
      # check and cleanup logs inside the box
      logsCleanup
 elif [ $FLAG -eq 1 ]; then
-     echo "`/bin/timestamp` Runtime Cleanup..!" >> /tmp/disk_cleanup.log
+     echo "$(/bin/timestamp) Runtime Cleanup..!" >> /tmp/disk_cleanup.log
      # RUNTIME cleanup
      if [ "$HDD_ENABLED" = "true" ]; then
           # cleaning coredump backup area
@@ -307,7 +307,7 @@ elif [ $FLAG -eq 1 ]; then
           logsCleanup
      fi
 else
-     echo "`/bin/timestamp` Runtime Error: Invalid input flag argument..!" >> /tmp/disk_cleanup.log
+     echo "$(/bin/timestamp) Runtime Error: Invalid input flag argument..!" >> /tmp/disk_cleanup.log
 fi
 
 # Final runtime/bootup cleanup
@@ -315,7 +315,7 @@ count=`counter $count`
 disk_size_check $count
 count=`counter $count`
 disk_size_check $count
-echo "`/bin/timestamp` CRITICAL ERROR, please check the /opt folder..!" >> /tmp/disk_cleanup.log
+echo "$(/bin/timestamp) CRITICAL ERROR, please check the /opt folder..!" >> /tmp/disk_cleanup.log
 t2CountNotify "SYST_ERR_OPTFULL"
 
 if [ $FLAG -eq 1 ];then
