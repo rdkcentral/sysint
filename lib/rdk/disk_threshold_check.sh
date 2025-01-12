@@ -271,10 +271,7 @@ fi
 
 if [ $FLAG -eq 0 ]; then
      echo "`/bin/timestamp` Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
-     if [ -d /opt/lost+found ]; then
-         echo "`/bin/timestamp` Clearing /opt/lost+found folder" >> /tmp/disk_cleanup.log
-         rm -rf /opt/lost+found
-     fi
+   
      # BOOTUP cleanup
      
      # Check and cleanup wifi firmware dumps from /opt/logs inside the box
