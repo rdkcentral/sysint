@@ -22,10 +22,10 @@
 # for monitoring in telemetry
 
 TEMP_LOG="/opt/logs/videodecoder.log"
-THIS_SCRIPT=$(basename "$0")
+
 log()
 {
-    echo "$(date '+%Y %b %d %H:%M:%S.%6N') [$THIS_SCRIPT#$$]: $*"
+     echo "$(date '+%Y %b %d %H:%M:%S') [$(basename "$0")#$$]: $*"
 }
 touch $TEMP_LOG
 
@@ -44,12 +44,26 @@ if [ "$FRQMIN" != 0 ] && [ "$output" != "$FRQMIN" ]; then
 fi
 
 log "Retrieving Video Decoder performance information for telemetry support" >> $TEMP_LOG
+if [ -f /sys/class/vdec/vdec_status ]; then
 log "cat /sys/class/vdec/vdec_status" >> $TEMP_LOG
 cat /sys/class/vdec/vdec_status >> $TEMP_LOG
+else
+    log "ERROR: /sys/class/vdec/vdec_status does not exist"
+fi
 
+if [ -f /sys/class/vdec/core ]; then
 log "cat /sys/class/vdec/core" >> $TEMP_LOG
 cat /sys/class/vdec/core >> $TEMP_LOG
+else
+    log "ERROR: /sys/class/vdec/core does not exist"
+fi
 
+if [ -f /sys/class/codec_mm/codec_mm_dump ]; then
 log "cat /sys/class/codec_mm/codec_mm_dump" >> $TEMP_LOG
 cat /sys/class/codec_mm/codec_mm_dump >> $TEMP_LOG
+else
+    log "ERROR: /sys/class/codec_mm/codec_mm_dump does not exist"
+fi
 
+log "Script execution completed successfully"
+exit 0
