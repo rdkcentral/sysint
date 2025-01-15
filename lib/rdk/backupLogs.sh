@@ -33,7 +33,7 @@ PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
 PREV_LOG_BACKUP_PATH="$LOG_PATH/PreviousLogs_backup"
 
 backupLog() {
-    timestamp=/bin/timestamp
+    timestamp=$(/bin/timestamp)
     echo "$timestamp $0: $*"
 }
 
@@ -100,7 +100,7 @@ if [ "$HDD_ENABLED" = "false" ]; then
     BAK2="bak2_"
     BAK3="bak3_"
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
-            find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -iname "*.bin*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \;
+            find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -iname "*.bin*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; || exit 1
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK1" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK1
@@ -127,12 +127,12 @@ if [ "$HDD_ENABLED" = "false" ]; then
     # logs cleanup after backup
     backupLog "Clean up $LOG_PATH"
     rm -rf $LOG_PATH/*.*
-    find $LOG_PATH -name "*-*-*-*-*M-" -exec rm -rf {} \;
+    find $LOG_PATH -name "*-*-*-*-*M-" -exec rm -rf {} \; || exit 1
 else
     backupLog "HDD enabled device"
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
        backupLog "Move logs from $LOG_PATH to $PREV_LOG_PATH"
-       find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \;
+       find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; || exit 1
        if [ -f /etc/os-release ];then
            /bin/touch $PREV_LOG_PATH/last_reboot
        else
