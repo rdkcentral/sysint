@@ -104,7 +104,7 @@ if [ "$HDD_ENABLED" = "false" ]; then
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK1" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK1
-    elif [ ! ! -f "$PREV_LOG_PATH/$sysLogBAK2" ]; then
+    elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK2" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK2
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK3" ]; then
