@@ -345,7 +345,7 @@ imageDownloadToLocalServer ()
     echo "$imageHTTPURL" > $DnldURLvalue
 
     ret=1
-    model_num=$MODEL_NUM
+    model_num=`sh $RDK_PATH/getDeviceDetails.sh read model_number`
     FILE_EXT=$model_num*.bin
     rm -f $FILE_EXT
     cloudfile_model=`echo $UPGRADE_FILE | cut -d '_' -f1`

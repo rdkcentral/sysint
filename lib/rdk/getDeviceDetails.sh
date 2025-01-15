@@ -209,7 +209,56 @@ getBuildType()
 
 getModelNum()
 {
-   echo $MODEL_NUM
+     if [ "$TURNKEY_ENABLED" == "true" ]; then
+         if [ -s /tmp/.device_model_number ]; then
+            MFR_MODEL=$(cat /tmp/.device_model_number)
+            echo $MFR_MODEL
+         else
+            output=$(mfr_util --Modelname 2>&1)
+            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+                echo "$output" > /tmp/.device_model_number
+                MFR_MODEL=$output
+                echo $MFR_MODEL
+            else
+                echo "UNKNOWN"
+            fi
+         fi
+      else
+	 echo $MODEL_NUM
+      fi
+}
+
+getManufacturer(){
+     if [ "$TURNKEY_ENABLED" == "true" ]; then
+        if [ -s /tmp/.manufacturer ]; then
+           MFR_NAME=$(cat /tmp/.manufacturer)
+           echo $MFR_NAME
+        else
+           output=$(mfr_util --Manufacturer 2>&1)
+           if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+               echo "$output" > /tmp/.manufacturer
+               MFR_NAME=$output
+               echo $MFR_NAME
+	   else
+               echo "UNKNOWN"
+           fi
+        fi
+     else
+        echo ""
+     fi
+}
+
+getBrandName(){
+    if [ "$DEVICE_NAME" == "PLATCO" ]; then
+        if [ "$TURNKEY_ENABLED" == "true" ]; then
+            output=$(mfr_util --Manufacturer 2>&1)
+            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+                echo "$output" > /tmp/.brandname
+            fi
+        else
+            echo "$MANUFACTURE" > /tmp/.brandname
+        fi
+    fi
 }
 
 getDeviceType()
@@ -301,6 +350,8 @@ executeServiceRequest()
 		executeServiceRequest "wifi_mac"
 		executeServiceRequest "eth_mac"
 		executeServiceRequest "model_number"
+		executeServiceRequest "manufacturer"
+		executeServiceRequest "brandname"
 		executeServiceRequest "device_type"
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
@@ -418,6 +469,12 @@ executeServiceRequest()
       "model_number")
 		modelNum=`getModelNum`
 		echo "$modelNum" > /tmp/.model_number
+                ;;
+      "manufacturer")
+		getManufacturer
+                ;;
+      "brandname")
+		getBrandName
                 ;;
       "device_type")
                 deviceType=`getDeviceType`
