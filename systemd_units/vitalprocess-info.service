@@ -21,4 +21,4 @@
 Description=Vital Process information Timer Service (R)
 
 [Service]
-ExecStart=/bin/sh -c '/lib/rdk/vitalProcessInfo.sh'
+ExecStart=/lib/system_info_collector.sh
