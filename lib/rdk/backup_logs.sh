@@ -63,7 +63,7 @@ fi
 touch $PERSISTENT_PATH/logFileBackup
 
 # disk size check for recovery if /opt size > 90%
-if [ -f /etc/os-release ] && [ -f /lib/rdk/disk_threshold_check.sh ];then
+if  [ -f /lib/rdk/disk_threshold_check.sh ];then
     sh /lib/rdk/disk_threshold_check.sh 0
 fi
 
@@ -117,13 +117,9 @@ if [ "$HDD_ENABLED" = "false" ]; then
         backupAndRecoverLogs "$PREV_LOG_PATH/" "$PREV_LOG_PATH/" mv "$BAK3" "$BAK2"
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" "$BAK3"
     fi
-
-    if [ -f /etc/os-release ];then
-           /bin/touch "$PREV_LOG_PATH/last_reboot"
-    else
-           touch "$PREV_LOG_PATH/last_reboot"
-    fi
-
+  
+   /bin/touch "$PREV_LOG_PATH/last_reboot"
+   
     # logs cleanup after backup
     backupLog "Clean up $LOG_PATH"
     rm -rf $LOG_PATH/*.*
@@ -133,11 +129,7 @@ else
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
        backupLog "Move logs from $LOG_PATH to $PREV_LOG_PATH"
        find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; || exit 1
-       if [ -f /etc/os-release ];then
-           /bin/touch $PREV_LOG_PATH/last_reboot
-       else
-           touch $PREV_LOG_PATH/last_reboot
-       fi
+       /bin/touch $PREV_LOG_PATH/last_reboot
     else
        find "$PREV_LOG_PATH" -name last_reboot | xargs rm >/dev/null
        timestamp=$(date "+%m-%d-%y-%I-%M-%S%p")
@@ -145,11 +137,7 @@ else
        mkdir -p "$LogFilePathPerm"
        backupLog "Move logs from $LOG_PATH to $LogFilePathPerm"
        find "$LOG_PATH" -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \)  -exec mv '{}' "$LogFilePathPerm" \; || exit 1
-       if [ -f /etc/os-release ];then
-           /bin/touch "$LogFilePathPerm/last_reboot"
-       else
-           touch "$LogFilePathPerm/last_reboot"
-       fi
+       /bin/touch "$LogFilePathPerm/last_reboot"
     fi
 fi
 
@@ -167,6 +155,5 @@ cp /etc/skyversion.txt "${LOG_PATH}/skyversion.txt"
 cp /etc/rippleversion.txt "${LOG_PATH}/rippleversion.txt"
 
 backupLog "Send systemd notification ..."
-if [ -f /etc/os-release ];then
-    /bin/systemd-notify --ready --status="Logs Backup Done..!"
-fi
+/bin/systemd-notify --ready --status="Logs Backup Done..!"
+
