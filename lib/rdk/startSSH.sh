@@ -98,7 +98,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                       break
                  fi
            fi
-		   Interface=$(getMoCAInterface)
+	   Interface=$(getMoCAInterface)
            if [ ! "$ipAddress" ];then
                  checkForInterface "$Interface"
                   if [ "$ipAddress" ]; then
@@ -155,7 +155,7 @@ startDropbear()
 # non-mediaclient devices
 while [ $loop -eq 1 ]
 do
-	estbIp=$(getIPAddress)
+    estbIp=$(getIPAddress)
     if [ "X$estbIp" == "X" ]; then
          sleep 15
     else
