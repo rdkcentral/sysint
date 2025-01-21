@@ -97,10 +97,10 @@ if [ -f $RDK_PATH/hddStatusLogger.sh ]; then
 fi
 
 if [ "$DEVICE_NAME" == "X1" ]  && [ -f /etc/os-release ]; then
-   if [ -f $RDK_PATH/monitor_vital_process_info.sh ]; then
-      output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "monitor_vital_process_info.sh"`
+   if [ -f $RDK_PATH/system_info_collector.sh ]; then
+      output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "system_info_collector.sh"`
       if [ "$output" == "0" ]; then
-            sh /lib/rdk/cronjobs_update.sh "add" "monitor_vital_process_info.sh" "*/10 * * * * nice -n 19 sh $RDK_PATH/monitor_vital_process_info.sh | /usr/local/bin/logger -t monitor_vital_process_info.sh"
+            sh /lib/rdk/cronjobs_update.sh "add" "system_info_collector.sh" "*/10 * * * * nice -n 19 sh $RDK_PATH/system_info_collector.sh | /usr/local/bin/logger -t system_info_collector.sh"
       fi
    fi
    if [ -f $RDK_PATH/getGdlFreeMemory.sh ]; then
