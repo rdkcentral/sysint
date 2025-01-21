@@ -33,8 +33,8 @@ if [ -f /etc/mount-utils/getConfigFile.sh ];then
       getConfigFile $DROPBEAR_PARAMS_1
 
       if [ ! -f "$DROPBEAR_PARAMS_1" ]; then
-        echo "Dropbear param 1: $DROPBEAR_PARAMS_1 generation failure"
-        exit 127
+	echo "Dropbear param 1: $DROPBEAR_PARAMS_1 generation failure"
+	exit 127
       fi
 
       getConfigFile $DROPBEAR_PARAMS_2
@@ -80,7 +80,7 @@ if [ "$COMMUNITY_BUILDS" = "true" ]; then
      EXTRA_ARGS=" -B "
      DROPBEAR_KEY_DIR="/opt/dropbear"
      if [ ! -f ${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key ] ; then
-        systemctl start dropbearkey.service
+	systemctl start dropbearkey.service
      fi
      DROPBEAR_PARAMS="${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key"
 else
