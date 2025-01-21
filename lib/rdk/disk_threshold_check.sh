@@ -43,10 +43,12 @@ fi
 FLAG=$1
 # default cleanup path and size for bootup cleanup
 
-if [ "$HDD_ENABLED" = "false" ];then
-     DEFAULT_THRESHOLD_SIZE=80
-else
-     DEFAULT_THRESHOLD_SIZE=90
+if [ -z "$DEFAULT_THRESHOLD_SIZE" ]; then
+   if [ "$HDD_ENABLED" = "false" ];then
+         DEFAULT_THRESHOLD_SIZE=80
+   else
+         DEFAULT_THRESHOLD_SIZE=90
+   fi
 fi
 WORK_PATH=$PERSISTENT_PATH
 LOG_FILE=/tmp/disk_cleanup.log
