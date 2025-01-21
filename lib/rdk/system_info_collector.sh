@@ -58,10 +58,6 @@ cpu_statistics() {
 	t2ValNotify "FREE_MEM_split" "$mem"
 }
 
-# adding sleep of 180 sec to reduce high load condition during bootup
-if [ ! -f /etc/os-release ]; then
-    sleep 180
-fi
 
 # Adding the Clock Frequency Info
 echo "Clock Frequency Info:"
