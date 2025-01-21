@@ -172,6 +172,34 @@ wifiFWDumpsCleanup()
     fi
 }
 
+# Retain only the last packet capture
+clearOlderPacketCaptures()
+{
+    #Remove *.pcap files from /opt/logs
+    pcapCount=`ls $LOG_PATH/*.pcap* | wc -l`
+    ## Retain last packet capture
+    if [ $pcapCount -gt 0 ]; then
+        lastEasPcapCapture="$LOG_PATH/eas.pcap"
+        lastMocaPcapCapture="$LOG_PATH/moca.pcap"
+        ## Back up last packet capture
+        if [ -f $lastEasPcapCapture ]; then
+            mv $lastEasPcapCapture $lastEasPcapCapture.bkp
+        fi
+        if [ -f $lastMocaPcapCapture ]; then
+            mv $lastMocaPcapCapture $lastMocaPcapCapture.bkp
+        fi
+        rm -f $LOG_PATH/*.pcap
+        if [ -f $lastEasPcapCapture.bkp ]; then
+            mv $lastEasPcapCapture.bkp $lastEasPcapCapture
+        fi
+        if [ -f $lastMocaPcapCapture.bkp ]; then
+            mv $lastMocaPcapCapture.bkp $lastMocaPcapCapture
+        fi
+        rm -f $LOG_PATH/eas.pcap.*
+    fi
+
+}
+
 oldLogsFolderCleanup()
 {
     oldestFolder=`ls -ldst /opt/logs/*-logbackup | tail -n 1`
@@ -272,8 +300,23 @@ fi
         echo "$(/bin/timestamp) Memory After Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
     fi
 
+NetflixDiskcache="/opt/netflix/nrd/gibbon/diskcache"
+if [ -d "$NetflixDiskcache" ]; then
+    size=$(du -s /opt/netflix/nrd/gibbon/diskcache/ | awk '{print $1}')
+    # check if the used space is grater than 9MB (9216KB)
+    if [ $size -ge 9216 ]; then
+        # Delete all files under /opt/netflix/nrd/gibbon/diskcache
+        echo "`/bin/timestamp` Memory consumed is $size which is more than threshold(9216kb), so deleting content of $NetflixDiskcache" >> /tmp/disk_cleanup.log
+        rm -rf /opt/netflix/nrd/gibbon/diskcache/*
+    fi
+fi
+
 if [ $FLAG -eq 0 ]; then
      echo "$(/bin/timestamp) Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
+     if [ -d /opt/lost+found ]; then
+         echo "`/bin/timestamp` Clearing /opt/lost+found folder" >> /tmp/disk_cleanup.log
+         rm -rf /opt/lost+found
+     fi
    
      # BOOTUP cleanup
      
