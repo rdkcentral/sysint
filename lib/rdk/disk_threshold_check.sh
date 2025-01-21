@@ -18,6 +18,9 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose: Clean up disk space by removing unnecessary files and logs
+# Scope: This script is designed to run on RDK devices
+# Usage: Run this script as systemd service/cron job
 
 
 # set -x
