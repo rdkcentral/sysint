@@ -16,41 +16,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##############################################################################
+#############################################################################
 
+# Purpose: Collect system information and log it to a file
+# Scope: This script is used to collect system information on RDK devices
+# Usage: This script should be run periodically to collect system information
 
 . /etc/include.properties
 . /etc/device.properties
 . /etc/env_setup.sh
 
-LOG_FILE=/opt/logs/top_log.txt
 count=0
 
-# XRE-11056: Added rdkbrowser2, WPE* and rtrmfplayer to the list of dumped processes for XI and XG.
+log_disk_usage() {
+    echo "********** Disk Space Usage **********" 
+    /bin/df -h 
+}
+
+# Function to run the appropriate top command based on device type
+run_top_command() {
 if [ "$DEVICE_TYPE" = "mediaclient" ]; then
-        top_cmd="top -b -o +%CPU | head -n 17"
+        top -b -o +%CPU | head -n 17 
 elif [ "$DEVICE_TYPE" = "hybrid" ]; then
-     top_cmd="top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|rmfStreamer|Receiver|lighttpd|IARMDaemonMain|dsMgrMain|runPod|Main|nrdPluginApp|rdkbrowser2|rtrmfplayer|WPE|fogcli' | grep -vE 'grep|run.sh'"
+      top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|rmfStreamer|Receiver|lighttpd|IARMDaemonMain|dsMgrMain|runPod|Main|nrdPluginApp|rdkbrowser2|rtrmfplayer|WPE|fogcli' | grep -vE 'grep|run.sh' 
 else
-     top_cmd="top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|mpeos|Receiver|uimgr_main|lighttpd|IARMDaemonMain|dsMgrMain|Main|nrdPluginApp|fogcli' | grep -vE 'grep|run.sh'"
+     top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|mpeos|Receiver|uimgr_main|lighttpd|IARMDaemonMain|dsMgrMain|Main|nrdPluginApp|fogcli' | grep -vE 'grep|run.sh'
 fi
+}
 
-# adding sleep of 180 sec to reduce high load condition during bootup
-if [ ! -f /etc/os-release ]; then
-    sleep 180
-fi
-
-# Adding the Clock Frequency Info
-echo "Clock Frequency Info:"
-cat /proc/cpuinfo | grep MH | sed 's/[[:blank:]]*//g'
-
-if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    source /lib/rdk/t2Shared_api.sh
-fi
-
-cpu_statistics()
-{
-	iostat -c 1 2 > /tmp/.intermediate_calc
+# Function to collect CPU statistics
+cpu_statistics() {
+        iostat -c 1 2 > /tmp/.intermediate_calc
 	sed -i '/^$/d' /tmp/.intermediate_calc
 	echo "INSTANTANEOUS CPU INFORMATIONS"
 	values=`sed '5q;d' /tmp/.intermediate_calc| tr -s " " | cut -c2-| tr ' ' ','`
@@ -62,20 +58,27 @@ cpu_statistics()
 	t2ValNotify "FREE_MEM_split" "$mem"
 }
 
+
+# Adding the Clock Frequency Info
+echo "Clock Frequency Info:"
+grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' 
+
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    . /lib/rdk/t2Shared_api.sh
+fi
+
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
-echo "Logging for Yocto platforms..."
-echo "`/bin/timestamp`"
-	uptime
-eval $top_cmd
-echo "********** Disk Space Usage **********"
-echo "`/bin/df -h`"
-	
-	cpu_statistics
+    echo "Logging for Yocto platforms..."
+    /bin/timestamp 
+    uptime 
+    run_top_command
+    log_disk_usage
+    cpu_statistics
 
-if [ -f /tmp/.top_count ]; then
+    if [ -f /tmp/.top_count ]; then
 	curr_count=`cat /tmp/.top_count`
-    count=$(( curr_count + 1 ))
+        count=$(( curr_count + 1 ))
 	if [ $count -eq 6 ]; then
 		top -b -n1 | grep -vE 'grep|run.sh'
 		cat /proc/meminfo
@@ -83,4 +86,3 @@ if [ -f /tmp/.top_count ]; then
 	fi
 fi
 echo "$count" > /tmp/.top_count
-
