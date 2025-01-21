@@ -18,6 +18,10 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose: Script to Initiate SSH Session
+# Scope: RDK devices
+# Usage: Run as a systemd service 
+
 . /etc/include.properties
 . /etc/device.properties
 if [ "$DEVICE_TYPE" = "mediaclient" ]; then
