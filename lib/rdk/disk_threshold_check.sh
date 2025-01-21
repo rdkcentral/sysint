@@ -204,7 +204,7 @@ clearOlderPacketCaptures()
 
 oldLogsFolderCleanup()
 {
-    oldestFolder=$(ls -ldst /opt/logs/*-logbackup | tail -n 1)
+    oldestFolder=$(find /opt/logs/ -maxdepth 1 -name "*-logbackup" -type d  | sort -n | head -n 1)
     while [ "$oldestFolder" ]                
     do                                     
        deleteFolder=`echo ${oldestFolder##* }`
