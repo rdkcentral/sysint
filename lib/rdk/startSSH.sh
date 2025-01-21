@@ -33,8 +33,8 @@ if [ -f /etc/mount-utils/getConfigFile.sh ];then
       getConfigFile $DROPBEAR_PARAMS_1
 
       if [ ! -f "$DROPBEAR_PARAMS_1" ]; then
-	echo "Dropbear param 1: $DROPBEAR_PARAMS_1 generation failure"
-	exit 127
+        echo "Dropbear param 1: $DROPBEAR_PARAMS_1 generation failure"
+        exit 127
       fi
 
       getConfigFile $DROPBEAR_PARAMS_2
@@ -62,9 +62,13 @@ checkForInterface()
    interface=$1
    if [ -f /tmp/estb_ipv6 ]; then
        ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
+	   if [ "$ipAddress" ]; then
+		   ipAddress+=" "
+		   ipAddress+=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
+	   fi
    else 
        ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
-  fi
+   fi
 }
 
 #RFC check for MOCA SSH enable/not.
@@ -76,7 +80,7 @@ if [ "$COMMUNITY_BUILDS" = "true" ]; then
      EXTRA_ARGS=" -B "
      DROPBEAR_KEY_DIR="/opt/dropbear"
      if [ ! -f ${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key ] ; then
-	systemctl start dropbearkey.service
+        systemctl start dropbearkey.service
      fi
      DROPBEAR_PARAMS="${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key"
 else
@@ -91,24 +95,19 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
            if [ "$WIFI_INTERFACE" ] && [ ! "$ipAddress" ];then
                  checkForInterface "$WIFI_INTERFACE"
                  if [ "$ipAddress" ]; then
-                      ipAddress+=" "
-                      ipAddress+=`ifconfig $WIFI_INTERFACE |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
                       break
                  fi
            fi
-           Interface=`getMoCAInterface`
+		   Interface=$(getMoCAInterface)
            if [ ! "$ipAddress" ];then
                  checkForInterface "$Interface"
-
-                 if [ "$ipAddress" ]; then
-                      ipAddress+=" "
-                      ipAddress+=`ifconfig $Interface |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
-                      break
-                 fi
+                  if [ "$ipAddress" ]; then
+                       break
+                  fi
            fi
            if [ "$isMOCASSHEnable" = "true" ];then
                ipAddress+=" "
-               ipAddress+=`ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
+			   ipAddress+=$(ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g')
            fi
            sleep 5
      done
@@ -117,7 +116,8 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
      for i in $ipAddress;
      do
           IP_ADDRESS_PARAM+="-p $i:22 "
-     done
+	  done
+
      if [ -e /sbin/dropbear ] || [ -e /usr/sbin/dropbear ] ; then
           if [ -f /etc/os-release ];then
                 if [ "$COMMUNITY_BUILDS" = "true" ]; then
@@ -140,7 +140,7 @@ startDropbear()
      echo --------- $interface got an ip $ipAddress starting dropbear service ---------
      if [ -f /etc/os-release ];then
           /bin/systemctl set-environment IP_ADDRESS=$ipAddress
-	  if [ "$COMMUNITY_BUILDS" = "true" ]; then
+          if [ "$COMMUNITY_BUILDS" = "true" ]; then
                 /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS"
           else
                 /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2"
@@ -155,7 +155,7 @@ startDropbear()
 # non-mediaclient devices
 while [ $loop -eq 1 ]
 do
-    estbIp=`getIPAddress`
+	estbIp=$(getIPAddress)
     if [ "X$estbIp" == "X" ]; then
          sleep 15
     else
@@ -183,7 +183,7 @@ do
                    startDropbear "$estbIp"
                    loop=0
               fi
-	 fi
+         fi
     fi
 done
 
