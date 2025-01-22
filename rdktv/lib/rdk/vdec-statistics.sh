@@ -36,7 +36,7 @@ else
     FRQMIN=$1
 fi
 
-output=`crontab -l -c /var/spool/cron/ | grep vdec-statistics.sh | grep -o '[0-9]'`
+output=$(crontab -l -c /var/spool/cron/ | grep vdec-statistics.sh | grep -o '[0-9]\+')
 if [ "$FRQMIN" != 0 ] && [ "$output" != "$FRQMIN" ]; then
     # Set new cron job from the file
     sh /lib/rdk/cronjobs_update.sh "update" "vdec-statistics.sh" "*/$FRQMIN * * * * sh /lib/rdk/vdec-statistics.sh"
