@@ -32,7 +32,7 @@ touch $TEMP_LOG
 
 # Compare with previous value before updating the cron
 if [ $# -eq 0 ]; then
-    FRQMIN=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.VideoTelemetry.FrequncyMinutes 2>&1 > /dev/null`
+    FRQMIN=$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.VideoTelemetry.FrequncyMinutes 2>&1 > /dev/null)
 else
     FRQMIN=$1
 fi
