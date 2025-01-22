@@ -20,6 +20,7 @@
 [Unit]
 Description=SSH Per-Connection Server
 After=network-online.target network@eth0.service network@wlan0.service
+Requires=network@eth0.service network@wlan0.service
 
 [Service]
 Type=forking
