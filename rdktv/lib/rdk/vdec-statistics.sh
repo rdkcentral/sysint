@@ -18,8 +18,9 @@
 # limitations under the License.
 ##
 
-# This script to collect Video Decoder performance details
-# for monitoring in telemetry
+# Purpose: Collect Video Decoder performance details for telemetry monitoring
+# Scope: This script is used to retrieve Video Decoder performance information in TV platforms
+# Usage: Run this script as a cron job to collect performance data
 
 TEMP_LOG="/opt/logs/videodecoder.log"
 
