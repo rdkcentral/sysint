@@ -85,7 +85,7 @@ disk_size_check()
 {
    retryCount=$1
 
-   usep=$(df -kh /opt/logs | awk 'NR==2 {sub(/%/, "", $5); print $5}')
+   usep=$(df -kh $WORK_PATH | awk 'NR==2 {sub(/%/, "", $5); print $5}')
    if [ "$usep" -ge "$DEFAULT_THRESHOLD_SIZE" ] ; then
          echo "$(/bin/timestamp) $retryCount. Running out of space \"$partition ($usep%)\"" >> /tmp/disk_cleanup.log
    else
@@ -148,7 +148,7 @@ wifiFWDumpsCleanup()
     done
 
 
-    usep=$(df -kh $WORK_PATH | grep -v "Filesystem" |awk '{print $5}'|sed 's/%//g')
+    usep=$(df -kh /opt/logs | awk 'NR==2 {sub(/%/, "", $5); print $5}')
     if [ $usep -ge $DEFAULT_THRESHOLD_SIZE ] ; then
         wifi_fwdumps=$(find $LOG_PATH/PreviousLogs*/ -type f -name "*.bin")
         if [ -n "$wifi_fwdumps" ]; then
@@ -192,7 +192,7 @@ clearOlderPacketCaptures()
 
 oldLogsFolderCleanup()
 {
-    oldestFolder=$(find /opt/logs/ -maxdepth 1 -name "*-logbackup" -type d  | sort -n | head -n 1)
+    oldestFolder=$(ls -ldst /opt/logs/*-logbackup | tail -n 1)
     while [ "$oldestFolder" ]                
     do                                     
        deleteFolder=`echo ${oldestFolder##* }`
@@ -255,7 +255,7 @@ reduceFolderSize()
 {
     path=$1
     size=$2
-    optSize=$(du -sk "$path" | awk '{print $1}')
+    optSize=$(du -k $path | awk '{print $1}'| sed 's/[^0-9]*//g')
 
     if [ $optSize -le $size ]; then
          return 0
