@@ -265,7 +265,7 @@ reduceFolderSize()
        oldFile=$(ls -t $path | tail -1)
        echo "$(/bin/timestamp) Old File: $oldFile" >> /tmp/disk_cleanup.log
        if [ -f $path/$oldFile ]; then rm -rf $path/$oldFile; fi
-       optSize=$(du -sk "$path" | awk '{print $1}')
+       optSize=$(du -k $path | awk '{print $1}'| sed 's/[^0-9]*//g')
     done
 }
 
