@@ -81,23 +81,11 @@ counter()
   echo $num
 }
 
-deleteMaxFile()                                                   
-{
-    #Don't delete the log file. Instead empty it.
-    find "$LOG_PATH" -type f | xargs ls -S > /tmp/deletionList.txt
-    maxFile=$(head -n 1 /tmp/deletionList.txt)
-    echo "$(/bin/timestamp) Max File: $maxFile" >> /tmp/disk_cleanup.log
-    if [ -f "$maxFile" ]; then
-         echo "$(/bin/timestamp) Emptying the file due to size issue $(ls -l $maxFile)" >> /tmp/disk_cleanup.log
-         cat /dev/null > "$maxFile"
-    fi
-}
-
 disk_size_check()
 {
    retryCount=$1
 
-   usep=$(df -kh "$WORK_PATH" | grep -v "Filesystem" |awk '{print $5}'|sed 's/%//g')
+   usep=$(df -kh /opt/logs | awk 'NR==2 {sub(/%/, "", $5); print $5}')
    if [ "$usep" -ge "$DEFAULT_THRESHOLD_SIZE" ] ; then
          echo "$(/bin/timestamp) $retryCount. Running out of space \"$partition ($usep%)\"" >> /tmp/disk_cleanup.log
    else
