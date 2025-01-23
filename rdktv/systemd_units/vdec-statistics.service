@@ -2,8 +2,8 @@
 Description=Vdec statistics for telemtry
 
 [Service]
-Type=oneshot
-ExecStart=/lib/rdk/vdec-statistics.sh
+Type=simple
+ExecStart=/bin/sh -c '/lib/rdk/vdec-statistics.sh'
 
 [Install]
 WantedBy=multi-user.target
