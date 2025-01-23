@@ -19,8 +19,8 @@
 
 [Unit]
 Description=SSH Per-Connection Server
-After=network-online.target network@eth0.service network@wlan0.service
-Requires=network@eth0.service network@wlan0.service
+After=network-online.target checkforinterface.service
+Requires=checkforinterface.service
 
 [Service]
 Type=forking
