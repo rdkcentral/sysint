@@ -18,26 +18,25 @@
 # limitations under the License.
 ##
 
-# Purpose: Collect Video Decoder performance details for telemetry monitoring
-# Scope: This script is used to retrieve Video Decoder performance information in TV platforms
-# Usage: Run this script as a cron job to collect performance data
+# This script to collect Video Decoder performance details
+# for monitoring in telemetry
 
 TEMP_LOG="/opt/logs/videodecoder.log"
-
+THIS_SCRIPT=$(basename "$0")
 log()
 {
-     echo "$(date '+%Y %b %d %H:%M:%S') [$(basename "$0")#$$]: $*"
+    echo "$(date '+%Y %b %d %H:%M:%S.%6N') [$THIS_SCRIPT#$$]: $*"
 }
 touch $TEMP_LOG
 
 # Compare with previous value before updating the cron
 if [ $# -eq 0 ]; then
-    FRQMIN=$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.VideoTelemetry.FrequncyMinutes 2>&1 > /dev/null)
+    FRQMIN=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.VideoTelemetry.FrequncyMinutes 2>&1 > /dev/null`
 else
     FRQMIN=$1
 fi
 
-output=$(crontab -l -c /var/spool/cron/ | grep vdec-statistics.sh | grep -o '[0-9]\+')
+output=`crontab -l -c /var/spool/cron/ | grep vdec-statistics.sh | grep -o '[0-9]'`
 if [ "$FRQMIN" != 0 ] && [ "$output" != "$FRQMIN" ]; then
     # Set new cron job from the file
     sh /lib/rdk/cronjobs_update.sh "update" "vdec-statistics.sh" "*/$FRQMIN * * * * sh /lib/rdk/vdec-statistics.sh"
@@ -45,26 +44,11 @@ if [ "$FRQMIN" != 0 ] && [ "$output" != "$FRQMIN" ]; then
 fi
 
 log "Retrieving Video Decoder performance information for telemetry support" >> $TEMP_LOG
-if [ -f /sys/class/vdec/vdec_status ]; then
 log "cat /sys/class/vdec/vdec_status" >> $TEMP_LOG
 cat /sys/class/vdec/vdec_status >> $TEMP_LOG
-else
-    log "ERROR: /sys/class/vdec/vdec_status does not exist"
-fi
 
-if [ -f /sys/class/vdec/core ]; then
 log "cat /sys/class/vdec/core" >> $TEMP_LOG
 cat /sys/class/vdec/core >> $TEMP_LOG
-else
-    log "ERROR: /sys/class/vdec/core does not exist"
-fi
 
-if [ -f /sys/class/codec_mm/codec_mm_dump ]; then
 log "cat /sys/class/codec_mm/codec_mm_dump" >> $TEMP_LOG
 cat /sys/class/codec_mm/codec_mm_dump >> $TEMP_LOG
-else
-    log "ERROR: /sys/class/codec_mm/codec_mm_dump does not exist"
-fi
-
-log "Script execution completed successfully"
-exit 0
