@@ -96,7 +96,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                  checkForInterface "$WIFI_INTERFACE"
                  if [ "$ipAddress" ]; then
                       ipAddress+=" "
-                      ipAddress+=`ifconfig $WIFI_INTERFACE |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
+                      ipAddress+=$(ifconfig wlan0| awk '/inet / && !/127.0.0.1/ { sub(/addr:/, "", $2); print $2 }')
                       break
                  fi
            fi
@@ -106,7 +106,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
 
                  if [ "$ipAddress" ]; then
                       ipAddress+=" "
-                      ipAddress+=`ifconfig $Interface |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
+                      ipAddress+=$(ifconfig wlan0| awk '/inet / && !/127.0.0.1/ { sub(/addr:/, "", $2); print $2 }')
                       break
                  fi
            fi
