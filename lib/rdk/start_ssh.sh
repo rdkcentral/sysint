@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/busybox sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -20,7 +20,7 @@
 
 # Purpose: Script to Initiate SSH Session
 # Scope: RDK devices
-# Usage: Run as a systemd service 
+# Usage: Run as a systemd service
 
 . /etc/include.properties
 . /etc/device.properties
@@ -65,14 +65,10 @@ checkForInterface()
 {
    interface=$1
    if [ -f /tmp/estb_ipv6 ]; then
-       ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
-	   if [ "$ipAddress" ]; then
-		   ipAddress+=" "
-		   ipAddress+=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
-	   fi
+       ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d'`
    else 
-       ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
-   fi
+       ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d'`
+  fi
 }
 
 #RFC check for MOCA SSH enable/not.
@@ -99,29 +95,33 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
            if [ "$WIFI_INTERFACE" ] && [ ! "$ipAddress" ];then
                  checkForInterface "$WIFI_INTERFACE"
                  if [ "$ipAddress" ]; then
+                      ipAddress+=" "
+                      ipAddress+=`ifconfig $WIFI_INTERFACE |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
                       break
                  fi
            fi
-	   Interface=$(getMoCAInterface)
+           Interface=`getMoCAInterface`
            if [ ! "$ipAddress" ];then
                  checkForInterface "$Interface"
-                  if [ "$ipAddress" ]; then
-                       break
-                  fi
+
+                 if [ "$ipAddress" ]; then
+                      ipAddress+=" "
+                      ipAddress+=`ifconfig $Interface |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
+                      break
+                 fi
            fi
            if [ "$isMOCASSHEnable" = "true" ];then
                ipAddress+=" "
-			   ipAddress+=$(ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g')
+               ipAddress+=`ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
            fi
-           sleep 5
+         # TO DO: Test without nw
      done
      #Concatenating all ip addresses
      IP_ADDRESS_PARAM=""
      for i in $ipAddress;
      do
           IP_ADDRESS_PARAM+="-p $i:22 "
-	  done
-
+     done
      if [ -e /sbin/dropbear ] || [ -e /usr/sbin/dropbear ] ; then
           if [ -f /etc/os-release ];then
                 if [ "$COMMUNITY_BUILDS" = "true" ]; then
@@ -144,7 +144,7 @@ startDropbear()
      echo --------- $interface got an ip $ipAddress starting dropbear service ---------
      if [ -f /etc/os-release ];then
           /bin/systemctl set-environment IP_ADDRESS=$ipAddress
-          if [ "$COMMUNITY_BUILDS" = "true" ]; then
+	  if [ "$COMMUNITY_BUILDS" = "true" ]; then
                 /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS"
           else
                 /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2"
@@ -187,7 +187,7 @@ do
                    startDropbear "$estbIp"
                    loop=0
               fi
-         fi
+	 fi
     fi
 done
 
