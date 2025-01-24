@@ -85,7 +85,6 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
             dropbearLog "IP address available from MOCA interface"
         fi
       sleep 5
-      loop=$((loop-1))
    done
 fi
 
