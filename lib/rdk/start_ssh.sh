@@ -114,6 +114,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                ipAddress+=" "
                ipAddress+=`ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
            fi
+	   sleep 5
      done
      #Concatenating all ip addresses
      IP_ADDRESS_PARAM=""
