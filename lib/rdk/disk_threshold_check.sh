@@ -43,13 +43,13 @@ fi
 FLAG=$1
 # default cleanup path and size for bootup cleanup
 
-if [ -z "$DEFAULT_THRESHOLD_SIZE" ]; then
-   if [ "$HDD_ENABLED" = "false" ];then
-         DEFAULT_THRESHOLD_SIZE=80
-   else
-         DEFAULT_THRESHOLD_SIZE=90
-   fi
+
+if [ "$HDD_ENABLED" = "false" ];then
+        DEFAULT_THRESHOLD_SIZE=80
+else
+        DEFAULT_THRESHOLD_SIZE=90
 fi
+
 WORK_PATH=$PERSISTENT_PATH
 LOG_FILE=/tmp/disk_cleanup.log
 usep=0
@@ -148,7 +148,7 @@ wifiFWDumpsCleanup()
     done
 
 
-    usep=$(df -kh /opt/logs | awk 'NR==2 {sub(/%/, "", $5); print $5}')
+    usep=$(df -kh $WORK_PATH | awk 'NR==2 {sub(/%/, "", $5); print $5}')
     if [ $usep -ge $DEFAULT_THRESHOLD_SIZE ] ; then
         wifi_fwdumps=$(find $LOG_PATH/PreviousLogs*/ -type f -name "*.bin")
         if [ -n "$wifi_fwdumps" ]; then
