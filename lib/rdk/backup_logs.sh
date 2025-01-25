@@ -100,7 +100,7 @@ if [ "$HDD_ENABLED" = "false" ]; then
     BAK2="bak2_"
     BAK3="bak3_"
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
-            find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -iname "*.bin*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; || exit 1
+            find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -iname "*.bin*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; 
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK1" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK1
@@ -123,12 +123,12 @@ if [ "$HDD_ENABLED" = "false" ]; then
     # logs cleanup after backup
     backupLog "Clean up $LOG_PATH"
     rm -rf $LOG_PATH/*.*
-    find $LOG_PATH -name "*-*-*-*-*M-" -exec rm -rf {} \; || exit 1
+    find $LOG_PATH -name "*-*-*-*-*M-" -exec rm -rf {} \;
 else
     backupLog "HDD enabled device"
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
        backupLog "Move logs from $LOG_PATH to $PREV_LOG_PATH"
-       find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; || exit 1
+       find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \;
        /bin/touch $PREV_LOG_PATH/last_reboot
     else
        find "$PREV_LOG_PATH" -name last_reboot | xargs rm >/dev/null
@@ -136,7 +136,7 @@ else
        LogFilePathPerm="$PREV_LOG_PATH/logbackup-$timestamp"
        mkdir -p "$LogFilePathPerm"
        backupLog "Move logs from $LOG_PATH to $LogFilePathPerm"
-       find "$LOG_PATH" -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \)  -exec mv '{}' "$LogFilePathPerm" \; || exit 1
+       find "$LOG_PATH" -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \)  -exec mv '{}' "$LogFilePathPerm" \;
        /bin/touch "$LogFilePathPerm/last_reboot"
     fi
 fi
