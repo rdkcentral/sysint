@@ -35,13 +35,7 @@ log_disk_usage() {
 
 # Function to run the appropriate top command based on device type
 run_top_command() {
-if [ "$DEVICE_TYPE" = "mediaclient" ]; then
         top -b -o +%CPU | head -n 17 
-elif [ "$DEVICE_TYPE" = "hybrid" ]; then
-      top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|rmfStreamer|Receiver|lighttpd|IARMDaemonMain|dsMgrMain|runPod|Main|nrdPluginApp|rdkbrowser2|rtrmfplayer|WPE|fogcli' | grep -vE 'grep|run.sh' 
-else
-     top | grep -E 'load|Tasks|Cpu|Mem|Swap|COMMAND|mpeos|Receiver|uimgr_main|lighttpd|IARMDaemonMain|dsMgrMain|Main|nrdPluginApp|fogcli' | grep -vE 'grep|run.sh'
-fi
 }
 
 # Function to collect CPU statistics
