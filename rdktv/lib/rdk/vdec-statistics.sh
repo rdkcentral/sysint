@@ -52,3 +52,4 @@ cat /sys/class/vdec/core >> $TEMP_LOG
 
 log "cat /sys/class/codec_mm/codec_mm_dump" >> $TEMP_LOG
 cat /sys/class/codec_mm/codec_mm_dump >> $TEMP_LOG
+
