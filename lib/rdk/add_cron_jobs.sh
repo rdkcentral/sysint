@@ -37,10 +37,10 @@ if [ "x$BIND_ENABLED" = "xtrue" ];then
    fi
 fi
 # Regr the log rotate to crontab
-if [ -f $RDK_PATH/logRotateDaemon.sh ]; then
-     output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "logRotateDaemon.sh"`
+if [ -f $RDK_PATH/log_rotate_daemon.sh ]; then
+     output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "log_rotate_daemon.sh"`
      if [ "$output" == "0" ]; then
-           sh /lib/rdk/cronjobs_update.sh "add" "logRotateDaemon.sh" "* * * * * nice -n 19 sh $RDK_PATH/logRotateDaemon.sh"
+           sh /lib/rdk/cronjobs_update.sh "add" "log_rotate_daemon.sh" "* * * * * nice -n 19 sh $RDK_PATH/log_rotate_daemon.sh"
      fi
 fi
 
