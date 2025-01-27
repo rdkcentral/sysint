@@ -101,6 +101,9 @@ if [ "$HDD_ENABLED" = "false" ]; then
     BAK3="bak3_"
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
             find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -iname "*.bin*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \; 
+            if [ $? -ne 0 ]; then
+                backupLog "Error:Failed to Move the logs from  $LOG_PATH to $PREV_LOG_PATH"
+            fi
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK1" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK1
