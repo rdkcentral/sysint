@@ -116,7 +116,7 @@ while getopts ":s:c:r:o:" opt; do
     case $opt in
         s)
             source=$OPTARG
-            rebootReason="Triggered from $source process"
+            rebootLogReason="Triggered from $source process"
             case $source in
                 runPodRecovery)
                     t2CountNotify "SYST_ERR_RunPod_reboot"
@@ -131,7 +131,7 @@ while getopts ":s:c:r:o:" opt; do
             ;;
         c)
             source=$OPTARG
-            rebootReason="Triggered from $source process failure or crash..!"
+            rebootLogReason="Triggered from $source process failure or crash..!"
             case $source in
                 dsMgrMain)
                     t2CountNotify "SYST_ERR_DSMGR_reboot"
@@ -352,9 +352,9 @@ setPreviousRebootInfo()
 rebootTime=`date -u`
 
 if [ "$otherReason" == "Unknown" ]; then
-    echo "RebootReason: $rebootReason" >> $REBOOTINFO_LOGFILE
+    echo "RebootReason: $rebootLogReason" >> $REBOOTINFO_LOGFILE
 else
-    echo "RebootReason: $rebootReason $otherReason" >> $REBOOTINFO_LOGFILE
+    echo "RebootReason: $rebootLogReason $otherReason" >> $REBOOTINFO_LOGFILE
 fi
 echo "RebootInitiatedBy: $source" >> $REBOOTINFO_LOGFILE
 echo "RebootTime: $rebootTime" >> $REBOOTINFO_LOGFILE
