@@ -124,22 +124,21 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=`ifconfig $ETHERNET_INTERFACE | grep $ETHERNET_INTERFACE | tr -s ' ' | cut -d ' ' -f5`
-    EtherMac=`echo $EtherMac | sed  "s/ //g"`
+    EtherMac=$(ifconfig $ETHERNET_INTERFACE | grep $ETHERNET_INTERFACE | tr -s ' ' | cut -d ' ' -f5)
+    EtherMac=$(echo $EtherMac | sed  "s/ //g")
 }
 
 getMocaMac()
 {
-    MocaMac=`ifconfig $MOCA_INTERFACE | grep HWaddr | tr -s ' ' | cut -d ' ' -f5`
-    MocaMac=`echo $MocaMac | sed  "s/ //g"`
+    MocaMac=$(ifconfig $MOCA_INTERFACE | grep HWaddr | tr -s ' ' | cut -d ' ' -f5)
+    MocaMac=$(echo $MocaMac | sed  "s/ //g")
 }
 
 getWiFiMac()
 {
     # Get the wifi mac only if WIFI_INTERFACE is defined
     if [ "x$WIFI_INTERFACE" != "x" ]; then
-        WiFiMac=`ifconfig $WIFI_INTERFACE | grep HWaddr | tr -s ' ' | cut -d ' ' -f5`
-        WiFiMac=`echo $WiFiMac | sed  "s/ //g"`
+        WiFiMac=$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')
     fi
 }
 
@@ -148,9 +147,9 @@ getMocaIp()
     MocaIp=""
     if [ "$MOCA_INTERFACE" != "" ]; then
         if [ -f /tmp/.ipv6$MOCA_INTERFACE ]; then
-            MocaIp=`cat /tmp/.ipv6$MOCA_INTERFACE`
+            MocaIp=$(cat /tmp/.ipv6$MOCA_INTERFACE)
         elif [ -f /tmp/.ipv4$MOCA_INTERFACE ]; then
-            MocaIp=`cat /tmp/.ipv4$MOCA_INTERFACE`
+            MocaIp=$(cat /tmp/.ipv4$MOCA_INTERFACE)
         else
             MocaIp=""
         fi
@@ -159,7 +158,7 @@ getMocaIp()
 
 getLocalTime()
 {
-   timeValue=`date`
+   timeValue=$(date)
    echo "$timeValue"
 }
 
@@ -167,14 +166,14 @@ getTimeZone()
 {
   zoneValue=""
   if [ -f /opt/etc/saved_timezone ]; then
-       zoneValue=`cat /opt/etc/saved_timezone | cut -d "=" -f2 | cut -d "," -f1`
+       zoneValue=$(cat /opt/etc/saved_timezone | cut -d "=" -f2 | cut -d "," -f1)
   fi
   echo "$zoneValue"
 }
 
 getFWVersion()
 {
-  Version=`cat /version.txt | grep ^imagename: | cut -d ":" -f 2`
+  Version=$(cat /version.txt | grep ^imagename: | cut -d ":" -f 2)
 }
 getDACInitTimestamp()
 {
@@ -261,7 +260,7 @@ getBluetoothMac()
 {
     bluetooth_mac="00:00:00:00:00:00"
     if [ "$BLUETOOTH_ENABLED" = "true" ]; then
-        bluetooth_mac=`getDeviceBluetoothMac`
+        bluetooth_mac=$(getDeviceBluetoothMac)
     fi
 
     echo "$bluetooth_mac"
@@ -497,14 +496,14 @@ executeServiceRequestOutput()
 
 updateMissingParameters()
 {
-        data=`sed -n '/=$/p' /tmp/.deviceDetails.cache | tr "=" " "`
+        data=$(sed -n '/=$/p' /tmp/.deviceDetails.cache | tr "=" " ")
         if [ "$data" != "" ]; then
             echo "$data" | while read -r param
             do
                 if [ "$param" != "" ]; then
                     file=/tmp/.$param
-                    [ -f $file ] && [ "`cat $file`" != "" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
-                    [ ! -f $file ] || [ "`cat $file`" == "" ] && executeServiceRequest $param
+                    [ -f $file ] && [ "$(cat $file)" != "" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
+                    [ ! -f $file ] || [ "$(cat $file)" == "" ] && executeServiceRequest $param
                 fi
             done
         fi
@@ -517,7 +516,7 @@ lock()
 		logMsg "wait to acquire lock"
                 if [ -s $lockPidFile ];then
 		    lockPid=$(cat $lockPidFile)
-		    if [ $? == 0 ]; then
+		    if [ $? = 0 ]; then
 			if ! kill -0 $lockPid &>/dev/null; then
 				unlock "terminated process $lockPid stale"
 		  	fi
@@ -525,7 +524,7 @@ lock()
                 else
                     prev_locktime=$locktime
                     locktime=`date +%s -r $lockDir 2> /dev/null`
-                    if [ $? == 0 ] && [ "$prev_locktime" == "$locktime" ]; then
+                    if [ $? = 0 ] && [ "$prev_locktime" = "$locktime" ]; then
                         unlock "terminated process"
                     fi
 		fi
@@ -545,13 +544,13 @@ unlock()
 # execute service request with arguments
 if [ "$command" != "" ]; then
 
-     if [ ! -f $deviceDetailsCache ] || [ "`cat $deviceDetailsCache`" == "" ]; then
+     if [ ! -f $deviceDetailsCache ] || [ "`cat $deviceDetailsCache`" = "" ]; then
          executeServiceRequestOutput
      fi
 
      logMsg "execute service request with arguments: command=$command : parameter=$parameter"
-     if [ "$command" == "refresh" ]; then
-         [ "$parameter" == "" ] && parameter="all"
+     if [ "$command" = "refresh" ]; then
+         [ "$parameter" = "" ] && parameter="all"
          executeServiceRequest "$parameter"
          if [ "$parameter" != "all" ]; then
             file=/tmp/."$parameter"
@@ -559,8 +558,8 @@ if [ "$command" != "" ]; then
                value=$(cat "$file")
             fi
          fi
-     elif [ "$command" == "read" ]; then
-         [ "$parameter" == "" ] && parameter="all"
+     elif [ "$command" = "read" ]; then
+         [ "$parameter" = "" ] && parameter="all"
          if [ "$parameter" != "all" ] && [ "$parameter" != "" ]; then
             file=/tmp/."$parameter"
             [ ! -f "$file" ] || [ "`cat $file`" == "" ] && executeServiceRequest "$parameter"
@@ -589,7 +588,7 @@ if [ -s $deviceDetailsCache ]; then
 fi
 
 # execute all services in one request if not completed
-if [ ! -f $deviceDetailsCache ] || [ "`cat $deviceDetailsCache`" == "" ]; then
+if [ ! -f $deviceDetailsCache ] || [ "$(cat $deviceDetailsCache)" = "" ]; then
     executeServiceRequestOutput
 fi
 executeServiceRequest "all"
