@@ -18,6 +18,9 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose: This script is used to fetch device information such as MAC address, IP address, and model.
+# Scope: RDK devices.
+# Usage: This script is triggered by a systemd service and shell scripts.
 
 # input arguments
 command=$1
