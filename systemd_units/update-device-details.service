@@ -27,8 +27,7 @@ Type=oneshot
 RemainAfterExit=yes
 SyslogIdentifier=getDeviceDetails
 ExecStart=/lib/rdk/getDeviceDetails.sh "" "" "true" 
-ExecStop=/bin/kill -9 $MAINPID
-TimeoutStopSec=3
+
 
 [Install]
 WantedBy=multi-user.target
