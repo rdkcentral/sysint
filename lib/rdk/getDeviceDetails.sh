@@ -127,14 +127,12 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=$(ifconfig $ETHERNET_INTERFACE | grep $ETHERNET_INTERFACE | tr -s ' ' | cut -d ' ' -f5)
-    EtherMac=$(echo $EtherMac | sed  "s/ //g")
+    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/eth0/ {print $5}')
 }
 
 getMocaMac()
 {
-    MocaMac=$(ifconfig $MOCA_INTERFACE | grep HWaddr | tr -s ' ' | cut -d ' ' -f5)
-    MocaMac=$(echo $MocaMac | sed  "s/ //g")
+    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/eth0/ {print $5}')
 }
 
 getWiFiMac()
@@ -148,7 +146,8 @@ getWiFiMac()
 getMocaIp()
 {
     MocaIp=""
-    if [ "$MOCA_INTERFACE" != "" ]; then
+    [ -z "$MOCA_INTERFACE" ] && return
+    
         if [ -f /tmp/.ipv6$MOCA_INTERFACE ]; then
             MocaIp=$(cat /tmp/.ipv6$MOCA_INTERFACE)
         elif [ -f /tmp/.ipv4$MOCA_INTERFACE ]; then
@@ -156,7 +155,6 @@ getMocaIp()
         else
             MocaIp=""
         fi
-    fi
 }
 
 getLocalTime()
