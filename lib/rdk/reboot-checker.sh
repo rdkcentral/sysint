@@ -33,7 +33,7 @@ fi
 LOG_FILE=/opt/logs/rebootInfo.log
 verifyProcess ()
 {
-    processpid=`pidof $1`
+    processpid=$(pidof $1)
     if [ ! "$processpid" ];then
          exit 0
     fi
@@ -44,12 +44,6 @@ process=$2
 
 if [ "$1" = "shutdown" ];then
     case "$process" in
-         rmfstreamer)
-               verifyProcess "rmfStreamer"
-                ;;
-         runpod)
-               verifyProcess "runPod"
-                ;;
          iarmbusd)
                verifyProcess "IARMDaemonMain"
                 ;;
@@ -92,7 +86,7 @@ elif [ "$1" = "bootup" ];then
     fi
 
     # If box gets rebooted before 8mins from bootup on Non HDD devices
-    if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ];then
+    if [ "$last_reboot_file" = "/opt/logs/PreviousLogs/rebootInfo.log" ];then
         if [ -f /opt/logs/PreviousLogs/bak1_rebootInfo.log ];then
             last_reboot_file=/opt/logs/PreviousLogs/bak1_rebootInfo.log
         fi
