@@ -18,6 +18,11 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose: This script handles reboot information logging and updating.
+# Scope: This script is used during bootup and shutdown to log and update reboot information in RDK devices
+# Usage: $0 <bootup/shutdown> 
+##############################################################################
+
 
 . /etc/include.properties
 . /etc/device.properties
@@ -34,7 +39,7 @@ verifyProcess ()
     fi
 }
 
-mode=$1
+boot_mode=$1
 process=$2
 
 if [ "$1" = "shutdown" ];then
