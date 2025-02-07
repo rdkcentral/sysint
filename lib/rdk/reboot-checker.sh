@@ -79,10 +79,19 @@ elif [ "$1" = "bootup" ];then
           echo "`/bin/timestamp` PreviousOtherReason: $otherReason" >> $LOG_FILE
           rm /opt/.rebootInfo.log
     fi
-    if [ -f /opt/logs/PreviousLogs/rebootInfo.log ];then
+    
+    last_reboot_file=""
+    last_bootfile=`find /opt/logs/PreviousLogs/ -name last_reboot`
+    last_log_path=`echo ${last_bootfile%/*}`
+    echo "LOG PATH: $last_log_path"
+    if [ -f "$last_log_path/rebootInfo.log" ] && [ "$last_log_path" ];then
+          last_reboot_file=$last_log_path/rebootInfo.log
+    elif [ -f /opt/logs/PreviousLogs/rebootInfo.log ];then
           last_reboot_file=/opt/logs/PreviousLogs/rebootInfo.log
+    else
+          echo "Missing last reboot reason log file..!"
     fi
-
+    
     # If box gets rebooted before 8mins from bootup on Non HDD devices
     if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ];then
         if [ -f /opt/logs/PreviousLogs/bak1_rebootInfo.log ];then
