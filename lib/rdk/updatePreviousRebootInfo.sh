@@ -18,6 +18,10 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose: To Determine the reason for a reboot and update the reboot information
+# Scope: This script is used to analyze the reboot reason and update the reboot information in RDK Devices
+# Usage: run as systemd service. Invoked by reboot-checker.sh to set the reboot reason
+
 # Source Variable
 . /etc/device.properties
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
@@ -58,7 +62,7 @@ PARODUS_LOG="/opt/logs/parodus.log"
 #Use log framework to pring timestamp and source script name
 rebootLog()
 {
-    echo "$0: $*"
+     printf "%s: %s\n" "$0" "$*"
 }
 
 rebootLog "Start of Reboot Reason Script"
@@ -92,8 +96,8 @@ setPreviousRebootInfo()
     echo "}" >> $PREVIOUS_REBOOT_INFO_FILE
 
     rebootLog "Updating previous reboot reason in $PARODUS_LOG"
-    echo "`/bin/timestamp` Updating previous reboot info to Parodus" >> $PARODUS_LOG
-    echo "`/bin/timestamp` : $0: PreviousRebootInfo:$timestamp,$reason,$customReason,$source" >> $PARODUS_LOG
+    echo "$(/bin/timestamp) Updating previous reboot info to Parodus" >> $PARODUS_LOG
+    echo "$(/bin/timestamp) : $0: PreviousRebootInfo:$timestamp,$reason,$customReason,$source" >> $PARODUS_LOG
 
     # Set Hard Power reset time with timestamp
     if [ "$reason" == "HARD_POWER" ] || [ "$reason" == "POWER_ON_RESET" ] || [ "$reason" == "UNKNOWN_RESET" ] || [ ! -f "$PREVIOUS_HARD_REBOOT_INFO_FILE" ];then
