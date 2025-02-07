@@ -33,7 +33,7 @@ fi
 LOG_FILE=/opt/logs/rebootInfo.log
 verifyProcess ()
 {
-    processpid=$(pidof $1)
+    processpid=`pidof $1`
     if [ ! "$processpid" ];then
          exit 0
     fi
@@ -44,6 +44,12 @@ process=$2
 
 if [ "$1" = "shutdown" ];then
     case "$process" in
+         rmfstreamer)
+               verifyProcess "rmfStreamer"
+                ;;
+         runpod)
+               verifyProcess "runPod"
+                ;;
          iarmbusd)
                verifyProcess "IARMDaemonMain"
                 ;;
@@ -73,20 +79,12 @@ elif [ "$1" = "bootup" ];then
           echo "`/bin/timestamp` PreviousOtherReason: $otherReason" >> $LOG_FILE
           rm /opt/.rebootInfo.log
     fi
-    last_reboot_file=""
-    last_bootfile=`find /opt/logs/PreviousLogs/ -name last_reboot`
-    last_log_path=`echo ${last_bootfile%/*}`
-    echo "LOG PATH: $last_log_path"
-    if [ -f "$last_log_path/rebootInfo.log" ] && [ "$last_log_path" ];then
-          last_reboot_file=$last_log_path/rebootInfo.log
-    elif [ -f /opt/logs/PreviousLogs/rebootInfo.log ];then
+    if [ -f /opt/logs/PreviousLogs/rebootInfo.log ];then
           last_reboot_file=/opt/logs/PreviousLogs/rebootInfo.log
-    else
-          echo "Missing last reboot reason log file..!"
     fi
 
     # If box gets rebooted before 8mins from bootup on Non HDD devices
-    if [ "$last_reboot_file" = "/opt/logs/PreviousLogs/rebootInfo.log" ];then
+    if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ];then
         if [ -f /opt/logs/PreviousLogs/bak1_rebootInfo.log ];then
             last_reboot_file=/opt/logs/PreviousLogs/bak1_rebootInfo.log
         fi
@@ -100,27 +98,26 @@ elif [ "$1" = "bootup" ];then
     echo "Last reboot File = $last_reboot_file"
 
     if [ -f "$last_reboot_file" ]; then
-            rebootReason=`cat $last_reboot_file | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep`
-            rebootInitiatedBy=`cat $last_reboot_file | grep "RebootInitiatedBy:" | grep -v "PreviousRebootInitiatedBy" | grep -v grep | awk -F 'RebootInitiatedBy:' '{print $2}' | sed 's/ //g'`
-            rebootTime=`cat $last_reboot_file | grep "RebootTime:" | grep -v "PreviousRebootTime" | grep -v grep | awk -F 'RebootTime:' '{print $2}'`
-            customReason=`cat $last_reboot_file | grep "CustomReason:" | grep -v "PreviousCustomReason" | grep -v grep | awk -F 'CustomReason:' '{print $2}'`
+            rebootReason=$(grep "RebootReason:" "$last_reboot_file" | grep -v -E "HAL_SYS_Reboot|PreviousRebootReason")
+            rebootInitiatedBy=$(awk -F 'RebootInitiatedBy:' '/RebootInitiatedBy:/ && !/PreviousRebootInitiatedBy/ {gsub(/ /, "", $2); print $2}' "$last_reboot_file")
+            rebootTime=$(awk -F 'RebootTime:' '/RebootTime:/ && !/PreviousRebootTime/ {print $2}' "$last_reboot_file")
+            customReason=$(awk -F 'CustomReason:' '/CustomReason:/ && !/PreviousCustomReason/ {print $2}' "$last_reboot_file")
           if [ "$rebootInitiatedBy" == "HAL_SYS_Reboot" ]; then
-              rebootInitiatedBy=`cat $last_reboot_file | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep | sed -n 's/.* Triggered from \([^ ]*\).*/\1/p'`
-              otherReason=`cat $last_reboot_file | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep | awk -F 'Triggered from ' '{print $2}' | sed 's/[^ ]* *//' | sed 's/(.*//'`
+              rebootInitiatedBy=$(awk -F 'Triggered from ' '/RebootReason:/ && !/HAL_SYS_Reboot/ && !/PreviousRebootReason/ {print $2}' "$last_reboot_file" | awk '{print $1}')
+              otherReason=$(awk -F 'Triggered from ' '/RebootReason:/ && !/HAL_SYS_Reboot/ && !/PreviousRebootReason/ {sub(/^[^ ]* /, "", $2); sub(/\(.*$/, "", $2); print $2}' "$last_reboot_file")
           else
-              otherReason=`cat $last_reboot_file | grep "OtherReason:" | grep -v "PreviousOtherReason" | grep -v grep | awk -F 'OtherReason:' '{print $2}'`
+              otherReason=$(awk -F 'OtherReason:' '/OtherReason:/ && !/PreviousOtherReason/ {print $2}' "$last_reboot_file")
           fi
     fi
 
-    echo "`/bin/timestamp` PreviousRebootReason: $rebootReason" >> $LOG_FILE
-    echo "`/bin/timestamp` PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
-    echo "`/bin/timestamp` PreviousRebootTime: $rebootTime" >> $LOG_FILE
-    echo "`/bin/timestamp` PreviousCustomReason: $customReason" >> $LOG_FILE
-    echo "`/bin/timestamp` PreviousOtherReason: $otherReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousOtherReason: $otherReason" >> $LOG_FILE
     touch /tmp/rebootInfo_Updated
     sh /lib/rdk/updatePreviousRebootInfo.sh
 else
     echo "Usage: $0 <bootup/shutdown>"
 fi
 exit 0
-
