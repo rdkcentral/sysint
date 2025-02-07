@@ -25,7 +25,7 @@
 # Source Variable
 . /etc/device.properties
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    source /lib/rdk/t2Shared_api.sh
+     . /lib/rdk/t2Shared_api.sh
 fi
 
 # Define logfiles and flags
@@ -148,7 +148,7 @@ oopsDumpCheck()
 
     if [ "$SOC" = "BRCM" ]; then
         # Ensure OOPS DUMP string presence for Kernel Panic in messages.txt
-        if [ -f "$KERNEL_LOG_FILE" ] && [[ $(grep $KERNEL_PANIC_SEARCH_STRING $KERNEL_LOG_FILE) ]];then
+        if [ -f "$KERNEL_LOG_FILE" ] && [ $(grep -q $KERNEL_PANIC_SEARCH_STRING $KERNEL_LOG_FILE) ];then
             if [[ $(grep -e "Kernel Oops" -e "Kernel Panic" $KERNEL_LOG_FILE) ]];then
                 oops_dump=1
             fi
