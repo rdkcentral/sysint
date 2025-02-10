@@ -125,7 +125,7 @@ elif [ "$1" = "bootup" ];then
     echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE
     echo "$(/bin/timestamp) PreviousOtherReason: $otherReason" >> $LOG_FILE
     touch /tmp/rebootInfo_Updated
-    sh /lib/rdk/updatePreviousRebootInfo.sh
+    sh /lib/rdk/update_previous_reboot_info.sh
 else
     echo "Usage: $0 <bootup/shutdown>"
 fi
