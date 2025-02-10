@@ -23,29 +23,27 @@
 . /etc/device.properties
 . $RDK_PATH/utils.sh
 
-Timestamp()
+log()
 {
-    /bin/timestamp
+    echo "$(/bin/timestamp) $1" >> "$LOG_PATH/reboot.log"
 }
 
-REBOOTLOG="$LOG_PATH/reboot.log"
 ## Sleep for 30 minutes, to make sure all the times are correct on the STB
-echo `Timestamp` 'Initial sleep for 30 minutes, for time to be set correctly on STB'>>$REBOOTLOG;
-sleep 1800
+#echo `Timestamp` 'Initial sleep for 30 minutes, for time to be set correctly on STB'>>$REBOOTLOG;
+#sleep 1800
 
 #check if AutoReboot Maintenance Window is Enabled
 if [ "$DEVICE_TYPE" = "hybrid" ] || [ "$DEVICE_TYPE" = "mediaclient" ]; then
     AutoReboot=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AutoReboot.Enable 2>&1 > /dev/null)
     if [ "$AutoReboot" = "true" ]; then
-        echo `Timestamp` 'Aborting the rebootSTB Operation as AutoReboot.Enable is True'>>$REBOOTLOG;
+        log "Aborting the rebootSTB Operation as AutoReboot.Enable is True"
         exit
     fi
 fi
 
 if [ "$DEVICE_TYPE" = "mediaclient" ] && [ -f $RDK_PATH/networkCommnCheck.sh ]; then
-     echo "Verifying the network and the gateway for Communication"
-     sh $RDK_PATH/networkCommnCheck.sh
-     sleep 1
+     log "Verifying the network and the gateway for Communication"
+     /bin/sh $RDK_PATH/networkCommnCheck.sh
 fi
 #Default param values
 rebootWindowMins=30
@@ -57,74 +55,67 @@ if [ -f $PERSISTENT_PATH/.autoRebootParams.sh ] && [ "$BUILD_TYPE" != "prod" ] ;
     . $PERSISTENT_PATH/.autoRebootParams.sh
 
     ## Random time between RebootWStartTime and RebootWindow in mins
-    if [ $RebootWStartTimeUTC -ge 0 ] ; then
-        if [ $RebootWindowHours -gt 0 ] ; then
-            rebootWindowMins=`expr $RebootWindowHours \* 60`
-        fi
-        timeToReboot=`echo $RebootWStartTimeUTC":00"`
-    fi  
-    if [ $RebootIntervalHours -ge 0 ] ; then
-        rebootInt=$RebootIntervalHours
-    fi
-fi
+       [ $RebootWStartTimeUTC -ge 0 ] &&  timeToReboot=$(echo $RebootWStartTimeUTC":00")
+       [ $RebootWindowHours -gt 0 ] &&  rebootWindowMins=$(expr $RebootWindowHours \* 60)
+       [ $RebootIntervalHours -ge 0 ] &&  rebootInt=$RebootIntervalHours
   
-echo `Timestamp` 'rebootWindowMins' $rebootWindowMins ' timeToReboot' $timeToReboot ' rebootInt' $rebootInt 'hours'>>$REBOOTLOG;
-rTime=`expr $RANDOM % $rebootWindowMins`
-echo `Timestamp` 'Sleeping for an additional ' $rTime ' minutes'>>$REBOOTLOG;
+log "'rebootWindowMins' $rebootWindowMins ' timeToReboot' $timeToReboot ' rebootInt' $rebootInt 'hours'"
+rTime=$(expr $RANDOM % $rebootWindowMins)
+log "Sleeping for an additional ' $rTime ' minutes"
 
 ## Minimum time to reboot in minutes
 minTime=60
 
 ## Calculating time to reboot in seconds
-start_time=`date +%H:%M:%S`
+start_time=$(date +%H:%M:%S)
 rebootIntSecs=`expr $rebootInt \* 3600`
-start_hour=`echo $start_time | cut -d':' -f1`
-start_min=`echo $start_time | cut -d':' -f2`
-end_hour=`echo $timeToReboot | cut -d':' -f1`
-end_min=`echo $timeToReboot | cut -d':' -f2`
-hour=`expr $end_hour - $start_hour`
-min=`expr $end_min - $start_min`
+start_hour=$(echo $start_time | cut -d':' -f1)
+start_min=$(echo $start_time | cut -d':' -f2)
+end_hour=$(echo $timeToReboot | cut -d':' -f1)
+end_min=$(echo $timeToReboot | cut -d':' -f2)
+hour=$(expr $end_hour - $start_hour)
+min=$(expr $end_min - $start_min)
 
 if [ $min -lt 0 ]
 then
-    min=`expr $min + 60`
-    hour=`expr $hour - 1`
+    min=$(expr $min + 60)
+    hour=$(expr $hour - 1)
 fi
 
 if [ $hour -lt 0 ]
 then
-    hour=`expr $hour + 24`
+    hour=$(expr $hour + 24)
 fi
 
-hour_min=`expr $hour \* 60`
+hour_min=$(expr $hour \* 60)
 
 ## Modified to include random time
-tot_min=`expr $hour_min + $min + $rTime`
+tot_min=$(expr $hour_min + $min + $rTime)
                                    
 ## Sleep for remaining time or next day the same time
 if [ $tot_min -lt $minTime ]                 
 then                                         
-     tot_min=`expr $tot_min + 1440`             
-     seconds=`expr $tot_min \* 60`              
+     tot_min=$(expr $tot_min + 1440)          
+     seconds=$(expr $tot_min \* 60)           
 else                                         
-     seconds=`expr $tot_min \* 60`              
+     seconds=$(expr $tot_min \* 60)              
 fi    
 
 ## Calculate additional time based on rebootInterval
-echo 'rebootIntSecs' $rebootIntSecs ' seconds' $seconds>>$REBOOTLOG;
+log "rebootIntSecs $rebootIntSecs  seconds $seconds"
 while [ $rebootIntSecs -ge $seconds ] 
 do 
-    seconds=`expr $seconds + 86400` 
+    seconds=$(expr $seconds + 86400)
 done                              
                                                      
 ## Sleep for the time in seconds                     
-echo `Timestamp` 'The box will reboot in ' $seconds ' seconds'>>$REBOOTLOG;
+log "The box will reboot in  $seconds seconds"
 sleep $seconds                                                                       
 
 ## Rebooting the box                                                                         
-echo `Timestamp` 'Rebooting the box'>>$REBOOTLOG;
+log "Rebooting the box"
 echo 0 > $PERSISTENT_PATH/.rebootFlag
-echo `/bin/timestamp` ------------ Its a scheduled reboot ----------------- >> $REBOOTLOG
+log" ------------ Its a scheduled reboot -----------------"
 ## reboot the box
 sh /rebootNow.sh -s RebootSTB.sh -r "Scheduled Reboot" -o "Rebooting the box after device triggered Scheduled Reboot..."
 
