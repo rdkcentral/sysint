@@ -22,4 +22,4 @@ Description=Update Previous reboot info
 ConditionPathExists=/tmp/stt_received
 
 [Service]
-ExecStart=/bin/sh -c '/lib/rdk/updatePreviousRebootInfo.sh'
+ExecStart=/lib/rdk/updatePreviousRebootInfo.sh
