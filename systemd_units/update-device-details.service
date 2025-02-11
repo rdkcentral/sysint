@@ -23,10 +23,12 @@ After=network-online.target
 Before=authservice.service tr69hostif.service
 
 [Service]
-Type=oneshot
+Type=forking
 RemainAfterExit=yes
-SyslogIdentifier=getDeviceDetails
-ExecStart=/lib/rdk/getDeviceDetails.sh "" "" "true" 
+SyslogIdentifier="getDeviceDetails"
+ExecStart=/bin/sh -c '/lib/rdk/getDeviceDetails.sh "" "" "true" &'
+ExecStop=/bin/kill -9 $MAINPID
+TimeoutStopSec=3
 
 
 [Install]
