@@ -146,8 +146,8 @@ getWiFiMac()
 getMocaIp()
 {
     MocaIp=""
-    [ -z "$MOCA_INTERFACE" ] && return
     
+    if [ "$MOCA_INTERFACE" != "" ]; then
         if [ -f /tmp/.ipv6$MOCA_INTERFACE ]; then
             MocaIp=$(cat /tmp/.ipv6$MOCA_INTERFACE)
         elif [ -f /tmp/.ipv4$MOCA_INTERFACE ]; then
@@ -155,6 +155,7 @@ getMocaIp()
         else
             MocaIp=""
         fi
+   fi
 }
 
 getLocalTime()
