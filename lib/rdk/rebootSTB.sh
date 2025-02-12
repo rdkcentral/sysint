@@ -127,3 +127,4 @@ echo 0 > $PERSISTENT_PATH/.rebootFlag
 echo `/bin/timestamp` ------------ Its a scheduled reboot ----------------- >> $REBOOTLOG
 ## reboot the box
 sh /rebootNow.sh -s RebootSTB.sh -r "Scheduled Reboot" -o "Rebooting the box after device triggered Scheduled Reboot..."
+
