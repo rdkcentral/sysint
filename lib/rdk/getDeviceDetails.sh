@@ -127,12 +127,12 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/eth0/ {print $5}')
+    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/$ETHERNET_INTERFACE/ {print $5}')
 }
 
 getMocaMac()
 {
-    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/eth0/ {print $5}')
+    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/$ETHERNET_INTERFACE/ {print $5}')
 }
 
 getWiFiMac()
@@ -469,7 +469,7 @@ executeServiceRequest()
                 ;;
    esac
 
-   if [ "$1" != "all" ] && [ "$1" != "" ]; then
+   if [ -n "$1" ] && [ "$1" != "all" ]; then
         [ ! -f "$deviceDetailsCache" ] && executeServiceRequestOutput || sed -i 's/'"$1"'=.*/'"$1"'='"$(cat /tmp/."$1")"'/' "$deviceDetailsCache"
         unlock
    fi
@@ -504,8 +504,8 @@ updateMissingParameters()
             do
                 if [ "$param" != "" ]; then
                     file=/tmp/.$param
-                    [ -f $file ] && [ "$(cat $file)" != "" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
-                    [ ! -f $file ] || [ "$(cat $file)" == "" ] && executeServiceRequest $param
+                    [ -s "$file" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
+                    [ ! -s "$file" ] && executeServiceRequest $param
                 fi
             done
         fi
@@ -525,7 +525,7 @@ lock()
                     fi
                 else
                     prev_locktime=$locktime
-                    locktime=`date +%s -r $lockDir 2> /dev/null`
+                    locktime=$(date +%s -r $lockDir 2> /dev/null)
                     if [ $? = 0 ] && [ "$prev_locktime" = "$locktime" ]; then
                         unlock "terminated process"
                     fi
@@ -546,7 +546,7 @@ unlock()
 # execute service request with arguments
 if [ "$command" != "" ]; then
 
-     if [ ! -f $deviceDetailsCache ] || [ "`cat $deviceDetailsCache`" = "" ]; then
+     if [ ! -s "$deviceDetailsCache" ]; then
          executeServiceRequestOutput
      fi
 
@@ -562,10 +562,10 @@ if [ "$command" != "" ]; then
          fi
      elif [ "$command" = "read" ]; then
          [ "$parameter" = "" ] && parameter="all"
-         if [ "$parameter" != "all" ] && [ "$parameter" != "" ]; then
+        if [ -n "$parameter" ] && [ "$parameter" != "all" ]; then
             file=/tmp/."$parameter"
-            [ ! -f "$file" ] || [ "`cat $file`" == "" ] && executeServiceRequest "$parameter"
-            [ -f "$deviceDetailsCache" ] && value=`cat $deviceDetailsCache | grep $parameter | cut -d "=" -f2`
+            [ ! -s "$file" ]  && executeServiceRequest "$parameter"
+            [ -f "$deviceDetailsCache" ] && value=$(cat $deviceDetailsCache | grep $parameter | cut -d "=" -f2)
             [ -f "$deviceDetailsCache" ] && [ "$value" == "" ] && sed -i 's/'$parameter=.*'/'$parameter="$(cat $file)"'/' $deviceDetailsCache
 
             [ -f "$file" ] && cat $file
@@ -590,7 +590,7 @@ if [ -s $deviceDetailsCache ]; then
 fi
 
 # execute all services in one request if not completed
-if [ ! -f $deviceDetailsCache ] || [ "$(cat $deviceDetailsCache)" = "" ]; then
+if [ ! -s $deviceDetailsCache ]; then
     executeServiceRequestOutput
 fi
 executeServiceRequest "all"
