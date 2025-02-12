@@ -127,12 +127,12 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/$ETHERNET_INTERFACE/ {print $5}')
+    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
 }
 
 getMocaMac()
 {
-    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/$ETHERNET_INTERFACE/ {print $5}')
+    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/HWaddr/ {print $5}')
 }
 
 getWiFiMac()
