@@ -31,6 +31,8 @@ if [ ! -f /tmp/set_crash_reboot_flag -a "$1" != "bootup" ];then
      touch /tmp/set_crash_reboot_flag
 fi
 LOG_FILE=/opt/logs/rebootInfo.log
+PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
+
 verifyProcess ()
 {
     processpid=$(pidof $1)
@@ -56,7 +58,7 @@ if [ "$1" = "shutdown" ];then
      esac
 elif [ "$1" = "bootup" ];then
     last_reboot_file=""
-    last_bootfile=$(find /opt/logs/PreviousLogs/ -name last_reboot)
+    last_bootfile=$(find $PREV_LOG_PATH -name last_reboot)
     last_log_path=$(echo ${last_bootfile%/*})
     echo "LOG PATH: $last_log_path"
     if [ -f "$last_log_path/rebootInfo.log" ] && [ "$last_log_path" ];then
@@ -68,8 +70,8 @@ elif [ "$1" = "bootup" ];then
     fi
     
     # If box gets rebooted before 8mins from bootup on Non HDD devices
-    if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ]; then
-         for file in /opt/logs/PreviousLogs/bak[1-3]_rebootInfo.log; do
+    if [ "$last_reboot_file" = "$PREV_LOG_PATH/rebootInfo.log" ]; then
+         for file in $PREV_LOG_PATH/bak[1-3]_rebootInfo.log; do
              [ -f "$file" ] && last_reboot_file="$file"
          done
     fi
