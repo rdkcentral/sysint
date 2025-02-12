@@ -44,12 +44,6 @@ process=$2
 
 if [ "$1" = "shutdown" ];then
     case "$process" in
-         rmfstreamer)
-               verifyProcess "rmfStreamer"
-                ;;
-         runpod)
-               verifyProcess "runPod"
-                ;;
          iarmbusd)
                verifyProcess "IARMDaemonMain"
                 ;;
@@ -61,24 +55,6 @@ if [ "$1" = "shutdown" ];then
                 ;;
      esac
 elif [ "$1" = "bootup" ];then
-    if [ -f /opt/.rebootInfo.log ];then
-          rebootReason=$(cat /opt/.rebootInfo.log | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep)
-          rebootInitiatedBy=$(cat /opt/.rebootInfo.log | grep "RebootInitiatedBy:" | grep -v "PreviousRebootInitiatedBy" | grep -v grep | awk -F 'RebootInitiatedBy:' '{print $2}' | sed 's/ //g')
-          rebootTime=$(cat /opt/.rebootInfo.log | grep "RebootTime:" | grep -v "PreviousRebootTime" | grep -v grep | awk -F 'RebootTime:' '{print $2}')
-          customReason=$(cat /opt/.rebootInfo.log | grep "CustomReason:" | grep -v "PreviousCustomReason" | grep -v grep | awk -F 'CustomReason:' '{print $2}')
-          if [ "$rebootInitiatedBy" == "HAL_SYS_Reboot" ]; then
-              rebootInitiatedBy=$(cat /opt/.rebootInfo.log | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep | sed -n 's/.* Triggered from \([^ ]*\).*/\1/p')
-              otherReason=$(cat /opt/.rebootInfo.log | grep "RebootReason:" | grep -v "HAL_SYS_Reboot" | grep -v "PreviousRebootReason" | grep -v grep | awk -F 'Triggered from ' '{print $2}' | sed 's/[^ ]* *//' | sed 's/(.*//')
-          else
-              otherReason=$(cat /opt/.rebootInfo.log | grep "OtherReason:" | grep -v "PreviousOtherReason" | grep -v grep | awk -F 'OtherReason:' '{print $2}')
-          fi
-          echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" >> $LOG_FILE
-          echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
-          echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" >> $LOG_FILE
-          echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE
-          echo "$(/bin/timestamp) PreviousOtherReason: $otherReason" >> $LOG_FILE
-          rm /opt/.rebootInfo.log
-    fi
     last_reboot_file=""
     last_bootfile=$(find /opt/logs/PreviousLogs/ -name last_reboot)
     last_log_path=$(echo ${last_bootfile%/*})
