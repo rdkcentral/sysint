@@ -68,16 +68,10 @@ elif [ "$1" = "bootup" ];then
     fi
     
     # If box gets rebooted before 8mins from bootup on Non HDD devices
-    if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ];then
-        if [ -f /opt/logs/PreviousLogs/bak1_rebootInfo.log ];then
-            last_reboot_file=/opt/logs/PreviousLogs/bak1_rebootInfo.log
-        fi
-        if [ -f /opt/logs/PreviousLogs/bak2_rebootInfo.log ];then
-            last_reboot_file=/opt/logs/PreviousLogs/bak2_rebootInfo.log
-        fi
-        if [ -f /opt/logs/PreviousLogs/bak3_rebootInfo.log ];then
-            last_reboot_file=/opt/logs/PreviousLogs/bak3_rebootInfo.log
-        fi
+    if [ "$last_reboot_file" == "/opt/logs/PreviousLogs/rebootInfo.log" ]; then
+         for file in /opt/logs/PreviousLogs/bak[1-3]_rebootInfo.log; do
+             [ -f "$file" ] && last_reboot_file="$file"
+         done
     fi
     echo "Last reboot File = $last_reboot_file"
 
