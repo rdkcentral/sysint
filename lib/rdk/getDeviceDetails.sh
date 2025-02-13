@@ -36,8 +36,8 @@ deviceDetailsCache=/tmp/.deviceDetails.cache
 # to enable logging: uncomment out echo and comment out colon :
 logMsg()
 { 
-	echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
-	#:
+        #echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
+	:
 }
 
 logMsg "enter"
@@ -564,7 +564,7 @@ if [ "$command" != "" ]; then
          [ "$parameter" = "" ] && parameter="all"
         if [ -n "$parameter" ] && [ "$parameter" != "all" ]; then
             file=/tmp/."$parameter"
-            [ ! -f "$file" ] || [ "`cat $file`" == "" ]   && executeServiceRequest "$parameter"
+            [ ! -f "$file" ] || [ "$(cat $file)" == "" ]  && executeServiceRequest "$parameter"
             [ -f "$deviceDetailsCache" ] && value=$(cat $deviceDetailsCache | grep $parameter | cut -d "=" -f2)
             [ -f "$deviceDetailsCache" ] && [ "$value" == "" ] && sed -i 's/'$parameter=.*'/'$parameter="$(cat $file)"'/' $deviceDetailsCache
 
