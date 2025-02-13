@@ -128,6 +128,7 @@ getEcmMac()
 getEthernetMacAddress()
 {
     EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
+    logMsg "$EtherMac"
 }
 
 getMocaMac()
@@ -141,7 +142,8 @@ getWiFiMac()
     if [ "x$WIFI_INTERFACE" != "x" ]; then
         logMsg "DEBUG:Retrieving wifi mac : $WIFI_INTERFACE"
         WiFiMac=$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')
-	logMsg "DEBUG:$WifiMac"
+	logMsg "$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')"
+	logMsg "DEBUG:$WiFiMac"
     fi
 }
 
