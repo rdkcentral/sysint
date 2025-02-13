@@ -510,8 +510,8 @@ updateMissingParameters()
             do
                 if [ "$param" != "" ]; then
                     file=/tmp/.$param
-                    [ -s "$file" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
-                    [ ! -s "$file" ] && executeServiceRequest $param
+                    [ -f $file ] && [ "$(cat $file)" != "" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
+                     [ ! -f $file ] || [ "$(cat $file)" == "" ] && executeServiceRequest $param
                 fi
             done
         fi
@@ -570,7 +570,7 @@ if [ "$command" != "" ]; then
          [ "$parameter" = "" ] && parameter="all"
         if [ -n "$parameter" ] && [ "$parameter" != "all" ]; then
             file=/tmp/."$parameter"
-            [ ! -s "$file" ]  && executeServiceRequest "$parameter"
+            [ ! -f "$file" ] || [ "`cat $file`" == "" ]   && executeServiceRequest "$parameter"
             [ -f "$deviceDetailsCache" ] && value=$(cat $deviceDetailsCache | grep $parameter | cut -d "=" -f2)
             [ -f "$deviceDetailsCache" ] && [ "$value" == "" ] && sed -i 's/'$parameter=.*'/'$parameter="$(cat $file)"'/' $deviceDetailsCache
 
