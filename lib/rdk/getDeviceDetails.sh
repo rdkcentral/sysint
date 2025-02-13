@@ -35,8 +35,8 @@ deviceDetailsCache=/tmp/.deviceDetails.cache
 
 # to enable logging: uncomment out echo and comment out colon :
 logMsg()
-{ 
-        #echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
+{
+	#echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
 	:
 }
 
