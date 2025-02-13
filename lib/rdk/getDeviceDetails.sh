@@ -128,7 +128,6 @@ getEcmMac()
 getEthernetMacAddress()
 {
     EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
-    logMsg "$EtherMac"
 }
 
 getMocaMac()
@@ -140,10 +139,7 @@ getWiFiMac()
 {
     # Get the wifi mac only if WIFI_INTERFACE is defined
     if [ "x$WIFI_INTERFACE" != "x" ]; then
-        logMsg "DEBUG:Retrieving wifi mac : $WIFI_INTERFACE"
         WiFiMac=$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')
-	logMsg "$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')"
-	logMsg "DEBUG:$WiFiMac"
     fi
 }
 
@@ -266,9 +262,7 @@ getBluetoothMac()
 {
     bluetooth_mac="00:00:00:00:00:00"
     if [ "$BLUETOOTH_ENABLED" = "true" ]; then
-        logMsg "Retriving bluetoothMac"
         bluetooth_mac=$(getDeviceBluetoothMac)
-	logMsg "DEBUG:$bluetooth_mac"
     fi
 
     echo "$bluetooth_mac"
@@ -597,13 +591,9 @@ fi
 
 # execute all services in one request if not completed
 if [ ! -s $deviceDetailsCache ]; then
-    logMsg "DEBUG:File not available. updating"
     executeServiceRequestOutput
-    cat $deviceDetailsCache 
 fi
 executeServiceRequest "all"
-logMsg "All service Req, display contents"
-cat $deviceDetailsCache 
 
 logMsg "exit"
 
