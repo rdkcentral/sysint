@@ -23,7 +23,7 @@ After=network-online.target dnsmasq.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/bin/busybox sh -c '/lib/rdk/uploadDumps.sh  "" 1 '
+ExecStart=/lib/rdk/uploadDumps.sh  "" 1 
 KillSignal=SIGKILL
 
 [Install]

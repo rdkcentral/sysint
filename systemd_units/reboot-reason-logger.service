@@ -24,7 +24,7 @@ After=local-fs.target nvram.service previous-log-backup.service network-online.t
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '/lib/rdk/reboot-checker.sh bootup'
+ExecStart=/lib/rdk/reboot-checker.sh bootup
 
 [Install]
 WantedBy=multi-user.target
