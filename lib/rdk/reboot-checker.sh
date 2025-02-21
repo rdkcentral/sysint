@@ -82,7 +82,7 @@ elif [ "$1" = "bootup" ];then
             rebootInitiatedBy=$(awk -F 'RebootInitiatedBy:' '/RebootInitiatedBy:/ && !/PreviousRebootInitiatedBy/ {gsub(/ /, "", $2); print $2}' "$last_reboot_file")
             rebootTime=$(awk -F 'RebootTime:' '/RebootTime:/ && !/PreviousRebootTime/ {print $2}' "$last_reboot_file")
             customReason=$(awk -F 'CustomReason:' '/CustomReason:/ && !/PreviousCustomReason/ {print $2}' "$last_reboot_file")
-          if [ "$rebootInitiatedBy" == "HAL_SYS_Reboot" ]; then
+          if [ "$rebootInitiatedBy" = "HAL_SYS_Reboot" ]; then
               rebootInitiatedBy=$(awk -F 'Triggered from ' '/RebootReason:/ && !/HAL_SYS_Reboot/ && !/PreviousRebootReason/ {print $2}' "$last_reboot_file" | awk '{print $1}')
               otherReason=$(awk -F 'Triggered from ' '/RebootReason:/ && !/HAL_SYS_Reboot/ && !/PreviousRebootReason/ {sub(/^[^ ]* /, "", $2); sub(/\(.*$/, "", $2); print $2}' "$last_reboot_file")
           else
