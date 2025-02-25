@@ -209,12 +209,10 @@ getBuildType()
 
 getModelNum()
 {
-     if [ "$TURNKEY_ENABLED" == "true" ]; then
-         if [ -s /tmp/.device_model_number ]; then
+      if [ -s /tmp/.device_model_number ]; then
             MFR_MODEL=$(cat /tmp/.device_model_number)
             echo $MFR_MODEL
-         else
-            output=$(mfr_util --Modelname 2>&1)
+      elif output=$(mfr_util --Modelname 2>&1); then
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.device_model_number
                 MFR_MODEL=$output
@@ -222,19 +220,16 @@ getModelNum()
             else
                 echo "UNKNOWN"
             fi
-         fi
       else
 	 echo $MODEL_NUM
       fi
 }
 
 getManufacturer(){
-     if [ "$TURNKEY_ENABLED" == "true" ]; then
-        if [ -s /tmp/.manufacturer ]; then
+      if [ -s /tmp/.manufacturer ]; then
            MFR_NAME=$(cat /tmp/.manufacturer)
            echo $MFR_NAME
-        else
-           output=$(mfr_util --Manufacturer 2>&1)
+      elif output=$(mfr_util --Manufacturer 2>&1); then
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                echo "$output" > /tmp/.manufacturer
                MFR_NAME=$output
@@ -242,16 +237,14 @@ getManufacturer(){
 	   else
                echo "UNKNOWN"
            fi
-        fi
-     else
-        echo ""
-     fi
+      fi
 }
 
 getBrandName(){
     if [ "$DEVICE_NAME" == "PLATCO" ]; then
-        if [ "$TURNKEY_ENABLED" == "true" ]; then
-            output=$(mfr_util --Manufacturer 2>&1)
+        if [ -s /tmp/.brandname ]; then
+           Brandname=$(cat /tmp/.brandname)
+        elif output=$(mfr_util --Manufacturer 2>&1); then
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.brandname
             fi

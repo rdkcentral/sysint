@@ -483,8 +483,6 @@ createJsonString () {
     #Included additionalFwVerInfo and partnerId
     if [ "$(getModel)" = "RPI" ]; then
       JSONSTR='eStbMac='$(getEstbMacAddress)'&firmwareVersion='$(getFWVersion)'&env='$(getBuildType)'&model='$BOX_MODEL'&localtime='$(getLocalTime)'&timezone='EST05EDT''$CAPABILITIES''
-    elif [ -z "$MFR_NAME" ]; then
-      JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
     else
       JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&Manufacturer='$MFR_NAME'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
     fi
