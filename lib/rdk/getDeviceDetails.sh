@@ -209,48 +209,29 @@ getBuildType()
 
 getModelNum()
 {
-      if [ -s /tmp/.device_model_number ]; then
-            MFR_MODEL=$(cat /tmp/.device_model_number)
-            echo $MFR_MODEL
-      elif output=$(mfr_util --Modelname 2>&1); then
+      output=$(mfr_util --Modelname 2>&1); then
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.device_model_number
-                MFR_MODEL=$output
-                echo $MFR_MODEL
             else
                 echo "UNKNOWN"
             fi
-      else
-	 echo $MODEL_NUM
-      fi
 }
 
 getManufacturer(){
-      if [ -s /tmp/.manufacturer ]; then
-           MFR_NAME=$(cat /tmp/.manufacturer)
-           echo $MFR_NAME
-      elif output=$(mfr_util --Manufacturer 2>&1); then
+      output=$(mfr_util --Manufacturer 2>&1); then
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                echo "$output" > /tmp/.manufacturer
-               MFR_NAME=$output
-               echo $MFR_NAME
 	   else
                echo "UNKNOWN"
            fi
-      fi
 }
 
 getBrandName(){
     if [ "$DEVICE_NAME" == "PLATCO" ]; then
-        if [ -s /tmp/.brandname ]; then
-           Brandname=$(cat /tmp/.brandname)
-        elif output=$(mfr_util --Manufacturer 2>&1); then
+         output=$(mfr_util --Manufacturer 2>&1); then
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.brandname
             fi
-        else
-            echo "$MANUFACTURE" > /tmp/.brandname
-        fi
     fi
 }
 
@@ -461,7 +442,6 @@ executeServiceRequest()
                 ;;
       "model_number")
 		modelNum=`getModelNum`
-		echo "$modelNum" > /tmp/.model_number
                 ;;
       "manufacturer")
 		getManufacturer
