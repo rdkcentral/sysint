@@ -54,8 +54,11 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
 
         sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
         echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
-             
+
         sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
+    fi
+    if [ "$interfaceName" == "wlan0" ]; then
+        touch /tmp/wifi-on
     fi
 fi
