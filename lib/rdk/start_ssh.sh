@@ -112,7 +112,6 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
            fi
            sleep 5
      done
-     echo "FOUND= $ipAddress"
 
      #Concatenating all ip addresses
      IP_ADDRESS_PARAM=""
