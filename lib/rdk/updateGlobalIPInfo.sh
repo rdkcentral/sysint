@@ -74,3 +74,22 @@ if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
         refresh_devicedetails "boxIP"
     fi
 fi
+
+if [ "x$cmd" == "xdelete" ] && [ "x$flags" == "xglobal" ]; then
+
+    if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
+        check_valid_IPaddress
+        echo "Updating Box/ESTB IP"
+        rm /tmp/.$mode$ESTB_INTERFACE
+        refresh_devicedetails "estb_ip"
+    elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
+        echo "Updating MoCA IP"
+        rm /tmp/.$mode$MOCA_INTERFACE
+        refresh_devicedetails "moca_ip"
+    elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
+        check_valid_IPaddress
+        echo "Updating Wi-Fi IP"
+        rm /tmp/.$mode$WIFI_INTERFACE
+        refresh_devicedetails "boxIP"
+    fi
+fi
