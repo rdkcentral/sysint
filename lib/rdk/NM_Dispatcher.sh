@@ -20,7 +20,7 @@
 ####################################################################################
 
 DT_TIME=$(date +'%Y-%m-%d:%H:%M:%S:%6N')
-echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NM_dispatcher.txt
+echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NMMonitor.log
 
 interfaceName=$1
 interfaceStatus=$2
@@ -41,21 +41,21 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
 
         sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
-        echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
 
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
 
         sh /lib/rdk/networkInfoLogger.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME networkInfoLogger.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME networkInfoLogger.sh" >> /opt/logs/NMMonitor.log
 
         sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
 
         sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
              
         sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NM_dispatcher.txt
+        echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
     fi
 fi
