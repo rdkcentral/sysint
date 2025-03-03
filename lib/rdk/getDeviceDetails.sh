@@ -209,16 +209,17 @@ getBuildType()
 
 getModelNum()
 {
-      output=$(mfr_util --Modelname 2>&1); then
+            output=$(mfr_util --Modelname 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
-                echo "$output" > /tmp/.device_model_number
+                echo "$output" > /tmp/.model_number
+                echo $output
             else
                 echo "UNKNOWN"
             fi
 }
 
 getManufacturer(){
-      output=$(mfr_util --Manufacturer 2>&1); then
+           output=$(mfr_util --Manufacturer 2>&1)
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                echo "$output" > /tmp/.manufacturer
 	   else
@@ -228,7 +229,7 @@ getManufacturer(){
 
 getBrandName(){
     if [ "$DEVICE_NAME" == "PLATCO" ]; then
-         output=$(mfr_util --Manufacturer 2>&1); then
+            output=$(mfr_util --Manufacturer 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.brandname
             fi

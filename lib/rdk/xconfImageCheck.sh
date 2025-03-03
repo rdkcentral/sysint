@@ -479,7 +479,7 @@ createJsonString () {
     else
         ACTIVATE_FLAG='&activationInProgress=true'
     fi
-    MFR_NAME=`sh $RDK_PATH/getDeviceDetails.sh read model_number`
+    MFR_NAME=`sh $RDK_PATH/getDeviceDetails.sh read manufacturer`
     #Included additionalFwVerInfo and partnerId
     if [ "$(getModel)" = "RPI" ]; then
       JSONSTR='eStbMac='$(getEstbMacAddress)'&firmwareVersion='$(getFWVersion)'&env='$(getBuildType)'&model='$BOX_MODEL'&localtime='$(getLocalTime)'&timezone='EST05EDT''$CAPABILITIES''
