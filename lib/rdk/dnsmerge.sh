@@ -30,9 +30,10 @@ udhcpc_resolvfile=/tmp/resolv.dnsmasq.udhcpc
 upnp_resolvFile=/tmp/resolv.dnsmasq.upnp
 composite_resolvFile=/tmp/bck_resolv.dnsmasq
 dup_resolvFile=/tmp/backup.resolv.dnsmasq
+LOCK_FILE="/var/lock/dnsmerge.lock"
 
 #Waiting for the lock to release
-exec 200>/var/lock/dnsmerge.lock
+exec 200>"$LOCK_FILE"
 flock -n 200
 
 :>$composite_resolvFile #empty contents of resolvFile
@@ -99,8 +100,9 @@ shuffleNameservers () {
     cp "$resolvFile" "$dup_resolvFile"
 }
 
-for resolver in `ls /tmp/resolv.dnsmasq.* | grep -v $composite_resolvFile`
+for resolver in /tmp/resolv.dnsmasq.*;
 do
+    if [[ "$resolver" == "$COMPOSITE_RESOLV_FILE" ]] && continue 
     /usr/bin/timeout 5 /bin/sync -d $resolver
     if [ $resolver = $udhcpc_resolvfile ]  && [ -s $upnp_resolvFile ]; then
         continue
