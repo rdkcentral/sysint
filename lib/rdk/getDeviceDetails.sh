@@ -209,7 +209,31 @@ getBuildType()
 
 getModelNum()
 {
-   echo $MODEL_NUM
+            output=$(mfr_util --Modelname 2>&1)
+            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+                echo "$output" > /tmp/.model_number
+                echo $output
+            else
+                echo "UNKNOWN"
+            fi
+}
+
+getManufacturer(){
+           output=$(mfr_util --Manufacturer 2>&1)
+           if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+               echo "$output" > /tmp/.manufacturer
+	   else
+               echo "UNKNOWN"
+           fi
+}
+
+getBrandName(){
+    if [ "$DEVICE_NAME" == "PLATCO" ]; then
+            output=$(mfr_util --Manufacturer 2>&1)
+            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+                echo "$output" > /tmp/.brandname
+            fi
+    fi
 }
 
 getDeviceType()
@@ -301,6 +325,8 @@ executeServiceRequest()
 		executeServiceRequest "wifi_mac"
 		executeServiceRequest "eth_mac"
 		executeServiceRequest "model_number"
+		executeServiceRequest "manufacturer"
+		executeServiceRequest "brandname"
 		executeServiceRequest "device_type"
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
@@ -417,7 +443,12 @@ executeServiceRequest()
                 ;;
       "model_number")
 		modelNum=`getModelNum`
-		echo "$modelNum" > /tmp/.model_number
+                ;;
+      "manufacturer")
+		getManufacturer
+                ;;
+      "brandname")
+		getBrandName
                 ;;
       "device_type")
                 deviceType=`getDeviceType`
