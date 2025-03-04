@@ -148,6 +148,7 @@ fi
 rm -rf /opt/secure/persistent/System
 if [ ! -f /tmp/warehouse_reset_suppress_reboot_clear ]; then
     rm -rf /opt/secure/persistent/rdkservicestore
+    rm -rf /opt/secure/persistent/rdkservicestore-journal
 fi
 # authservice data cleanup
 if [ -d /opt/www/authService ]; then rm -rf /opt/www/authService/*; fi
@@ -246,6 +247,7 @@ if [ "$MODEL_NUM" = "pi" ] || [ "$DEVICE_TYPE" = "mediaclient" ];then
               result=$( curl -H "Content-Type: application/json"  -H "Authorization: Bearer $t" -X POST -d '{"jsonrpc":"2.0", "id":3, "method":"org.rdk.PersistentStore.1.setValue", "params":{"namespace":"FactoryTest", "key":"FTAClearStatus", "value":"CLEAR_COMPLETED"}}' http://127.0.0.1:9998/jsonrpc )
               echo "Warehouse_clear set value: $result"
 	      rm -rf /opt/secure/persistent/rdkservicestoreos-release
+              rm -rf /opt/secure/persistent/rdkservicestore-journal
               rm -f /tmp/warehouse_reset_suppress_reboot_clear
          fi
          echo "Warehouse Reset:Deleting receiver.conf override"
