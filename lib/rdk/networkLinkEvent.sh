@@ -39,7 +39,7 @@ if [ "$#" -eq 2 ];then
         . /etc/device.properties
         if [ "$interfaceName" == "$ETHERNET_INTERFACE" ]; then
             if systemctl is-active netsrvmgr.service > /dev/null || systemctl is-failed netsrvmgr.service > /dev/null; then
-                echo "$(/bin/timestamp) [networkLinkEvent.sh#$$]: $* - systemctl restart pni_controller.service &" >> /opt/logs/netsrvmgr.log
+                echo "$(/bin/timestamp) [networkLinkEvent.sh#$$]: $* - systemctl restart pni_controller.service &" >> /opt/logs/NMMonitor.log
                 systemctl restart pni_controller.service &
             fi
         fi
@@ -47,12 +47,15 @@ if [ "$#" -eq 2 ];then
 
     #Skip event received before ipremote boot scan
     sh /lib/rdk/enable_ipremote.sh $interfaceName $interfaceStatus
+    echo "$(/bin/timestamp) enable_ipremote.sh" >> /opt/logs/NMMonitor.log
 
     #WebInspector script
     sh /lib/rdk/enableWebInspector.sh $interfaceName $interfaceStatus
+    echo "$(/bin/timestamp) enableWebInspector.sh" >> /opt/logs/NMMonitor.log
 
     #WebAutomation script
     sh /lib/rdk/enableWebAutomation.sh $interfaceName $interfaceStatus
+    echo "$(/bin/timestamp) enableWebAutomation.sh" >> /opt/logs/NMMonitor.log
 
 else
     echo "Failed due to invalid arguments ..."
