@@ -21,8 +21,18 @@
 
 # Get all connection names associated with the device
 CONNECTIONS=$(nmcli connection show | grep wifi | cut -d ' ' -f1)
+echo "From NM_restart_Conn.sh List of connections: " >> /opt/logs/NMMonitor.log
+echo "$CONNECTIONS" >> /opt/logs/NMMonitor.log
 
 # Bring up each connection
 for CONNECTION in $CONNECTIONS; do
-    nmcli connection up "$CONNECTION"
+    is_Present=$(nmcli dev status | grep $CONNECTION)
+    echo "From NM_restart_Conn.sh Connection: $CONNECTION" >> /opt/logs/NMMonitor.log
+    echo "From NM_restart_Conn.sh is_Present: $is_Present" >> /opt/logs/NMMonitor.log
+
+    if [ -z $is_Present ]; then
+        echo "From NM_restart_Conn.sh Before Conn up" >> /opt/logs/NMMonitor.log
+        nmcli connection up "$CONNECTION"
+        echo "From NM_restart_Conn.sh After Conn up" >> /opt/logs/NMMonitor.log
+    fi
 done
