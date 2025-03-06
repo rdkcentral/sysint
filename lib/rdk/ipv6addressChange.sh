@@ -114,9 +114,9 @@ if [ $ifc == "$WIFI_INTERFACE" ] || [ $ifc == "$MOCA_INTERFACE" ] || [ $ifc == "
    if [ -d /opt/logs ] && [ $mode == "ipv6" ]; then
       ra_enabled=`sysctl -n net.ipv6.conf.$ifc.accept_ra`
       if [ "$ra_enabled" == "1" ]; then
-       echo "`/bin/timestamp` Address : $addr, is $cmd ed using SLAAC(RA) for interface $ifc" >> /opt/logs/netsrvmgr.log
+       echo "`/bin/timestamp` Address : $addr, is $cmd ed using SLAAC(RA) for interface $ifc" >> /opt/logs/NMMonitor.log
       else
-       echo "`/bin/timestamp` Address : $addr, is $cmd ed for interface $ifc" >> /opt/logs/netsrvmgr.log
+       echo "`/bin/timestamp` Address : $addr, is $cmd ed for interface $ifc" >> /opt/logs/NMMonitor.log
       fi
    fi
 
@@ -130,11 +130,11 @@ if [ $ifc == "$WIFI_INTERFACE" ] || [ $ifc == "$MOCA_INTERFACE" ] || [ $ifc == "
 
   if [ "x$flags" == "xglobal" ]; then
        if [ ! -f /tmp/Dropbear_restart_disabled ]; then
-            echo "`/bin/timestamp` Restarting Dropbear due to global ip address changes" >> /opt/logs/dropbear.log
+            echo "`/bin/timestamp` Restarting Dropbear due to global ip address changes" | tee -a /opt/logs/NMMonitor.log >> /opt/logs/dropbear.log
             systemctl reset-failed dropbear.service
             systemctl restart dropbear.service &
        else
-            echo "`/bin/timestamp` Preventing Dropbear restarts" >> /opt/logs/dropbear.log
+            echo "`/bin/timestamp` Preventing Dropbear restarts" | tee -a /opt/logs/NMMonitor.log >> /opt/logs/dropbear.log
        fi
   fi
 fi

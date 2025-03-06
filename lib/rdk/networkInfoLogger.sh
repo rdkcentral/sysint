@@ -36,15 +36,15 @@ LOG_FILE=$LOG_PATH/$LOG_INPUT
 # Input Arguments - $1 event - $2 ipaddress type - $3 interface name - $4 ipaddress - $5 ipaddress scope  
 cmd=$1
 flags=$5
-printf "`/bin/timestamp` $0: Input Parameters : $* \n" >> $LOG_FILE
+printf "`/bin/timestamp` $0: Input Parameters : $* \n" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
 if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
     # Debug Logs regarding the Network Informations
-    printf "`/bin/timestamp` $0: IP Informations\n `ifconfig` \n" >> $LOG_FILE
+    printf "`/bin/timestamp` $0: IP Informations\n `ifconfig` \n" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
     wifiMac=`grep 'wifi_mac=' /tmp/.deviceDetails.cache | sed -e "s/wifi_mac=//g"`
     t2ValNotify "Xi_wifiMAC_split" "$wifiMac"
-    printf "`/bin/timestamp` $0: Route Informations\n `route -n` \n" >> $LOG_FILE
-    printf "`/bin/timestamp` $0: DNS Servers Informations" >> $LOG_FILE
-    printf "`/bin/timestamp` $0: DNS Masq File: /etc/resolv.dnsmasq\n `cat /etc/resolv.dnsmasq`\n" >> $LOG_FILE
-    printf "`/bin/timestamp` $0: DNS Resolve: /etc/resolv.conf\n `cat /etc/resolv.conf`\n" >> $LOG_FILE
+    printf "`/bin/timestamp` $0: Route Informations\n `route -n` \n" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
+    printf "`/bin/timestamp` $0: DNS Servers Informations" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
+    printf "`/bin/timestamp` $0: DNS Masq File: /etc/resolv.dnsmasq\n `cat /etc/resolv.dnsmasq`\n" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
+    printf "`/bin/timestamp` $0: DNS Resolve: /etc/resolv.conf\n `cat /etc/resolv.conf`\n" | tee -a /opt/logs/NMMonitor.log >> $LOG_FILE
 fi
 exit 0
