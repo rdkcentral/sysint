@@ -180,7 +180,8 @@ getModel()
         model=`sh $RDK_PATH/getDeviceDetails.sh read model`
         echo $model
     else
-        echo "$MODEL_NUM"
+        model_number=`sh $RDK_PATH/getDeviceDetails.sh read model_number`
+        echo $model_number
     fi
 }
 
