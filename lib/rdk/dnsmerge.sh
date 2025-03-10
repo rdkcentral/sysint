@@ -19,10 +19,10 @@
 ##############################################################################
 
 ##################################################################################
-# Scopt :RDK Devices
-# purpose: dnsmerge.sh is to Merge all DNS entries from various entities like
+# Scope   : RDK Devices
+# purpose : dnsmerge.sh is to Merge all DNS entries from various entities like
 #              udhcpc, upnp, dibbler to a common resolv.dnsmasq file
-# Usage : Invoked by systemd service and scripts
+# Usage   : Invoked by systemd service and scripts
 ##################################################################################
 
 resolvFile=/etc/resolv.dnsmasq
