@@ -21,8 +21,16 @@
 
 # Get all connection names associated with the device
 CONNECTIONS=$(nmcli connection show | grep wifi | cut -d ' ' -f1)
+echo "From NM_restart_Conn.sh List of connections: " >> /opt/logs/NMMonitor.log
+echo "$CONNECTIONS" >> /opt/logs/NMMonitor.log
 
 # Bring up each connection
 for CONNECTION in $CONNECTIONS; do
-    nmcli connection up "$CONNECTION"
+    is_autoConnect=$(nmcli conn show $CONNECTION |  grep -i "autoconnect:" | grep 'yes')
+    echo "From NM_restart_Conn.sh Connection: $CONNECTION" >> /opt/logs/NMMonitor.log
+
+    if [ -z $is_autoConnect ]; then
+        echo "From NM_restart_Conn.sh $CONNECTION is not AutoConnect" >> /opt/logs/NMMonitor.log
+        nmcli conn up $CONNECTION
+    fi
 done
