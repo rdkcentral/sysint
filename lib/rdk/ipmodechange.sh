@@ -28,10 +28,12 @@ fi
 
 (/bin/busybox kill -STOP $$; /bin/busybox kill -CONT $$)
 echo "Input Arguments : $* "
-LOGFILE="/opt/logs/netsrvmgr.log"
+LOGFILE="/opt/logs/NMMonitor.log"
 opern="$7"
 mode="$1"
 gtwip="$4"
+
+echo "$(/bin/timestamp) ipmodechange.sh Arguments : $* " >> $LOGFILE
 
 lmode="none"
 # Mode = 2 for ipv4, mode = 10 for ipv6
@@ -43,7 +45,7 @@ if [ "x$mode" = "x10" ]; then
 fi
 if [ "$opern" = "add" ]; then
     #Check and create the route flag
-    echo "`/bin/timestamp` Adding Route Flag" >> /opt/logs/netsrvmgr.log
+    echo "`/bin/timestamp` Adding Route Flag" >> $LOGFILE
     if [ "x$lmode" = "xipv4" ];
     then
 	   touch /tmp/ipv4_route

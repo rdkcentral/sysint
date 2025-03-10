@@ -34,6 +34,8 @@ opern="$7"
 mode="$1"
 gtwip="$4"
 
+echo "$(/bin/timestamp) checkDefaultRoute.sh Arguments: $* \n" >> /opt/logs/NMMonitor.log
+
 if [ "$opern" = "add" ]; then
     #Check and create the route flag
     route -n

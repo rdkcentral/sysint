@@ -56,6 +56,8 @@ check_valid_IPaddress()
 echo "updateGlobalIPInfo.sh Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5"
 (/bin/busybox kill -STOP $$; /bin/busybox kill -CONT $$)
 
+echo "$(/bin/timestamp) updateGlobalIPInfo.sh Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5" >> /opt/logs/NMMonitor.log
+
 if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
 
     if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
