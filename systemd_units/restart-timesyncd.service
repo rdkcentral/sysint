@@ -24,5 +24,5 @@ ConditionPathExists=/tmp/route_available
 
 
 [Service]
-ExecStart=/bin/sh -c '/lib/rdk/timesyncd-conf-update.sh'
+ExecStart=/lib/rdk/timesyncd-conf-update.sh
 

@@ -18,6 +18,9 @@
 # limitations under the License.
 ##############################################################################
 
+# Purpose : To update the timesyncd configuration file
+# Scope : RDK Devices
+# Usage : Invoke by systemd service
 
 sleep_time=5
 output=""
@@ -27,18 +30,8 @@ if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
 fi
 
-# Ensure auth service is ready for URL request
-if [ -f /lib/systemd/system/authservice.service ];then
-    auth_pid=`pidof authservice`
-    while [ ! $auth_pid ]
-    do
-         sleep 5
-         auth_pid=`pidof authservice`
-    done
-    echo "Auth service ready now..!"
-    sleep 2
-fi
 # NTP URL from the property file
+get_ntp_hosts() {
 if [ -f /lib/rdk/getPartnerProperty.sh ]; then
      hostName=`/lib/rdk/getPartnerProperty.sh ntpHost`
      hostName2=`/lib/rdk/getPartnerProperty.sh ntpHost2`
@@ -46,25 +39,18 @@ if [ -f /lib/rdk/getPartnerProperty.sh ]; then
      hostName4=`/lib/rdk/getPartnerProperty.sh ntpHost4`
      hostName5=`/lib/rdk/getPartnerProperty.sh ntpHost5`
 fi
+}
 
 while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ]
 do
-
-    if [ -f /lib/rdk/getPartnerProperty.sh ]; then
-         hostName=`/lib/rdk/getPartnerProperty.sh ntpHost`
-         hostName2=`/lib/rdk/getPartnerProperty.sh ntpHost2`
-         hostName3=`/lib/rdk/getPartnerProperty.sh ntpHost3`
-         hostName4=`/lib/rdk/getPartnerProperty.sh ntpHost4`
-         hostName5=`/lib/rdk/getPartnerProperty.sh ntpHost5`
-    fi
-
+   get_ntp_hosts
    sleep 5
 done
 echo "NTP Server URL for this env is $hostName ..!"
 
 # Update the timesyncd configuration with URL
 if [ -f /etc/systemd/timesyncd.conf ];then
-      defaultHostName=`cat /etc/systemd/timesyncd.conf | grep ^NTP= | cut -d "=" -f2 | tr -s ' '`
+      defaultHostName=$(cat /etc/systemd/timesyncd.conf | grep ^NTP= | cut -d "=" -f2 | tr -s ' ')
       defaultHostName2=$defaultHostName
       if [ "$hostName" ] || [ "$hostName2" ] || [ "$hostName3" ] || [ "$hostName4" ] || [ "$hostName5" ];then
            if  [ "$hostName" == "$defaultHostName" ] || [ "$hostName2" == "$defaultHostName" ] || [ "$hostName3" == "$defaultHostName" ] || [ "$hostName4" == "$defaultHostName" ] || [ "$hostName5" == "$defaultHostName" ];then
