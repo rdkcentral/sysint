@@ -211,8 +211,7 @@ getModelNum()
 {
             output=$(mfr_util --Modelname 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
-                echo "$output" > /tmp/.model_number
-                echo $output
+                echo "$output" | tee /tmp/.model_number
             else
                 echo "UNKNOWN"
             fi
@@ -221,7 +220,7 @@ getModelNum()
 getManufacturer(){
            output=$(mfr_util --Manufacturer 2>&1)
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
-               echo "$output" > /tmp/.manufacturer
+               echo "$output" | tee /tmp/.manufacturer
 	   else
                echo "UNKNOWN"
            fi
