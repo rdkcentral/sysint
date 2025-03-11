@@ -100,9 +100,8 @@ shuffleNameservers () {
     cp "$resolvFile" "$dup_resolvFile"
 }
 
-for resolver in /tmp/resolv.dnsmasq.*;
+for resolver in `ls /tmp/resolv.dnsmasq.* | grep -v $composite_resolvFile`
 do
-    if [[ "$resolver" == "$COMPOSITE_RESOLV_FILE" ]] && continue 
     /usr/bin/timeout 5 /bin/sync -d $resolver
     if [ $resolver = $udhcpc_resolvfile ]  && [ -s $upnp_resolvFile ]; then
         continue
