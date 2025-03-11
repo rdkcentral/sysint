@@ -21,8 +21,6 @@
 Description=Set up IP tables
 Wants=network-online.target
 After=network-online.target
-After=moca.service
-Requires=moca.service
 After=securemount.service
 
 [Service]
