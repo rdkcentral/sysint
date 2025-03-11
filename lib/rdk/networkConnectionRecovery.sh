@@ -403,6 +403,9 @@ checkWifiConnected
 IsWifiConnected=$?
 
 if [ "$IsEthernetConnected" -eq 1 ] ; then
+  checkPacketLoss
+  packetLoss=$?
+  if [ "$packetLoss" -eq 1 ] ; then
     currentTime=$(($(date +%s)))
     #When packetloss is detected, print debug logs after $EthernetLoggingInterval
     if [ "$(($EthernetLogTimeStamp+$EthernetLoggingInterval))" -le "$currentTime" ] ; then
