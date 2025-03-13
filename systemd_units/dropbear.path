@@ -23,7 +23,7 @@ OnFailure=path-fail-notifier@%n.service
 
 [Path]
 PathExists=/tmp/estb_ipv6
-Unit=client-dropbear.service
+Unit=dropbear.service
 
 [Install]
 WantedBy=multi-user.target
