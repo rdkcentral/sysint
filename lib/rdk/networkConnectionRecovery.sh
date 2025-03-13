@@ -225,7 +225,7 @@ checkPacketLoss()
   gwIpv6=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
   if [ "$gwIpv6" != "" ] && [ "$gwIpv6" != "dev" ] ; then
     #get default interface name for ipv6 and pass it with ping6 command
-    gwIp6_interface=$(/sbin/ip -6 route show default | awk 'NR==1 {print $3; exit}')
+    gwIp6_interface=$(/sbin/ip -6 route show default | awk 'NR==1 {print $5; exit}')
     gwResponse=$(ping6 -I "$gwIp6_interface" -c "$pingCount" -i "$pingInterval" "$gwIpv6")
     ret=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
     packetsLostipv6=$ret
