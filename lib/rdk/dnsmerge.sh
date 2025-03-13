@@ -19,10 +19,8 @@
 ##############################################################################
 
 ##################################################################################
-# Scope   : RDK Devices
-# purpose : dnsmerge.sh is to Merge all DNS entries from various entities like
+# DESCRIPTION: dnsmerge.sh is to Merge all DNS entries from various entities like
 #              udhcpc, upnp, dibbler to a common resolv.dnsmasq file
-# Usage   : Invoked by systemd service and scripts
 ##################################################################################
 
 resolvFile=/etc/resolv.dnsmasq
@@ -30,11 +28,15 @@ udhcpc_resolvfile=/tmp/resolv.dnsmasq.udhcpc
 upnp_resolvFile=/tmp/resolv.dnsmasq.upnp
 composite_resolvFile=/tmp/bck_resolv.dnsmasq
 dup_resolvFile=/tmp/backup.resolv.dnsmasq
-LOCK_FILE="/var/lock/dnsmerge.lock"
 
 #Waiting for the lock to release
-exec 200>"$LOCK_FILE"
-flock -n 200
+while [ -f /var/lock/dnsmerge.lock ];
+do
+    sleep 1
+done;
+
+#Acquire the lock
+touch /var/lock/dnsmerge.lock
 
 :>$composite_resolvFile #empty contents of resolvFile
 
@@ -166,3 +168,4 @@ else
 fi
 
 #Release the lock before leaving
+rm -f /var/lock/dnsmerge.lock
