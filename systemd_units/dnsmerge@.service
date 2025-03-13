@@ -23,6 +23,6 @@ ConditionPathExists=/etc/resolv.dnsmasq
 
 [Service]
 Type=oneshot
-ExecStart=/lib/rdk/dnsmerge.sh
+ExecStart=/bin/busybox sh -c '/lib/rdk/dnsmerge.sh'
 
 
