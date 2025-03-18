@@ -18,6 +18,10 @@
 # limitations under the License.
 ##########################################################################
 
+DEFAULT_ROUTE_LOGFILE="/opt/logs/NMMonitor.log"
+defaultRouteLog() {
+    echo "`/bin/timestamp` :$0: $*" >> $DEFAULT_ROUTE_LOGFILE
+}
 # Message Format: family interface destinationip gatewayip preferred_src metric add/delete
 . /etc/common.properties
 FILE=/tmp/.GatewayIP_dfltroute
@@ -29,7 +33,7 @@ if [ $# -eq 0 ] || [ $# -ne 7 ];then
     exit;
 fi
 
-echo "Input Arguments : $* "
+defaultRouteLog "Input Arguments : $* "
 opern="$7"
 mode="$1"
 gtwip="$4"
@@ -38,9 +42,9 @@ if [ "$opern" = "add" ]; then
     #Check and create the route flag
     route -n
     ip -6 route
-    echo "Route is available"
+    defaultRouteLog "Route is available"
     if [ ! -f /tmp/route_available ];then
-        echo "Creating the Route Flag /tmp/route_available"
+        defaultRouteLog "Creating the Route Flag /tmp/route_available"
         touch /tmp/route_available
         if [ "x${INIT_SYSTEM}" = "xs6" ] ; then
             s6-ftrig-notify /tmp/.pathfifo path-route-available
@@ -54,16 +58,16 @@ if [ "$opern" = "add" ]; then
         elif [ "$mode" = "10" ]; then
             echo "IPV6 $gtwip" >> $FILE
         else
-            echo "Invalid Mode"
+            defaultRouteLog "Invalid Mode"
             exit;
         fi
     fi
 
 elif [ "$opern" = "delete" ]; then
     #Remove flag and IP for delete operation
-    echo "Deleting Route Flag"
+    defaultRouteLog "Deleting Route Flag"
     sed -i "/$gtwip/d" $FILE
     [ -s $FILE ] || rm -rf /tmp/route_available
 else
-    echo "Received operation:$opern is Invalid..!!"
+    defaultRouteLog "Received operation:$opern is Invalid..!!"
 fi

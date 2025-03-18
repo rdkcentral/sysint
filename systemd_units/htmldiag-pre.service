@@ -21,8 +21,6 @@
 Description=Set up static values used by html diagnostics
 Wants=network-online.target
 After=network-online.target
-After=moca.service xre-receiver.service
-Requires=moca.service
 
 [Service]
 Type=forking

@@ -18,6 +18,10 @@
 # limitations under the License.
 ##########################################################################
 
+IPMODE_LOGFILE="/opt/logs/NMMonitor.log"
+ipModeLog() {
+    echo "`/bin/timestamp` :$0: $*" >> $IPMODE_LOGFILE
+}
 # Message Format: family interface destinationip gatewayip preferred_src metric add/delete
 #Condition to check for arguments are 7 and not 0.
 if [ $# -eq 0 ] || [ $# -ne 7 ];then
@@ -27,8 +31,7 @@ if [ $# -eq 0 ] || [ $# -ne 7 ];then
 fi
 
 (/bin/busybox kill -STOP $$; /bin/busybox kill -CONT $$)
-echo "Input Arguments : $* "
-LOGFILE="/opt/logs/netsrvmgr.log"
+ipModeLog "Input Arguments : $* "
 opern="$7"
 mode="$1"
 gtwip="$4"
@@ -43,14 +46,14 @@ if [ "x$mode" = "x10" ]; then
 fi
 if [ "$opern" = "add" ]; then
     #Check and create the route flag
-    echo "`/bin/timestamp` Adding Route Flag" >> /opt/logs/netsrvmgr.log
+    ipModeLog "Adding Route Flag"
     if [ "x$lmode" = "xipv4" ];
     then
 	   touch /tmp/ipv4_route
 	   if [ ! -f /tmp/ipv6_mode ] && [ ! -f /tmp/ipv4_mode ];
 	   then
                if [ -f /tmp/ipv4_global ]; then
-		   echo "`/bin/timestamp` Publishing ipmode change to ipv4" >> $LOGFILE
+		   ipModeLog "Publishing ipmode change to ipv4"
 		   /usr/bin/IARM_event_sender IpmodeEvent 1 ipv4
 		   touch /tmp/ipv4_mode
                fi
@@ -58,21 +61,21 @@ if [ "$opern" = "add" ]; then
    elif [ "x$lmode" = "xipv6" ]; then
 	   touch /tmp/ipv6_route
            if [ -f /tmp/ipv6_global ]; then
-               echo "`/bin/timestamp` Publishing ipmode change to ipv6" >> $LOGFILE
+               ipModeLog "Publishing ipmode change to ipv6"
                /usr/bin/IARM_event_sender IpmodeEvent 1 ipv6
                touch /tmp/ipv6_mode
            fi
    fi
 elif [ "$opern" = "delete" ]; then
     #Remove flag and IP for delete operation
-    echo "`/bin/timestamp` Deleting Route Flag" >> $LOGFILE
+    ipModeLog "Deleting Route Flag"
     if [ "x$lmode" = "xipv6" ];
     then
 	   rm -f  /tmp/ipv6_route
            if [ ! -f /tmp/ipv6_global ]; then
                rm -f  /tmp/ipv6_mode
                if [ -f /tmp/ipv4_route ]; then
-		   echo "`/bin/timestamp` Publishing ipmode change to ipv4" >> $LOGFILE
+		   ipModeLog "Publishing ipmode change to ipv4"
 		   /usr/bin/IARM_event_sender IpmodeEvent 1 ipv4
 		   touch /tmp/ipv4_mode
                fi
@@ -84,5 +87,5 @@ elif [ "$opern" = "delete" ]; then
 	   rm -f  /tmp/ipv4_route
    fi
 else
-    echo "Received operation:$opern is Invalid..!!"
+    ipModeLog "Received operation:$opern is Invalid..!!"
 fi

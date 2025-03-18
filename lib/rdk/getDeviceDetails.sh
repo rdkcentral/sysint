@@ -227,12 +227,10 @@ getManufacturer(){
 }
 
 getBrandName(){
-    if [ "$DEVICE_NAME" == "PLATCO" ]; then
             output=$(mfr_util --Manufacturer 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.brandname
             fi
-    fi
 }
 
 getDeviceType()

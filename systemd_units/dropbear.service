@@ -19,8 +19,7 @@
 
 [Unit]
 Description=SSH Per-Connection Server
-After=network-online.target checkforinterface.service
-Requires=checkforinterface.service
+After=network-online.target
 
 [Service]
 Type=forking
