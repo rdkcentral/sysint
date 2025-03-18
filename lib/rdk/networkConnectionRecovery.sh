@@ -18,6 +18,10 @@
 # limitations under the License.
 ##############################################################################
 
+#Purpose : To recover from the network breakages and log the details
+#Scope   : RDK Devices
+#Usage   : Invoked by systemd service
+ 
 . /etc/device.properties
 . /etc/include.properties
 . $RDK_PATH/utils.sh
