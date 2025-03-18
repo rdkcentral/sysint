@@ -22,7 +22,7 @@ Description=Path Exists
 OnFailure=path-fail-notifier@%n.service
 
 [Path]
-PathExists=/tmp/estb_ipv6
+PathExistsGlob=/tmp/addressaquired*
 Unit=dropbear.service
 
 [Install]
