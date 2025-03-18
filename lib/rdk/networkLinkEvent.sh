@@ -19,10 +19,6 @@
 ##############################################################################
 
 
-NETWORK_EVENT_LOGFILE="/opt/logs/NMMonitor.log"
-networkEventLog() {
-    echo "`/bin/timestamp` :$0: $*" >> $NETWORK_EVENT_LOGFILE
-}
 # Network Interface - $1
 # Network Interface Status - $2 (add/delete/up/down)
 
@@ -34,8 +30,6 @@ if [ "$#" -eq 2 ];then
     interfaceName=$1
     interfaceStatus=$2
 
-    networkEventLog "Arguments : Network InterfaceName:$1, Network InterfaceStatus:$2"
-
     # process only add/delete events
     if [ "$interfaceStatus" == "up" ] || [ "$interfaceStatus" == "down" ]; then
         exit
@@ -45,7 +39,7 @@ if [ "$#" -eq 2 ];then
         . /etc/device.properties
         if [ "$interfaceName" == "$ETHERNET_INTERFACE" ]; then
             if systemctl is-active netsrvmgr.service > /dev/null || systemctl is-failed netsrvmgr.service > /dev/null; then
-                networkEventLog "[networkLinkEvent.sh#$$]: $* - systemctl restart pni_controller.service &"
+                echo "$(/bin/timestamp) [networkLinkEvent.sh#$$]: $* - systemctl restart pni_controller.service &" >> /opt/logs/netsrvmgr.log
                 systemctl restart pni_controller.service &
             fi
         fi
@@ -53,17 +47,14 @@ if [ "$#" -eq 2 ];then
 
     #Skip event received before ipremote boot scan
     sh /lib/rdk/enable_ipremote.sh $interfaceName $interfaceStatus
-    networkEventLog "enable_ipremote.sh"
 
     #WebInspector script
     sh /lib/rdk/enableWebInspector.sh $interfaceName $interfaceStatus
-    networkEventLog "enableWebInspector.sh"
 
     #WebAutomation script
     sh /lib/rdk/enableWebAutomation.sh $interfaceName $interfaceStatus
-    networkEventLog "enableWebAutomation.sh"
 
 else
-    networkEventLog "Failed due to invalid arguments ..."
-    networkEventLog "Usage : $0 InterfaceName InterfaceStatus"
+    echo "Failed due to invalid arguments ..."
+    echo "Usage : $0 InterfaceName InterfaceStatus"
 fi
