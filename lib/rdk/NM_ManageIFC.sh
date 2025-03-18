@@ -36,4 +36,4 @@ done
 UNMANAGED_DEVICES+="interface-name:p2p*"
 
 # Update NetworkManager configuration
-echo -e "[keyfile]\nunmanaged-devices=${UNMANAGED_DEVICES}" >> /etc/NetworkManager/conf.d/10-unmanaged-devices.conf
+echo -e "[keyfile]\nunmanaged-devices=${UNMANAGED_DEVICES}" >> /tmp/NM_ifcs
