@@ -18,12 +18,6 @@
 # limitations under the License.
 ##############################################################################
 
-# Purpose   : This script is responsible for retrieving the IP addresses assigned to the
-# device's network interfaces and logging them.
-# It checks for IPv6 or IPv4 addresses depending on the device configuration
-# and retries fetching the IP for a limited number of iterations in RDK Devices
-# Usage     :  This script invoked by systemd service
-
 . /etc/include.properties
 . /etc/device.properties
 
@@ -37,7 +31,7 @@ fi
 DROPBEAR_LOG_FILE=$LOG_PATH/dropbear.log
 
 dropbearLog () {
-    echo "$(/bin/timestamp) : $0: $*" >> $DROPBEAR_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" >> $DROPBEAR_LOG_FILE
 }
 
 ipAddress=""
@@ -45,9 +39,9 @@ checkForInterface()
 {
     interface=$1
     if [ -f /tmp/estb_ipv6 ]; then
-        ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
+        ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d'`
     else 
-        ipAddress=$(ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d')
+        ipAddress=`ip addr show dev $interface | grep -i global | sed -e's/^.*inet \([^ ]*\)\/.*$/\1/;t;d'`
     fi
 }
 
@@ -68,7 +62,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
             checkForInterface "$WIFI_INTERFACE"
             if [ "$ipAddress" ]; then
                 ipAddress+=" "
-                ipAddress+=$(ifconfig "$WIFI_INTERFACE" | awk '/inet /{print $2}' | sed 's/addr://')
+                ipAddress+=`ifconfig $WIFI_INTERFACE |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
                 dropbearLog "WiFi IP address available"
                 loop=0
             fi
@@ -80,14 +74,14 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
 
             if [ "$ipAddress" ]; then
                 ipAddress+=" "
-                ipAddress+=$(ifconfig "$Interface" | awk '/inet /{print $2}' | sed 's/addr://')
+                ipAddress+=`ifconfig $Interface |grep inet | grep -v inet6 | grep -v localhost | grep -v 127.0.0.1 |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
                 dropbearLog "Eth IP address available"
                 loop=0
             fi
         fi
         if [ "$isMOCASSHEnable" = "true" ];then
             ipAddress+=" "
-            ipAddress+=$(ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g')
+            ipAddress+=`ifconfig $MOCA_INTERFACE |grep 169.254.* |tr -s ' '| cut -d ' ' -f3 | sed -e 's/addr://g'`
             dropbearLog "IP address available from MOCA interface"
         fi
       sleep 5
