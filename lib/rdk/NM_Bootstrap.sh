@@ -51,8 +51,8 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
                 nmcli conn reload
             fi
          fi
-         rm /nvram/secure/wifi/wpa_supplicant.conf
-         rm /opt/secure/wifi/wpa_supplicant.conf
-         rm /var/lib/secure/wifi/wpa_supplicant.conf
   fi
 fi
+rm -f /nvram/secure/wifi/wpa_supplicant.conf
+rm -f /opt/secure/wifi/wpa_supplicant.conf
+rm -f /var/lib/secure/wifi/wpa_supplicant.conf
