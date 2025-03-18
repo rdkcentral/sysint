@@ -19,10 +19,6 @@
 ##########################################################################
 ## invocation format
 ## add ipv4 interfacename address global
-IPV6_CHANGE_LOGFILE="/opt/logs/NMMonitor.log"
-ipv6ChangeLog() {
-    echo "`/bin/timestamp` :$0: $*" >> $IPV6_CHANGE_LOGFILE
-}
 . /etc/device.properties
 
 cmd=$1
@@ -34,7 +30,7 @@ flags=$5
 IPTABLE_CMD="/usr/sbin/iptables -w "
 
 if [ $ifc == "dobby0" ]; then
-     ipv6ChangeLog "Exit the script due to interface $ifc"
+     echo "Exit the script due to interface $ifc"
      exit
 fi
 
@@ -56,11 +52,11 @@ if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
    fi
 
    if [[ ($addr != fd* && $addr != fc*) || ($addr != 169.254* && $addr != 192.168.18.10 && $addr != 192.0.2.10 && $addr != 192.0.2.11) ]]; then
-        ipv6ChangeLog "Creating $mode flags for $ifc"
+        echo "Creating $mode flags for $ifc"
         touch "/tmp/estb_$mode"
         touch "/tmp/addressaquired_$mode"
    else
-	ipv6ChangeLog "It is a ULA address, no need to create IPv6 flags or ignoring zero config or default IP ($addr) assigned for $ifc"
+	echo "It is a ULA address, no need to create IPv6 flags or ignoring zero config or default IP ($addr) assigned for $ifc"
    fi
 fi
 
@@ -81,16 +77,16 @@ if [ "x$cmd" == "xdelete" ] && [ "x$flags" == "xglobal" ]; then
         # cleaning up all the spaces
         gIp=`echo $globalip | xargs`
         if [ "x$gIp" = "x" ]; then
-            ipv6ChangeLog "Creating $mode flags for $ifc"
+            echo "Creating $mode flags for $ifc"
             rm -f "/tmp/estb_$mode"
             rm -f "/tmp/addressaquired_$mode"
         fi
     else
-	ipv6ChangeLog "It is a ULA address, no need to create IPv6 flags or ignoring zero config or default IP ($addr) assigned for $ifc"
+	echo "It is a ULA address, no need to create IPv6 flags or ignoring zero config or default IP ($addr) assigned for $ifc"
     fi
 fi
 
-ipv6ChangeLog "Received address Notification, cmd = $cmd, mode = $mode,  ifc= $ifc, addr = $addr, flags = $flags"
+echo "Received address Notification, cmd = $cmd, mode = $mode,  $IFC= $ifc, addr = $addr, flags = $flags"
 
 uptime=`cat /proc/uptime | awk '{print $1}'`
 
@@ -98,7 +94,7 @@ if [ $ifc == "$WIFI_INTERFACE" ] || [ $ifc == "$MOCA_INTERFACE" ] || [ $ifc == "
 
    if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
      # Check for ESTB_INTERFACE from device.properties is matching with IP acquired interface.
-     ipv6ChangeLog "Received global $mode address for $ifc interface, uptime is $uptime milliseconds"
+     echo "Received global $mode address for $ifc interface, uptime is $uptime milliseconds"
      touch "/tmp/${mode}_${flags}"
 
      $IPTABLE_CMD -I INPUT -s $addr -p tcp --dport 22 -j ACCEPT
@@ -118,9 +114,9 @@ if [ $ifc == "$WIFI_INTERFACE" ] || [ $ifc == "$MOCA_INTERFACE" ] || [ $ifc == "
    if [ -d /opt/logs ] && [ $mode == "ipv6" ]; then
       ra_enabled=`sysctl -n net.ipv6.conf.$ifc.accept_ra`
       if [ "$ra_enabled" == "1" ]; then
-       ipv6ChangeLog "Address : $addr, is $cmd ed using SLAAC(RA) for interface $ifc"
+       echo "`/bin/timestamp` Address : $addr, is $cmd ed using SLAAC(RA) for interface $ifc" >> /opt/logs/netsrvmgr.log
       else
-       ipv6ChangeLog "Address : $addr, is $cmd ed for interface $ifc"
+       echo "`/bin/timestamp` Address : $addr, is $cmd ed for interface $ifc" >> /opt/logs/netsrvmgr.log
       fi
    fi
 

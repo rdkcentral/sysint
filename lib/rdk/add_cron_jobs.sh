@@ -36,6 +36,13 @@ if [ "x$BIND_ENABLED" = "xtrue" ];then
         fi
    fi
 fi
+# Regr the log rotate to crontab
+if [ -f $RDK_PATH/log_rotate_daemon.sh ]; then
+     output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "log_rotate_daemon.sh"`
+     if [ "$output" == "0" ]; then
+           sh /lib/rdk/cronjobs_update.sh "add" "log_rotate_daemon.sh" "* * * * * nice -n 19 sh $RDK_PATH/log_rotate_daemon.sh"
+     fi
+fi
 
 if [ "$UI_MONITOR_ENABLE" = "true" ]; then
      # Regr the UI Mngr rotate to crontab
