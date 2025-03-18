@@ -1,6 +1,6 @@
 [Unit]
 Description=DOCSIS IP Connectivity
-After=moca.service
+After=wifi.service tr69hostif.service 
 
 [Service]
 Type=forking
