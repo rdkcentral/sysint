@@ -297,10 +297,6 @@ wifiReset()
   echo "$(/bin/timestamp) Start WiFi Reset. !!!!!!!!!!!!!!"  >> "$logsFile"
   
   systemctl restart wifi.service
-  if [ -f /lib/systemd/system/moca.service ];then
-    systemctl restart moca.service
-  fi
-  systemctl restart netsrvmgr.service
   echo "$(/bin/timestamp) WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"  >> "$logsFile"
   exit 0
 }
