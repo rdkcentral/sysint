@@ -39,24 +39,27 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
+        # Check if the connection is up
+        connection_state=$(nmcli -t -f STATE device status | grep "$interface" | cut -d: -f2)
+        if [ "$connection_state" == "connected" ]; then
+            sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
+            echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
 
-        sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
-        echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
-
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
+            sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
+            echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
         
-        sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
+            sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
+            echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
 
-        sh /lib/rdk/networkInfoLogger.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME networkInfoLogger.sh" >> /opt/logs/NMMonitor.log
+            sh /lib/rdk/networkInfoLogger.sh "add" $mode $interfaceName $ipaddr "global"
+            echo "$DT_TIME networkInfoLogger.sh" >> /opt/logs/NMMonitor.log
 
-        sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
+            sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
+            echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
 
-        sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
+            sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
+            echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
+        fi
     fi
     if [ "$interfaceName" == "wlan0" ]; then
         touch /tmp/wifi-on
