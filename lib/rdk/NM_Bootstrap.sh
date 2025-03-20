@@ -19,7 +19,7 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/nvram/secure/wifi/wpa_supplicant.conf"
+WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 
 if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
@@ -52,4 +52,5 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
             fi
          fi
   fi
+  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
