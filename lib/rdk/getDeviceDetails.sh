@@ -209,12 +209,7 @@ getBuildType()
 
 getModelNum()
 {
-            output=$(mfr_util --Modelname 2>&1)
-            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
-                echo "$output" | tee /tmp/.model_number
-            else
-                echo "UNKNOWN"
-            fi
+   echo $MODEL_NUM
 }
 
 getManufacturer(){
@@ -440,6 +435,7 @@ executeServiceRequest()
                 ;;
       "model_number")
 		modelNum=`getModelNum`
+		echo "$modelNum" > /tmp/.model_number
                 ;;
       "manufacturer")
 		getManufacturer

@@ -35,7 +35,6 @@ if [ "$MMC_OOPS_ENABLE" = "true" ];then
 
         if [ "$DEVICE_CLASS" = "EMMC" ]; then
 		modprobe oops_mmc partition_start_block=$OOPS_MMC_START partition_size=$OOPS_MMC_SIZE mmc_blksz=$block_size
-		exit 0
 	else
 	        mtInfo=`mount_emmc_loop EMMC0.NON_VOL.NON_CRIT nomount =100K`
 		address=`echo $mtInfo | cut -d " " -f2`
@@ -45,9 +44,8 @@ if [ "$MMC_OOPS_ENABLE" = "true" ];then
 		echo $size
 
 		modprobe oops_mmc partition_start_block=$address partition_size=$size mmc_blksz=$block_size
-		exit 0
 	fi
-
+        exit 0
 else
 
      
@@ -69,11 +67,7 @@ else
 		fi
 	fi 
 
-	if [ ! -f /etc/os-release ]; then
-		modprobe oops_ubi ubi_dev_num=$ubi_dev_num ubi_vol=$vol ubi_vol_size=102400
-		exit 0
-	else
-		modprobe oops_ubi ubi_dev_num=$ubi_dev_num ubi_vol=$vol ubi_vol_size=102400
-		exit 0
-	fi
+	modprobe oops_ubi ubi_dev_num=$ubi_dev_num ubi_vol=$vol ubi_vol_size=102400
+	exit 0
+
 fi

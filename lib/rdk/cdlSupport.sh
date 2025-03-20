@@ -22,7 +22,6 @@
 . /etc/device.properties
 
 
-MODEL_NUM=`sh $RDK_PATH/getDeviceDetails.sh read model_number`
 
 LOG_FILE="/opt/logs/swupdate.log"
 #Use log framework to print timestamp and source script name
