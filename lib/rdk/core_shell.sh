@@ -238,12 +238,6 @@ if [ "$DEVICE_TYPE" = "hybrid" ]; then
           dumpFile
           exit 0
      fi
-     if [ "$1" = "dibbler-client" ]; then
-          echo 0 > /tmp/.uploadDibblerCores
-          echo $corename >> /tmp/.dibbler_crashed
-          dumpFile
-          exit 0
-     fi
 # Regular build specific
 elif [ "$DEVICE_TYPE" != "mediaclient" ]; then
      if [ "$1" = "mpeos-main" ]; then
@@ -261,7 +255,7 @@ else
      elif [ "$1" = "tr69agent" ] || [ "$1" =  "tr69hostif" ] || [ "$1" = "runTR69HostIf" ] ||
                 [ "$1" = "tr69BusMain" ] || [ "$1" = "dimclient" ]; then
           dumpFile
-     elif [ "$1" = "netsrvmgr" ] || [ "$1" = "udhcpc" ] || [ "$1" = "nxserver" ]; then
+     elif [ "$1" = "nxserver" ]; then
          dumpFile
      elif [ "$1" = "fogcli" ] || [ "$1" = "BaseDlFragDl" ]; then
          dumpFile

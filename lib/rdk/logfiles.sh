@@ -192,8 +192,6 @@ dropbearLog="dropbear.log"
 dropbearLogsBackup="dropbear.log.*"
 xdialLog="xdial.log"
 xdialLogsBackup="xdial.log.*"
-dibblerclientLog="dibbler-client.log"
-dibblerclientLogsBackup="dibbler-client.log.*"
 ecfsLog="ecfs.txt"
 ecfsLogsBackup="ecfs.txt.*"
 iptablesLog="iptables.log"
@@ -282,8 +280,6 @@ if [ "$DEVICE_TYPE" != "mediaclient" ]; then
      snmpdLogsBackup="snmpd.log.*"
      upstreamStatsLog="upstream_stats.log"
      upstreamStatsLogsBackup="upstream_stats.log.*"
-     dibblerLog="dibbler.log"
-     dibblerLogsBackup="dibbler.log.*"
      parodusLog="parodus.log"
      parodusLogsBackup="parodus.log.*"
      cpuprocanalyzerLog="cpuprocanalyzer.log"
@@ -448,7 +444,6 @@ backupAppBackupLogFiles()
          moveFiles $opern $source $pumaLogsBackup $destn
          moveFiles $opern $source $snmpdLogsBackup $destn
          moveFiles $opern $source $upstreamStatsLogsBackup $destn
-         moveFiles $opern $source $dibblerLogsBackup $destn
          moveFiles $opern $source $cpuprocanalyzerLogsBackup $destn
          moveFiles $opern $source $namedLogsBackup $destn
          moveFiles $opern $source $dnsqueryLogsBackup $destn
@@ -537,7 +532,6 @@ backupAppBackupLogFiles()
      	moveFiles $opern $source $dropbearLogsBackup $destn
         moveFiles $opern $source $appmanagerLogsBackup $destn
         moveFiles $opern $source $xdialLogsBackup $destn
-        moveFiles $opern $source $dibblerclientLogsBackup $destn
         moveFiles $opern $source $ecfsLogsBackup $destn
         moveFiles $opern $source $iptablesLogsBackup $destn
         moveFiles $opern $source $perfmonstatusLogsBackup $destn
@@ -660,7 +654,6 @@ backupSystemLogFiles()
      if [ -f $source/$servicenumberLog ] ; then $operation $source/$servicenumberLog $destn; fi
      if [ -f $source/$appmanagerLog ] ; then $operation $source/$appmanagerLog $destn; fi
      if [ -f $source/$xdialLog ] ; then $operation $source/$xdialLog $destn; fi
-     if [ -f $source/$dibblerclientLog ] ; then $operation $source/$dibblerclientLog $destn; fi
      if [ -f $source/$ecfsLog ] ; then $operation $source/$ecfsLog $destn; fi
      if [ -f $source/$iptablesLog ] ; then $operation $source/$iptablesLog $destn; fi
      if [ -f $source/$perfmonstatusLog ] ; then $operation $source/$perfmonstatusLog $destn; fi
@@ -749,7 +742,6 @@ backupSystemLogFiles()
           fi
           if [ -f $source/$snmpdLog ] ; then $operation $source/$snmpdLog $destn; fi
           if [ -f $source/$upstreamStatsLog ] ; then $operation $source/$upstreamStatsLog $destn; fi
-          if [ -f $source/$dibblerLog ] ; then $operation $source/$dibblerLog $destn; fi
      else
 	  if [ -f $source/$wifiTelemetryLog ] ; then $operation $source/$wifiTelemetryLog $destn; fi
 	  if [ -f $source/$tr69Log ] ; then $operation $source/$tr69Log $destn; fi
