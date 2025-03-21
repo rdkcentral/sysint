@@ -39,10 +39,12 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-
         sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
         echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
 
+        sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
+        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
+        
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
         echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
 
@@ -51,9 +53,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
 
         sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
-
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
 
         sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
