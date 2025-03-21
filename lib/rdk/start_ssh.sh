@@ -64,10 +64,14 @@ ipAddress=""
 checkForInterface()
 {
    interface=$1
-   if [ -f /tmp/estb_ipv6 ]; then
+   if [ -f /tmp/.ipv6$interface ]; then
+       echo "Reading IPv6 address for $interface"
        ipv6address=`cat /tmp/.ipv6$interface`
    fi
-   ipv4address=`cat /tmp/.ipv4$interface`
+   if [ -f /tmp/.ipv4$interface ]; then
+       echo "Reading IPv4 address for $interface"
+       ipv4address=`cat /tmp/.ipv4$interface`
+   fi
 }
 
 #RFC check for MOCA SSH enable/not.
