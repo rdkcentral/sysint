@@ -39,7 +39,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-        # Check if the connection is up
         sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
         echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
 
