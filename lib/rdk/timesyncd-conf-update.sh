@@ -47,18 +47,6 @@ if [ -f /lib/rdk/getPartnerProperty.sh ]; then
 fi
 }
 
-# Ensure auth service is ready for URL request
-if [ -f /lib/systemd/system/authservice.service ];then
-    auth_pid=`pidof authservice`
-    while [ ! $auth_pid ]
-    do
-         sleep 5
-         auth_pid=`pidof authservice`
-    done
-    ntpLog "Auth service ready now..!"
-    sleep 2
-fi
-
 ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
 while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ]
 do
