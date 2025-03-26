@@ -50,8 +50,22 @@ else
       MINDUMP_DIR=$MINIDUMPS_PATH
 fi
 
+WHITELIST=("HTTPREQUEST_MAN")
+
+is_whitelisted() {
+    for allowed_process in "${WHITELIST[@]}"; do
+        if [[ "$1" == "$allowed_process" ]]; then
+            return 0  # Process is whitelisted
+        fi
+    done
+    return 1  # Process is not whitelisted
+}
+
 upload() {
     TS=`date +%Y-%m-%d-%H-%M-%S`
+    if is_whitelisted "$process"; then
+        echo $(/bin/timestamp) "Starting upload process for $process to stack trace portal from core_shell.sh" >> $LOG_PATH/core_log.txt
+
     # core+mini dumps to Crash Portal
     # Coredump Upload call
     if [ ! -f /etc/os-release ];then
@@ -339,8 +353,16 @@ fi
             exit 0
         fi
     done
+
+if is_whitelisted "$process"; then
+    echo $(/bin/timestamp) "$process is whitelisted for core dump processing." >> $LOG_PATH/core_log.txt
+    dumpInfo $process $signal $timestamp
+else
+    echo $(/bin/timestamp) "$process is not whitelisted. Skipping core dump processing." >> $LOG_PATH/core_log.txt
+    exit 0
+fi
     
-echo $(/bin/timestamp) "$1 process is not listed to upload, we are not processing the core file" >> $LOG_PATH/core_log.txt
+
 
 exit 0
 
