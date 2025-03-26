@@ -146,6 +146,8 @@ dumpInfo()
    notifyCrashedMarker "$1"
    echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/core_log.txt
 }
 
 dumpCoreInfo()
@@ -196,7 +198,9 @@ fi
 process=$1
 signal=$2
 timestamp=$3
-dumpInfo $process $signal $timestamp
+pid=$4
+tid=$5
+dumpInfo $process $signal $timestamp $pid $tid
 corename="$3_core.prog_$1.signal_$2.gz"
 # we have to have processing_corename that is not touched by uploadDumps.sh
 processing_corename="$3_core_prog_$1.signal_$2.gz.tmp"
