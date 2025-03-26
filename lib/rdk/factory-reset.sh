@@ -41,13 +41,10 @@ if [ -f /etc/os-release ];then
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop socprovisioning.service
     /bin/systemctl stop rf4ce.service
-    /bin/systemctl stop moca.service
     /bin/systemctl stop lighttpd.service
     /bin/systemctl stop dump-backup.service
     /bin/systemctl stop dnsmasq.service
     /bin/systemctl stop authservice.service
-    /bin/systemctl stop dibbler.path
-    /bin/systemctl stop udhcp.path
     /bin/systemctl stop dcm-log.service
     /bin/systemctl stop syslog.socket
     /bin/systemctl stop wpeframework.service

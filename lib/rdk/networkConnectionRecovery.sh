@@ -18,6 +18,10 @@
 # limitations under the License.
 ##############################################################################
 
+#Purpose : To recover from the network breakages and log the details
+#Scope   : RDK Devices
+#Usage   : Invoked by systemd service
+ 
 . /etc/device.properties
 . /etc/include.properties
 . $RDK_PATH/utils.sh
@@ -196,7 +200,7 @@ checkPacketLoss()
 {
   currentTime=$(($(date +%s)))
   #Check IPV4
-  gwIpv4=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
+  gwIpv4=$(/sbin/ip -4 route show default | awk 'NR==1 {print $3; exit}')
   if [ "$gwIpv4" != "" ] ; then
     gwResponse=$(ping -c "$pingCount" -i "$pingInterval"  "$gwIpv4")
     ret=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
@@ -225,7 +229,7 @@ checkPacketLoss()
   gwIpv6=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
   if [ "$gwIpv6" != "" ] && [ "$gwIpv6" != "dev" ] ; then
     #get default interface name for ipv6 and pass it with ping6 command
-    gwIp6_interface=$(/sbin/ip -6 route | awk '/default/ { print $5 }' | head -n1 | awk '{print $1;}')
+    gwIp6_interface=$(/sbin/ip -6 route show default | awk 'NR==1 {print $5; exit}')
     gwResponse=$(ping6 -I "$gwIp6_interface" -c "$pingCount" -i "$pingInterval" "$gwIpv6")
     ret=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
     packetsLostipv6=$ret
@@ -293,10 +297,6 @@ wifiReset()
   echo "$(/bin/timestamp) Start WiFi Reset. !!!!!!!!!!!!!!"  >> "$logsFile"
   
   systemctl restart wifi.service
-  if [ -f /lib/systemd/system/moca.service ];then
-    systemctl restart moca.service
-  fi
-  systemctl restart netsrvmgr.service
   echo "$(/bin/timestamp) WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"  >> "$logsFile"
   exit 0
 }
@@ -307,8 +307,8 @@ checkDnsFile()
     if [ $(tr -d ' \r\n\t' < $dnsFile | wc -c ) -eq 0 ] ; then
       echo "$(/bin/timestamp) DNS File($dnsFile) is empty" >> "$logsFile"
       t2CountNotify "SYST_ERR_DNSFileEmpty" 
-      gwIpv4=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
-      gwIpv6=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
+      gwIpv4=$(/sbin/ip -4 route show default | awk 'NR==1 {print $3; exit}')
+      gwIpv6=$(/sbin/ip -6 route show default | awk 'NR==1 {print $3; exit}')
       routeIpv4=$(/sbin/ip -4 route)
       routeIpv6=$(/sbin/ip -6 route)      
       if [ "$gwIpv4" != "" ] || [ "$gwIpv6" != "" ] ; then

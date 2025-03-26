@@ -19,6 +19,10 @@
 ##############################################################################
 
 
+GLOBALIP_INFO_LOGFILE="/opt/logs/NMMonitor.log"
+globalIpInfoLog() {
+    echo "`/bin/timestamp` :$0: $*" >> $GLOBALIP_INFO_LOGFILE
+}
 . /etc/device.properties
 
 cmd=$1
@@ -33,7 +37,7 @@ refresh_devicedetails()
     if [ -f /lib/rdk/getDeviceDetails.sh ]; then
         sh /lib/rdk/getDeviceDetails.sh refresh $1
     else
-        echo "DeviceDetails file not present"
+        globalIpInfoLog "DeviceDetails file not present"
     fi
 }
 
@@ -53,24 +57,43 @@ check_valid_IPaddress()
 }
 
 
-echo "updateGlobalIPInfo.sh Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5"
+globalIpInfoLog "Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5"
 (/bin/busybox kill -STOP $$; /bin/busybox kill -CONT $$)
 
 if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
 
     if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
         check_valid_IPaddress
-        echo "Updating Box/ESTB IP"
+        globalIpInfoLog "Updating Box/ESTB IP"
         echo "$addr" > /tmp/.$mode$ESTB_INTERFACE
         refresh_devicedetails "estb_ip"
     elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
-        echo "Updating MoCA IP"
+        globalIpInfoLog "Updating MoCA IP"
         echo "$addr" > /tmp/.$mode$MOCA_INTERFACE
         refresh_devicedetails "moca_ip"
     elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
         check_valid_IPaddress
-        echo "Updating Wi-Fi IP"
+        globalIpInfoLog "Updating Wi-Fi IP"
         echo "$addr" > /tmp/.$mode$WIFI_INTERFACE
+        refresh_devicedetails "boxIP"
+    fi
+fi
+
+if [ "x$cmd" == "xdelete" ] && [ "x$flags" == "xglobal" ]; then
+
+    if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
+        check_valid_IPaddress
+        globalIpInfoLog "Updating Box/ESTB IP"
+        rm /tmp/.$mode$ESTB_INTERFACE
+        refresh_devicedetails "estb_ip"
+    elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
+        globalIpInfoLog "Updating MoCA IP"
+        rm /tmp/.$mode$MOCA_INTERFACE
+        refresh_devicedetails "moca_ip"
+    elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
+        check_valid_IPaddress
+        globalIpInfoLog "Updating Wi-Fi IP"
+        rm /tmp/.$mode$WIFI_INTERFACE
         refresh_devicedetails "boxIP"
     fi
 fi

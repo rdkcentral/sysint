@@ -16,10 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
 [Unit]
-Description=WiFi Telemetry Data Monitoring Service
-After=local-fs.target network-online.target netsrvmgr.service
+Description=Network Manager
+Wants=NetworkManager.service
+After=NetworkManager.service
 
 [Service]
-ExecStart=/bin/sh -c /lib/rdk/wifi-telemetry-cronjob.sh
+Type=exec
+ExecStart= /bin/sh -c '/lib/rdk/NM_Bootstrap.sh'
+
+[Install]
+WantedBy=multi-user.target
