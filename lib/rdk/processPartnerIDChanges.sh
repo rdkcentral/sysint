@@ -18,7 +18,6 @@
 # limitations under the License.
 ##############################################################################
 
-
 . /etc/include.properties
 . /etc/device.properties
 
