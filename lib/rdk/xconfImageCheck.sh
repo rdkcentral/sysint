@@ -479,12 +479,12 @@ createJsonString () {
     else
         ACTIVATE_FLAG='&activationInProgress=true'
     fi
-
+    MFR_NAME=`sh $RDK_PATH/getDeviceDetails.sh read manufacturer`
     #Included additionalFwVerInfo and partnerId
     if [ "$(getModel)" = "RPI" ]; then
       JSONSTR='eStbMac='$(getEstbMacAddress)'&firmwareVersion='$(getFWVersion)'&env='$(getBuildType)'&model='$BOX_MODEL'&localtime='$(getLocalTime)'&timezone='EST05EDT''$CAPABILITIES''
     else
-      JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
+      JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&Manufacturer='$MFR_NAME'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
     fi
 }
 
