@@ -146,6 +146,8 @@ dumpInfo()
    notifyCrashedMarker "$1"
    echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/core_log.txt
 }
 
 dumpCoreInfo()
@@ -196,7 +198,9 @@ fi
 process=$1
 signal=$2
 timestamp=$3
-dumpInfo $process $signal $timestamp
+pid=$4
+tid=$5
+dumpInfo $process $signal $timestamp $pid $tid
 corename="$3_core.prog_$1.signal_$2.gz"
 # we have to have processing_corename that is not touched by uploadDumps.sh
 processing_corename="$3_core_prog_$1.signal_$2.gz.tmp"
@@ -315,7 +319,7 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "qamsrc_bin-queu" ] || [ "$1" = "authservice" ] || [ "$1" = "named" ] ||
     [ "$1" = "slave_callback" ]  || [ "$1" = "telemetry2_0" ] || [ "$1" = "WorkerPool::Thr" ] ||
     [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || 
-    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ]; then
+    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ] || [ "$1" = "HTTPREQUEST_MAN" ]; then
         dumpFile
         exit 0
 fi
