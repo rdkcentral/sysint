@@ -319,7 +319,7 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "qamsrc_bin-queu" ] || [ "$1" = "authservice" ] || [ "$1" = "named" ] ||
     [ "$1" = "slave_callback" ]  || [ "$1" = "telemetry2_0" ] || [ "$1" = "WorkerPool::Thr" ] ||
     [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || 
-    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ] || [ "$1" = "HTTPREQUEST_MAN" ]; then
+    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ] || [ "$1" = "HTTPREQUEST_MAN" ] || [ "$1" = "sysMgrMain" ]; then
         dumpFile
         exit 0
 fi
