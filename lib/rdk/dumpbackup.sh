@@ -26,10 +26,10 @@ if [ ! -d $CORE_PATH ]; then
     echo "Creating $CORE_PATH folder" 
     mkdir -p $CORE_PATH 
 fi
-echo "Found $CORE_PATH directory to process minidumps"
+echo "Found $CORE_PATH directory to process coredumps"
 
 if [ ! -d $MINIDUMPS_PATH ]; then 
-    echo "Creating $CORE_PATH folder" 
+    echo "Creating $MINIDUMPS_PATH folder" 
     mkdir -p $MINIDUMPS_PATH 
 fi
-echo "Found $CORE_PATH directory to process coredumps" 
+echo "Found $MINIDUMPS_PATH directory to process minidumps" 
