@@ -18,47 +18,18 @@
 # limitations under the License.
 ##############################################################################
 
-. /etc/include.properties
-. /etc/config.properties
-. /etc/device.properties
 if [ -f /lib/rdk/getSecureDumpStatus.sh ]; then
      . /lib/rdk/getSecureDumpStatus.sh
 fi
 
-start_function() {
-    ulimit -c 1024000000
-    if [ ! -d $CORE_PATH ]; then mkdir -p $CORE_PATH; fi
-    if [ ! -d $MINIDUMPS_PATH ]; then mkdir -p $MINIDUMPS_PATH; fi
+if [ ! -d $CORE_PATH ]; then 
+    echo "Creating $CORE_PATH folder" 
+    mkdir -p $CORE_PATH 
+fi
+echo "Found $CORE_PATH directory to process minidumps"
 
-    if [ -f $RDK_PATH/core_shell.sh ]; then
-	echo "|$RDK_PATH/core_shell.sh %e %s %t %p %i" >/proc/sys/kernel/core_pattern
-    fi
-
-    TS=`date +%Y-%m-%d-%H-%M-%S`
-    # Randomize upload delay for PROD
-    if [ "$BUILD_TYPE" = "prod" ]; then
-        delay=$((400 + $RANDOM % 600))
-    else
-        delay=400
-    fi
-}
-
-stop_function() {
-    sh /lib/rdk/processPID.sh /lib/rdk/uploadDumps.sh | xargs kill -9
-}
-
-case "$1" in
-  start)
-    start_function
-    ;;
-  stop)
-    stop_function
-    ;;
-  restart)
-    $0 stop && $0 start
-    ;;
-  *)
-    echo "Usage: $0 {start|stop|restart}"
-    exit 1
-  ;;
-esac
+if [ ! -d $MINIDUMPS_PATH ]; then 
+    echo "Creating $CORE_PATH folder" 
+    mkdir -p $MINIDUMPS_PATH 
+fi
+echo "Found $CORE_PATH directory to process coredumps" 
