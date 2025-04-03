@@ -139,7 +139,7 @@ checkXpkiMtlsBasedLogUpload()
 }
 
 case "$1" in
-    RFC)
+    "RFC")
         # RFC Task
         if [ -f "$RFC_BIN" ]; then
             rfcLog "Starting rfcMgr Binary"
@@ -159,7 +159,7 @@ case "$1" in
         fi
         rfcLog "RFC Task execution done"
         ;;
-    SWUPDATE)
+    "SWUPDATE")
         # Handle SWUPDATE task
         if [ -f "$SWUPDATE_BIN" ]; then
             swupdateLog "Starting software update"
@@ -171,7 +171,7 @@ case "$1" in
         fi
         swupdateLog "swupdate script execution done"
         ;;
-    LOGUPLOAD)
+    "LOGUPLOAD")
         # Handle LOGUPLOAD task
         if [ -f "$LOGUPLOAD_SCRIPT" ]; then
             logUploadLog "Starting log upload"
