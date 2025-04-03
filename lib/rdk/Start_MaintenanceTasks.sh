@@ -49,6 +49,12 @@ eventSender() {
 export PATH=$PATH:/usr/bin:/bin:/usr/local/bin:/sbin:/usr/local/lighttpd/sbin:/usr/local/sbin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Qt/lib:/usr/local/lib
 
+if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
+      . /opt/dcm.properties
+else
+      . /etc/dcm.properties
+fi
+
 # Maintenance Events
 # RFC Events
 MAINT_RFC_COMPLETE=2
@@ -110,12 +116,6 @@ swupdateLog()
     echo "`/bin/timestamp` : $0: $*" >> $FWDL_LOG_FILE
 }
 
-if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-      . /opt/dcm.properties
-else
-      . /etc/dcm.properties
-fi
-
 ON_DEMAND_LOG_UPLOAD=5
 useXpkiMtlsLogupload=false
 TriggerType=$2 # Marked OnDemand LogUpload for second arg
@@ -138,104 +138,122 @@ checkXpkiMtlsBasedLogUpload()
     logUploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
 }
 
+runMaintenanceRFCTask()
+{
+    if [ -f "$RFC_BIN" ]; then
+        rfcLog "Starting rfcMgr Binary"
+        "$RFC_BIN" >> "RFC_LOG_FILE"
+        result=$?
+    elif [ -f "RFC_SCRIPT" ]; then
+        rfcLog "Starting RFCBase.sh"
+        "$RFC_SCRIPT_CALL"
+        result=$?
+    else
+        rfcLog "No RFC Bin/ Script"
+        result=-1
+    fi
+    # Error handling for unexpected exit codes
+    if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
+        eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
+    fi
+    rfcLog "RFC Task execution done"
+}
+
+runMaintenanceSWUpdateTask()
+{
+    if [ -f "$SWUPDATE_BIN" ]; then
+        swupdateLog "Starting software update"
+        "$SWUPDATE_BIN" >> "$SWUPDATE_LOG_FILE"
+        result=$?
+    else
+        swupdateLog "SWUPDATE binary not found"
+        result=$?
+    fi
+    swupdateLog "swupdate script execution done"
+}
+
+runMaintenanceLogUploadTask()
+{
+    if [ -f "$LOGUPLOAD_SCRIPT" ]; then
+        logUploadLog "Starting log upload"
+        upload_protocol=`cat /tmp/DCMSettings.conf | grep 'LogUploadSettings:UploadRepository:uploadProtocol' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
+        if [ -n "$upload_protocol" ]; then
+            logUploadLog "upload_protocol: $upload_protocol"
+        else
+            upload_protocol='HTTP'
+            logUploadLog "'urn:settings:LogUploadSettings:Protocol' is not found in DCMSettings.conf"
+        fi
+
+        if [ "$upload_protocol" == "HTTP" ]; then
+            httplink=`cat /tmp/DCMSettings.conf | grep 'LogUploadSettings:UploadRepository:URL' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
+            if [ -z "$httplink" ]; then
+                logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf, upload_httplink is '$upload_httplink'"
+            else
+                upload_httplink=$httplink
+                logUploadLog "upload_httplink is $upload_httplink"
+            fi
+            logUploadLog "MTLS preferred"
+            checkXpkiMtlsBasedLogUpload
+            if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
+                logUploadLog "opt override is present. Ignore settings from Bootstrap config"
+            else
+                logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>&1 > /dev/null)
+                if [ "$logUploadEndpointUrl" ]; then
+                    upload_httplink="$logUploadEndpointUrl"
+                    logUploadLog "Setting upload_httplink to $upload_httplink from Bootstrap config logUploadEndpointUrl:$logUploadEndpointUrl"
+                fi
+            fi
+            logUploadLog "upload_httplink is $upload_httplink"
+        fi
+        uploadOnReboot=0
+        uploadCheck=`cat /tmp/DCMSettings.conf | grep 'urn:settings:LogUploadSettings:UploadOnReboot' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
+        if [ "$uploadCheck" == "true" ] && [ "$reboot_flag" == "0" ]; then
+            # Execute /sysint/uploadSTBLogs.sh with arguments $tftp_server and 1
+            logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
+            uploadOnReboot=1    
+        elif [ "$uploadCheck" == "false" ] && [ "$reboot_flag" == "0" ]; then
+            # Execute /sysint/uploadSTBLogs.sh with arguments $tftp_server and 1
+            logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"    
+        else 
+            logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck" 
+        fi
+        if [ ! -z "$TriggerType" ] && [ $TriggerType -eq $ON_DEMAND_LOG_UPLOAD ]; then
+            # Appp triggered log upload call waits for return status to determine SUCCESS or FAILURE
+            # Run with priority in foreground as UI will be waiting for further steps
+            logUploadLog "Application triggered on demand log upload"
+            /bin/busybox $LOGUPLOAD_SCRIPT_CALL $tftp_server 1 1 $uploadOnReboot $upload_protocol $upload_httplink $TriggerType 2> /dev/null
+            result=$?
+        else
+            logUploadLog "Log upload triggered from regular execution"
+            nice -n 19 /bin/busybox $LOGUPLOAD_SCRIPT_CALL $tftp_server 1 1 $uploadOnReboot $upload_protocol $upload_httplink &
+            result=$?
+        fi
+    else
+        logUploadLog "LOGUPLOAD script not found"
+        result=-1
+    fi
+
+    if [ $result -ne 0 ] && [ $result -ne 1 ]; then
+        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_ERROR
+    fi
+    logUploadLog "Log Upload Task execution done"
+}
+
+################
+# Main App
+################
 case "$1" in
     "RFC")
         # RFC Task
-        if [ -f "$RFC_BIN" ]; then
-            rfcLog "Starting rfcMgr Binary"
-            "$RFC_BIN" >> "RFC_LOG_FILE"
-            result=$?
-        elif [ -f "RFC_SCRIPT" ]; then
-            rfcLog "Starting RFCBase.sh"
-            "$RFC_SCRIPT_CALL"
-            result=$?
-        else
-            rfcLog "No RFC Bin/ Script"
-            result=-1
-        fi
-        # Error handling for unexpected exit codes
-        if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
-            eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
-        fi
-        rfcLog "RFC Task execution done"
+        runMaintenanceRFCTask
         ;;
     "SWUPDATE")
         # Handle SWUPDATE task
-        if [ -f "$SWUPDATE_BIN" ]; then
-            swupdateLog "Starting software update"
-            "$SWUPDATE_BIN" >> "$SWUPDATE_LOG_FILE"
-            result=$?
-        else
-            swupdateLog "SWUPDATE binary not found"
-            result=$?
-        fi
-        swupdateLog "swupdate script execution done"
+        runMaintenanceSWUpdateTask
         ;;
     "LOGUPLOAD")
         # Handle LOGUPLOAD task
-        if [ -f "$LOGUPLOAD_SCRIPT" ]; then
-            logUploadLog "Starting log upload"
-            upload_protocol=`cat /tmp/DCMSettings.conf | grep 'LogUploadSettings:UploadRepository:uploadProtocol' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
-            if [ -n "$upload_protocol" ]; then
-                logUploadLog "upload_protocol: $upload_protocol"
-            else
-                upload_protocol='HTTP'
-                logUploadLog "'urn:settings:LogUploadSettings:Protocol' is not found in DCMSettings.conf"
-            fi
-
-            if [ "$upload_protocol" == "HTTP" ]; then
-                httplink=`cat /tmp/DCMSettings.conf | grep 'LogUploadSettings:UploadRepository:URL' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
-                if [ -z "$httplink" ]; then
-                    logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf, upload_httplink is '$upload_httplink'"
-                else
-                    upload_httplink=$httplink
-                    logUploadLog "upload_httplink is $upload_httplink"
-                fi
-                logUploadLog "MTLS preferred"
-                checkXpkiMtlsBasedLogUpload
-                if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-                    logUploadLog "opt override is present. Ignore settings from Bootstrap config"
-                else
-                    logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>&1 > /dev/null)
-                    if [ "$logUploadEndpointUrl" ]; then
-                        upload_httplink="$logUploadEndpointUrl"
-                        logUploadLog "Setting upload_httplink to $upload_httplink from Bootstrap config logUploadEndpointUrl:$logUploadEndpointUrl"
-                    fi
-                fi
-                logUploadLog "upload_httplink is $upload_httplink"
-            fi
-            uploadOnReboot=0
-            uploadCheck=`cat /tmp/DCMSettings.conf | grep 'urn:settings:LogUploadSettings:UploadOnReboot' | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//'`
-            if [ "$uploadCheck" == "true" ] && [ "$reboot_flag" == "0" ]; then
-                # Execute /sysint/uploadSTBLogs.sh with arguments $tftp_server and 1
-                logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
-                uploadOnReboot=1    
-            elif [ "$uploadCheck" == "false" ] && [ "$reboot_flag" == "0" ]; then
-                # Execute /sysint/uploadSTBLogs.sh with arguments $tftp_server and 1
-                logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"    
-            else 
-                logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck" 
-            fi
-            if [ ! -z "$TriggerType" ] && [ $TriggerType -eq $ON_DEMAND_LOG_UPLOAD ]; then
-                # Appp triggered log upload call waits for return status to determine SUCCESS or FAILURE
-                # Run with priority in foreground as UI will be waiting for further steps
-                logUploadLog "Application triggered on demand log upload"
-                /bin/busybox $LOGUPLOAD_SCRIPT_CALL $tftp_server 1 1 $uploadOnReboot $upload_protocol $upload_httplink $TriggerType 2> /dev/null
-                result=$?
-            else
-                logUploadLog "Log upload triggered from regular execution"
-                nice -n 19 /bin/busybox $LOGUPLOAD_SCRIPT_CALL $tftp_server 1 1 $uploadOnReboot $upload_protocol $upload_httplink &
-                result=$?
-            fi
-        else
-            logUploadLog "LOGUPLOAD script not found"
-            result=-1
-        fi
-
-        if [ $result -ne 0 ] && [ $result -ne 1 ]; then
-            eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_ERROR
-        fi
-        logUploadLog "Log Upload Task execution done"
+        runMaintenanceLogUploadTask
         ;;
     *)
         # Handle invalid arguments
