@@ -21,20 +21,10 @@
 
 . /etc/device.properties
 
-zramLog()
-{
-    echo "`/bin/timestamp`: $0: $*" >> /opt/logs/zram.log
-}
-
-if [ -z "$ZRAM_RFC_ENABLE" ]; then
-    zramLog "Reading ZRAM feature control value from RFC"
-    ZRAM_RFC_ENABLE=`/usr/bin/tr181Set -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable 2>&1 > /dev/null`
-else
-    zramLog "Using ZRAM feature control value from device.properties:$ZRAM_RFC_ENABLE"
-fi
+ZRAM_RFC_ENABLE=`/usr/bin/tr181Set -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable 2>&1 > /dev/null`
 
 if [ "x$ZRAM_RFC_ENABLE" != "xtrue" ]; then
-    zramLog "zram is disabled"
+    echo "zram is disabled"
     exit 1
 fi
 
@@ -52,7 +42,7 @@ modprobe zram $MODPROBE_ARGS
 # decide max percentage
 max_percentage=50
 if [ ! -z ${ZRAM_MEM_MAX_PERCENTAGE+x} ]; then
-    zramLog "using max mem percentage from device.properties: $ZRAM_MEM_MAX_PERCENTAGE"
+    echo "using max mem percentage from device.properties: $ZRAM_MEM_MAX_PERCENTAGE"
     max_percentage=${ZRAM_MEM_MAX_PERCENTAGE}
 fi
 
@@ -60,8 +50,8 @@ fi
 totalmem=`LC_ALL=C free | grep -e "^Mem:" | sed -e 's/^Mem: *//' -e 's/  *.*//'`
 mem=$(((totalmem * 1024 * ${max_percentage} ) / 100 / ${NRDEVICES}))
 
-zramLog "enabling zram with $NRDEVICES devices of $mem size each"
-zramLog "zram_enabled_stats: $NRDEVICES,$mem"
+echo "enabling zram with $NRDEVICES devices of $mem size each"
+echo "zram_enabled_stats: $NRDEVICES,$mem"
 # give enough time for module loading to finish even under high load conditions.
 sleep 3
 
