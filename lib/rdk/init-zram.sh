@@ -21,11 +21,14 @@
 
 . /etc/device.properties
 
+echo "Checking RFC override value for ZRAM_RFC_ENABLE:$ZRAM_RFC_ENABLE "
 ZRAM_RFC_ENABLE=`/usr/bin/tr181Set -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable 2>&1 > /dev/null`
 
 if [ "x$ZRAM_RFC_ENABLE" != "xtrue" ]; then
     echo "zram is disabled"
     exit 1
+else    
+    echo "zram is enabled:$ZRAM_RFC_ENABLE"
 fi
 
 # load module
