@@ -391,6 +391,7 @@ sendTLSCodebigRequest()
             echo CURL_CMD: $CURL_CMD
         else
             echo ADDITIONAL_FW_VER_INFO: $pdriFwVerInfo$remoteInfo
+            t2ValNotify "RCU_FWver_split" "$pdriFwVerInfo$remoteInfo"
         fi
         result= eval $CURL_CMD > $HTTP_CODE
 
@@ -410,6 +411,7 @@ sendTLSCodebigRequest()
     ;;
     esac
     echo "Curl return code : $TLSRet"
+    t2ValNotify "CurlRet_split" "$TLSRet"
 }
 
 sendTLSRequest()
@@ -443,10 +445,12 @@ getPDRIVersion () {
         echo "$pdriVersion" | grep -i 'failed' >  /dev/null
         if [ $? -eq 0 ] ; then
             echo "`Timestamp` PDRI version Retrieving Failed ..."
+            t2CountNotify "SYST_ERR_PDRI_VFail"
         else
             #copy to global variable
             pdriFwVerInfo=$pdriVersion
             echo "`Timestamp` PDRI Version = $pdriFwVerInfo"
+            t2ValNotify "PDRI_Version_split" "$pdriFwVerInfo"
         fi
     else
         echo "`Timestamp` mfr_utility Not found. No P-DRI Upgrade !!"
@@ -493,6 +497,7 @@ sendXCONFTLSRequest () {
     ret=1
     http_code="000"
     echo "`Timestamp` Trying to communicate with XCONF server"
+    t2CountNotify "SYST_INFO_XCONFConnect"
     sendTLSRequest "XCONF"
     curl_result=$TLSRet
     http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
@@ -523,6 +528,7 @@ sendXCONFCodebigRequest () {
             echo "`Timestamp` JSONSTR: $JSONSTR"
         else
             echo ADDITIONAL_FW_VER_INFO: $pdriFwVerInfo$remoteInfo
+            t2ValNotify "RCU_FWver_split" "$pdriFwVerInfo$remoteInfo"
         fi
         SIGN_CMD="GetServiceUrl $request_type \"$JSONSTR\""
         eval $SIGN_CMD > /tmp/.signedRequest
@@ -567,6 +573,7 @@ sendXCONFRequest()
                 while [ $xconfcbretry -le $CB_RETRY_COUNT ]
                 do
                     echo "`Timestamp` sendXCONFRequest Using Codebig Image upgrade connection"
+                    t2CountNotify "SYST_INFO_cb_xconf"
                     sendXCONFCodebigRequest
                     ret=$?
                     if [ "$http_code" = "200" ]; then
@@ -642,6 +649,7 @@ sendXCONFRequest()
                     while [ $xconfcbretry -le $CB_RETRY_COUNT ] 
                     do 
                         echo "`Timestamp` sendXCONFRequest Using Codebig Image upgrade connection" 
+                        t2CountNotify "SYST_INFO_cb_xconf"
                         sendXCONFCodebigRequest
                         ret=$?
                         if [ "$http_code" = "200" ]; then

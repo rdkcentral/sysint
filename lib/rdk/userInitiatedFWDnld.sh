@@ -418,6 +418,7 @@ imageDownloadToLocalServer ()
         fi
     fi
     swupdateLog "$UPGRADE_FILE Local Image Download Completed with status=$ret!"
+    t2ValNotify "SYST_INFO_FWCOMPLETE" "$UPGRADE_FILE"
 
     # Set reboot flag to true
     REBOOT_FLAG=1
@@ -512,6 +513,7 @@ ProcessImageUpgradeRequest()
         updateFWDnldStatus "$cloudProto" "No upgrade needed" "Versions Match" "$dnldVersion" "$UpgradeFile" "$runtime" "$CodebigFlag" "No upgrade needed"
     elif [ "$lastDnldFile" = "$dnldFile" ]; then
         swupdateLog "FW version of the standby image and the image to be upgraded are the same. No upgrade required."
+        t2CountNotify "fwupgrade_failed"
         updateFWDnldStatus "$cloudProto" "No upgrade needed" "Versions Match" "$dnldVersion" "$UpgradeFile" "$runtime" "$CodebigFlag" "No upgrade needed"
     else
         if [ $CodebigFlag -eq 1 ]; then
@@ -530,6 +532,7 @@ ProcessImageUpgradeRequest()
                     http_code=$(awk '{print $1}' $CURL_INFO)
                     if [ $resp -eq 0 ] && [ "$http_code" = "200" ]; then
                         swupdateLog "ProcessImageUpgradeRequest: Codebig firmware download Success - ret:$resp, httpcode:$http_code"
+                        t2CountNotify "SYS_INFO_CodBPASS"
                         IsDirectBlocked
                         skipDirect=$?
                         if [ $skipDirect -eq 0 ]; then
@@ -589,6 +592,7 @@ ProcessImageUpgradeRequest()
                        break
                     fi
                     swupdateLog "ProcessImageUpgradeRequest: Direct firmware download return - retry:$retries, ret:$resp, httpcode:$http_code"
+                    t2ValNotify "SYST_SWDL_Retry_split" "$TLSRet"
                     retries=`expr $retries + 1`
                     sleep 60
                 done
@@ -610,6 +614,7 @@ ProcessImageUpgradeRequest()
                             http_code=$(awk '{print $1}' $CURL_INFO)
                             if [ $resp -eq 0 ] && [ "$http_code" = "200" ]; then
                                 swupdateLog "ProcessImageUpgradeRequest: Codebig firmware download success - ret:$resp, httpcode:$http_code"
+                                t2CountNotify "SYS_INFO_CodBPASS"
                                 CodebigFlag=1
                                 if [ ! -f $DIRECT_BLOCK_FILENAME ]; then
                                     touch $DIRECT_BLOCK_FILENAME
@@ -650,8 +655,10 @@ ProcessImageUpgradeRequest()
             exit 0
         elif [ $resp != 0 ] || [ "$http_code" != "200" ]; then
             swupdateLog "ProcessImageUpgradeRequest: doCDL failed"
+            t2CountNotify "SYST_ERR_CDLFail"
         else
             swupdateLog "ProcessImageUpgradeRequest: doCDL success"
+            t2CountNotify "SYST_INFO_CDLSuccess"
             if [ "$DEFER_REBOOT" = "1" ];then
                 swupdateLog "ProcessImageUpgradeRequest: Deferring reboot after firmware download."
             else
@@ -681,6 +688,7 @@ IsWebpacdlEnabledForProd()
         Build_type=`echo $ImageName | grep -i "_PROD_" | wc -l`
         if [ "$Build_type" -ne 0 ] && [ "$WebPACDL" != "true" ]; then
             swupdateLog "Exiting!!! Either Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.NonPersistent.WebPACDL.Enable is FALSE or RFC sync not completed yet."
+            t2CountNotify "SYST_ERR_FW_RFC_disabled"
             exit 1
         fi
     fi
