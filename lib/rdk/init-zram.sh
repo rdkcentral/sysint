@@ -28,6 +28,7 @@ if [ ! -z "$ZRAM_ENABLE" ]; then
     echo "Using ZRAM feature control value from RFC parameter:$ZRAM_ENABLE"
     ZRAM_RFC_ENABLE=$ZRAM_ENABLE
 else
+    ZRAM_RFC_ENABLE=$ZRAM_ENABLED
     echo "Using ZRAM feature control value from device.properties:$ZRAM_RFC_ENABLE"
 fi
 
