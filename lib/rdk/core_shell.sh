@@ -257,7 +257,7 @@ else
           echo $corename >> /tmp/.rmf_crashed
           dumpFile
      elif [ "$1" = "tr69agent" ] || [ "$1" =  "tr69hostif" ] || [ "$1" = "runTR69HostIf" ] ||
-                [ "$1" = "tr69BusMain" ] || [ "$1" = "dimclient" ]; then
+                [ "$1" = "tr69BusMain" ] || [ "$1" = "dimclient" ] || [ "$1" = "rfcMgr" ]; then
           dumpFile
      elif [ "$1" = "nxserver" ]; then
          dumpFile
