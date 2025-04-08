@@ -247,6 +247,8 @@ rippleLog="ripple.log"
 rippleLogsBackup="ripple.log*"
 rippleVersion="rippleversion.txt"
 rippleVersionBackup="rippleversion.txt*"
+zramLog="zram.log"
+zramLogsBackup="zram.log.*"
 
 if [ "$CONTAINER_SUPPORT" == "true" ];then
     xreLxcLog="xre.log"
@@ -408,6 +410,7 @@ backup()
     if [ -f $source/$logrotateLog ] ; then $operation $source/$logrotateLog $destn; fi
     if [ -f $source/$systimemgrLog ] ; then $operation $source/$systimemgrLog $destn; fi
     if [ -f $source/$remoteDebuggerLog ] ; then $operation $source/$remoteDebuggerLog $destn; fi
+    if [ -f $source/$zramLog ] ; then $operation $source/$zramLog $destn; fi
     
     if [ "$CONTAINER_SUPPORT" == "true" ];then
         if [ -f $source$xreLxcLog ] ; then $operation $source$xreLxcLog $destn; fi
@@ -565,6 +568,7 @@ backupAppBackupLogFiles()
         moveFiles $opern $source $systimemgrLogsBackup $destn
 	moveFiles $opern $source $factoryCommsLogsBackup $destn
 	moveFiles $opern $source $remoteDebuggerLogsBackup $destn
+        moveFiles $opern $source $zramLogsBackup $destn
 	moveFiles $opern $source $rippleLogsBackup $destn
 	moveFiles $opern $source $rippleVersionBackup $destn
 
@@ -687,6 +691,7 @@ backupSystemLogFiles()
      if [ -f $source/$systimemgrLog ] ; then $operation $source/$systimemgrLog $destn; fi
      if [ -f $source/$factoryCommsLog ] ; then $operation $source/$factoryCommsLog $destn; fi
      if [ -f $source/$remoteDebuggerLog ] ; then $operation $source/$remoteDebuggerLog $destn; fi
+     if [ -f $source/$zramLog ] ; then $operation $source/$zramLog $destn; fi
      if [ -f $source/$rippleLog ] ; then $operation $source/$rippleLog $destn; fi
      if [ -f $source/$rippleVersion ] ; then $operation $source/$rippleVersion $destn; fi
  
