@@ -420,7 +420,7 @@ imageDownloadToLocalServer ()
         fi
     fi
     swupdateLog "$UPGRADE_FILE Local Image Download Completed with status=$ret!"
-    t2ValNotify "SYST_INFO_FWCOMPLETE" "$UPGRADE_FILE"
+    t2CountNotify "SYST_INFO_FWCOMPLETE"
 
     # Set reboot flag to true
     REBOOT_FLAG=1
