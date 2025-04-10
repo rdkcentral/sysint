@@ -87,7 +87,6 @@ else
 fi
 
 LOGUPLOAD_LOG_FILE="$LOG_PATH/dcmscript.log"
-
 SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 
 # Task Paths
@@ -95,7 +94,8 @@ RFC_SCRIPT="$RDK_PATH/RFCbase.sh"
 RFC_SCRIPT_CALL="sh $RFC_SCRIPT"
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 
-SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader 0 1"
+SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
+SWUPDATE_BIN_CALL="$SWUPDATE_BIN 0 1"
 
 LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
 LOGUPLOAD_SCRIPT_CALL="sh $LOGUPLOAD_SCRIPT"
@@ -113,7 +113,7 @@ logUploadLog()
 
 swupdateLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $FWDL_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" >> $SWUPDATE_LOG_FILE
 }
 
 ON_DEMAND_LOG_UPLOAD=5
