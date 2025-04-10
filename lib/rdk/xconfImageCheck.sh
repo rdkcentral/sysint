@@ -503,6 +503,11 @@ sendXCONFTLSRequest () {
     http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
     ret=$?
     echo "`Timestamp` curl_ret = $curl_result, ret=$ret, http_code: $http_code for XCONF communication"
+    if [ "$http_code" = "000" ]; then
+        t2CountNotify "SYST_ERR_Xconf28"
+    elif [ "$http_code" = "200" ]; then
+        t2CountNotify "SYST_INFO_Xconf200"
+    fi
     if [ $curl_result -eq 0 ] && [ "$http_code" = "404" ]; then
         exitForXconf404response
     fi    
@@ -547,6 +552,11 @@ sendXCONFCodebigRequest () {
         http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
         ret=$?
         echo "`Timestamp` curl_ret = $curl_result, ret=$ret, http_code: $http_code for XCONF communication from Open internet"
+        if [ "$http_code" = "000" ]; then
+            t2CountNotify "SYST_ERR_Xconf28"
+        elif [ "$http_code" = "200" ]; then
+            t2CountNotify "SYST_INFO_Xconf200"
+        fi
         if [ $curl_result -eq 0 ] && [ "$http_code" = "404" ] ; then
             exitForXconf404response
         fi
