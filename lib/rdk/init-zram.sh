@@ -21,12 +21,24 @@
 
 . /etc/device.properties
 
-ZRAM_RFC_ENABLE=`/usr/bin/tr181Set -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable 2>&1 > /dev/null`
+echo "Checking RFC Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable value for ZRAM_RFC_ENABLE"
+ZRAM_ENABLE=`/usr/bin/tr181Set -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable 2>&1 > /dev/null`
+
+if [ ! -z "$ZRAM_ENABLE" ]; then
+    echo "Using ZRAM feature control value from RFC parameter:$ZRAM_ENABLE"
+    ZRAM_RFC_ENABLE=$ZRAM_ENABLE
+else
+    ZRAM_RFC_ENABLE=$ZRAM_ENABLED
+    echo "Using ZRAM feature control value from device.properties:$ZRAM_RFC_ENABLE"
+fi
 
 if [ "x$ZRAM_RFC_ENABLE" != "xtrue" ]; then
     echo "zram is disabled"
     exit 1
+else
+    echo "zram is enabled:$ZRAM_RFC_ENABLE"
 fi
+
 
 # load module
 NRDEVICES=$(grep -c ^processor /proc/cpuinfo | sed 's/^0$/1/')
