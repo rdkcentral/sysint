@@ -142,7 +142,7 @@ runMaintenanceRFCTask()
 {
     if [ -f "$RFC_BIN" ]; then
         rfcLog "Starting rfcMgr Binary"
-        "$RFC_BIN" >> "RFC_LOG_FILE"
+        "$RFC_BIN" >> "$RFC_LOG_FILE"
         result=$?
     elif [ -f "RFC_SCRIPT" ]; then
         rfcLog "Starting RFCBase.sh"
@@ -248,11 +248,11 @@ case "$1" in
         runMaintenanceRFCTask
         ;;
     "SWUPDATE")
-        # Handle SWUPDATE task
+        # Handle SWUPDATE Task
         runMaintenanceSWUpdateTask
         ;;
     "LOGUPLOAD")
-        # Handle LOGUPLOAD task
+        # Handle LOGUPLOAD Task
         runMaintenanceLogUploadTask
         ;;
     *)
