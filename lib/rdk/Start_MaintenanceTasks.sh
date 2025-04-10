@@ -163,7 +163,7 @@ runMaintenanceSWUpdateTask()
 {
     if [ -f "$SWUPDATE_BIN" ]; then
         swupdateLog "Starting software update"
-        "$SWUPDATE_BIN" >> "$SWUPDATE_LOG_FILE"
+        "$SWUPDATE_BIN_CALL" >> "$SWUPDATE_LOG_FILE"
         result=$?
     else
         swupdateLog "SWUPDATE binary not found"
