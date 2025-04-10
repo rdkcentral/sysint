@@ -336,7 +336,8 @@ fi
         "VoiceSearchDaemon" "VoiceSearchDaem"
         "ASNetworkService" "ASNetworkServic"
         "ASConviva" "SkyBrowserLaunc"
-        "AS_CHERRY_STATU" "QNetworkAccessM" )
+        "AS_CHERRY_STATU" "QNetworkAccessM" 
+	"civetweb-worker" )
 
     for anAppName in "${APP_NAMES[@]}"; do
         if [ "$1" = "${anAppName}" ]; then
