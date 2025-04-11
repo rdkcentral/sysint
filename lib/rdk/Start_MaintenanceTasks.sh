@@ -88,15 +88,10 @@ LOGUPLOAD_LOG_FILE="$LOG_PATH/dcmscript.log"
 SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 
 # Task Paths
-RFC_SCRIPT="$RDK_PATH/RFCbase.sh"
-RFC_SCRIPT_CALL="sh $RFC_SCRIPT"
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
-
+RFC_SCRIPT="$RDK_PATH/RFCbase.sh"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
-SWUPDATE_BIN_CALL="$SWUPDATE_BIN 0 1"
-
 LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
-LOGUPLOAD_SCRIPT_CALL="sh $LOGUPLOAD_SCRIPT"
 
 # Log Functions
 rfcLog ()
@@ -104,14 +99,14 @@ rfcLog ()
     echo "`/bin/timestamp` : $0: $*" >> $RFC_LOG_FILE
 }
 
-logUploadLog()
-{
-    echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
-}
-
 swupdateLog()
 {
     echo "`/bin/timestamp` : $0: $*" >> $SWUPDATE_LOG_FILE
+}
+
+logUploadLog()
+{
+    echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
 }
 
 # On Demand Log Upload and other initializations
@@ -145,7 +140,7 @@ runMaintenanceRFCTask()
         result=$?
     elif [ -f "$RFC_SCRIPT" ]; then
         rfcLog "Starting RFCBase.sh"
-        "$RFC_SCRIPT_CALL"
+        sh "$RFC_SCRIPT"
         result=$?
     else
         rfcLog "No RFC Bin/ Script"
@@ -155,14 +150,13 @@ runMaintenanceRFCTask()
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
     fi
-    rfcLog "RFC Task execution done"
 }
 
 runMaintenanceSWUpdateTask()
 {
     if [ -f "$SWUPDATE_BIN" ]; then
         swupdateLog "Starting software update"
-        "$SWUPDATE_BIN_CALL" >> "$SWUPDATE_LOG_FILE"
+        "$SWUPDATE_BIN" 0 1 >> "$SWUPDATE_LOG_FILE" 2>&1 &
         result=$?
     else
         swupdateLog "SWUPDATE binary not found"
@@ -171,7 +165,6 @@ runMaintenanceSWUpdateTask()
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_FWDOWNLOAD_ERROR"
     fi
-    swupdateLog "swupdate script execution done"
 }
 
 runMaintenanceLogUploadTask()
@@ -211,11 +204,11 @@ runMaintenanceLogUploadTask()
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
-            /bin/busybox $LOGUPLOAD_SCRIPT_CALL "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+            /bin/busybox sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
             result=$?
         else
             logUploadLog "Log upload triggered from regular execution"
-            nice -n 19 /bin/busybox $LOGUPLOAD_SCRIPT_CALL "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+            nice -n 19 /bin/busybox sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
             result=$?
         fi
     else
@@ -226,7 +219,6 @@ runMaintenanceLogUploadTask()
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_LOGUPLOAD_ERROR"
     fi
-    logUploadLog "Log Upload Task execution done"
 }
 
 ################
@@ -236,14 +228,17 @@ case "$1" in
     "RFC")
         # RFC Task
         runMaintenanceRFCTask
+        rfcLog "RFC Task execution done"
         ;;
     "SWUPDATE")
         # Handle SWUPDATE Task
         runMaintenanceSWUpdateTask
+        swupdateLog "SWUpdate Task execution done"
         ;;
     "LOGUPLOAD")
         # Handle LOGUPLOAD Task
         runMaintenanceLogUploadTask
+        logUploadLog "Log Upload Task execution done"
         ;;
     *)
         # Handle invalid arguments
