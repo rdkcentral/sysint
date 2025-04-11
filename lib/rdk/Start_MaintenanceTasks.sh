@@ -99,19 +99,19 @@ LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
 LOGUPLOAD_SCRIPT_CALL="sh $LOGUPLOAD_SCRIPT"
 
 # Log Functions
-rfcLog () 
+rfcLog ()
 {
-    echo "$(timestamp): $0: $*" >> "$RFC_LOG_FILE"
+    echo "`/bin/timestamp` : $0: $*" >> $RFC_LOG_FILE
 }
 
-logUploadLog() 
+logUploadLog()
 {
-    echo "$(timestamp): $0: $*" >> "$LOGUPLOAD_LOG_FILE"
+    echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
 }
 
-swupdateLog() 
+swupdateLog()
 {
-    echo "$(timestamp): $0: $*" >> "$SWUPDATE_LOG_FILE"
+    echo "`/bin/timestamp` : $0: $*" >> $SWUPDATE_LOG_FILE
 }
 
 # On Demand Log Upload and other initializations
@@ -123,10 +123,13 @@ tftp_server=$LOG_SERVER # from dcm.properties
 
 checkXpkiMtlsBasedLogUpload()
 {
-    dycredpath="/opt/lxy"
-    [ "$DEVICE_TYPE" = "broadband" ] && dycredpath="/nvram/lxy"
+    if [ "$DEVICE_TYPE" = "broadband" ]; then
+        dycredpath="/nvram/lxy"
+    else
+        dycredpath="/opt/lxy"
+    fi
 
-    if [ -d "$dycredpath" ] && [ -f /usr/bin/rdkssacli ] && [ -f /opt/certs/devicecert_1.pk12 -o -f /etc/ssl/certs/staticXpkiCrt.pk12 ]; then
+    if [ -d "$dycredpath" ] && [ -f "/usr/bin/rdkssacli" ] && { [ -f "/opt/certs/devicecert_1.pk12" ] || [ -f "/etc/ssl/certs/staticXpkiCrt.pk12" ]; }; then
         useXpkiMtlsLogupload="true"
     else
         useXpkiMtlsLogupload="false"
@@ -145,10 +148,10 @@ runMaintenanceRFCTask()
         "$RFC_SCRIPT_CALL"
         result=$?
     else
-        rfcLog "No RFC Bin/Script"
+        rfcLog "No RFC Bin/ Script"
         result=-1
     fi
-
+    # Error handling for unexpected exit codes
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
     fi
@@ -175,10 +178,11 @@ runMaintenanceLogUploadTask()
 {
     if [ -f "$LOGUPLOAD_SCRIPT" ]; then
         logUploadLog "Starting log upload"
-        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//' || echo "")
-        logUploadLog "upload_protocol: ${upload_protocol:-HTTP}"
+        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+        [ -z "$upload_protocol" ] && upload_protocol='HTTP'
+        logUploadLog "upload_protocol: $upload_protocol"
 
-        httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//' || echo "")
+        httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
         if [ -n "$httplink" ]; then
             upload_httplink="$httplink"
         else
@@ -186,22 +190,23 @@ runMaintenanceLogUploadTask()
         fi
 
         checkXpkiMtlsBasedLogUpload
-        [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ] && logUploadLog "opt override is present. Ignore settings from Bootstrap config"
-
-        logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>/dev/null || echo "")
-        [ -n "$logUploadEndpointUrl" ] && upload_httplink="$logUploadEndpointUrl"
-
+        if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
+            logUploadLog "opt override is present. Ignore settings from Bootstrap config"
+        else
+            logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>/dev/null)
+            [ -n "$logUploadEndpointUrl" ] && upload_httplink="$logUploadEndpointUrl"
+        fi
         logUploadLog "upload_httplink: $upload_httplink"
 
         uploadOnReboot=0
-        uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//' | sed 's/"$//' || echo "")
+        uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
         if [ "$uploadCheck" = "true" ] && [ "$reboot_flag" -eq 0 ]; then
             logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
-            uploadOnReboot=1    
+            uploadOnReboot=1
         elif [ "$uploadCheck" = "false" ] && [ "$reboot_flag" -eq 0 ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"    
-        else 
-            logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck" 
+            logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"
+        else
+            logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
         fi
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
@@ -242,7 +247,7 @@ case "$1" in
         ;;
     *)
         # Handle invalid arguments
-        echo "Invalid argument: $1"
+        echo "Invalid Task: $1"
         echo "Usage: $0 [RFC|SWUPDATE|LOGUPLOAD]"
         exit 2
         ;;
