@@ -66,6 +66,7 @@ else
 
    if [ ! -z $zoneValue ]; then
       timelog "Got timezone using $JSONPATH/output.json successfully, value:$zoneValue"
+      t2ValNotify "TimeZone_split" "$zoneValue"
    elif [ -f "$timeZoneDSTPath" -a -s "$timeZoneDSTPath" ]; then
       timelog "Timezone value from output.json is empty, Reading from $timeZoneDSTPath file..."
       zoneValue=`cat "$timeZoneDSTPath" | grep -v 'null'`

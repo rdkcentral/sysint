@@ -127,6 +127,7 @@ if [ -f /tmp/DIFD.pid ]; then
             swupdateLog "[$0]: proc entry cmdline and process name matched."
             swupdateLog "device initiated firmware download is already in progress.."
             swupdateLog "So Exiting without triggering device initiated firmware download."
+            t2CountNotify "SYST_INFO_FWUpgrade_Exit"
             if [ "$DEVICE_TYPE" != "broadband" ] && [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
                eventSender "MaintenanceMGR" $MAINT_FWDOWNLOAD_INPROGRESS
             fi
