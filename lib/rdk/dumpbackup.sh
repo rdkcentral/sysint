@@ -1,3 +1,4 @@
+#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -17,14 +18,18 @@
 # limitations under the License.
 ##############################################################################
 
-[Unit]
-Description=Dump Backup Service
-After=securemount.service nvram.service tr69hostif.service local-fs.target
+if [ -f /lib/rdk/getSecureDumpStatus.sh ]; then
+     . /lib/rdk/getSecureDumpStatus.sh
+fi
 
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/bin/sh -c '/lib/rdk/dumpbackup.sh'
+if [ ! -d $CORE_PATH ]; then 
+    echo "Creating $CORE_PATH folder" 
+    mkdir -p $CORE_PATH 
+fi
+echo "Found $CORE_PATH directory to process coredumps"
 
-[Install]
-WantedBy=multi-user.target
+if [ ! -d $MINIDUMPS_PATH ]; then 
+    echo "Creating $MINIDUMPS_PATH folder" 
+    mkdir -p $MINIDUMPS_PATH 
+fi
+echo "Found $MINIDUMPS_PATH directory to process minidumps" 
