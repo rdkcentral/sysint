@@ -215,6 +215,7 @@ getModelNum()
 getManufacturer(){
            output=$(mfr_util --Manufacturer 2>&1)
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+               output=$(echo $output | tr ' ' '-')
                echo "$output" | tee /tmp/.manufacturer
 	   else
                echo "UNKNOWN"
