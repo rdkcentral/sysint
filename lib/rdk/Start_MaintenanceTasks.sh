@@ -27,33 +27,24 @@
 . /etc/device.properties
 . /lib/rdk/utils.sh
 
-COMMON_BIN_LOCATION="/usr/bin"
-
-# Script Path
+# RDK Paths
 if [ -z $RDK_PATH ]; then
     RDK_PATH="/lib/rdk"
 fi
+if [ -z "$LOG_PATH" ]; then
+    LOG_PATH="/opt/logs"
+fi
+COMMON_BIN_LOCATION="/usr/bin"
 
 # IARM Events
-IARM_EVENT_BINARY_LOCATION="$COMMON_BIN_LOCATION"
-if [ ! -f /etc/os-release ]; then
-    IARM_EVENT_BINARY_LOCATION=/usr/local/bin
-fi
-
 eventSender() {
-    if [ -f $IARM_EVENT_BINARY_LOCATION/IARM_event_sender ]; then
-        "$IARM_EVENT_BINARY_LOCATION/IARM_event_sender" "$1" "$2"
+    if [ -f $COMMON_BIN_LOCATION/IARM_event_sender ]; then
+        "$COMMON_BIN_LOCATION/IARM_event_sender" "$1" "$2"
     fi
 }
 
 export PATH=$PATH:/usr/bin:/bin:/usr/local/bin:/sbin:/usr/local/lighttpd/sbin:/usr/local/sbin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Qt/lib:/usr/local/lib
-
-if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-      . /opt/dcm.properties
-else
-      . /etc/dcm.properties
-fi
 
 # Maintenance RFC Events
 MAINT_RFC_COMPLETE=2
@@ -70,24 +61,12 @@ MAINT_LOGUPLOAD_COMPLETE=4
 MAINT_LOGUPLOAD_ERROR=5
 MAINT_LOGUPLOAD_INPROGRESS=16
 
-if [ -z "$LOG_PATH" ]; then
-    if [ "$DEVICE_TYPE" = "broadband" ]; then
-        LOG_PATH="/rdklogs/logs"
-    else
-        LOG_PATH="/opt/logs"
-    fi
-fi
-
-# Log Paths
-if [ "$DEVICE_TYPE" = "broadband" ]; then
-    RFC_LOG_FILE="$LOG_PATH/dcmrfc.log"
-else
-    RFC_LOG_FILE="$LOG_PATH/rfcscript.log"
-fi
+# Log files
+RFC_LOG_FILE="$LOG_PATH/rfcscript.log"
 LOGUPLOAD_LOG_FILE="$LOG_PATH/dcmscript.log"
 SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 
-# Task Paths
+# Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 RFC_SCRIPT="$RDK_PATH/RFCbase.sh"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
@@ -109,21 +88,10 @@ logUploadLog()
     echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
 }
 
-# On Demand Log Upload and other initializations
-ON_DEMAND_LOG_UPLOAD=5
-useXpkiMtlsLogupload=false
-TriggerType=$2 # Marked OnDemand LogUpload for second arg
-reboot_flag=0  # same as dcm log service
-tftp_server=$LOG_SERVER # from dcm.properties
-
+# Utility Function
 checkXpkiMtlsBasedLogUpload()
 {
-    if [ "$DEVICE_TYPE" = "broadband" ]; then
-        dycredpath="/nvram/lxy"
-    else
-        dycredpath="/opt/lxy"
-    fi
-
+    dycredpath="/opt/lxy"
     if [ -d "$dycredpath" ] && [ -f "/usr/bin/rdkssacli" ] && { [ -f "/opt/certs/devicecert_1.pk12" ] || [ -f "/etc/ssl/certs/staticXpkiCrt.pk12" ]; }; then
         useXpkiMtlsLogupload="true"
     else
@@ -146,7 +114,7 @@ runMaintenanceRFCTask()
         rfcLog "No RFC Bin/ Script"
         result=-1
     fi
-    # Error handling for unexpected exit codes
+    # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
     fi
@@ -157,11 +125,20 @@ runMaintenanceSWUpdateTask()
     if [ -f "$SWUPDATE_BIN" ]; then
         swupdateLog "Starting software update"
         "$SWUPDATE_BIN" 0 1 >> "$SWUPDATE_LOG_FILE" 2>&1 &
+        sleep 1
+        cdlpid=$(pidof rdkvfwupgrader)
+        wait $cdlpid
         result=$?
+        if [ "$result" -eq 1 ]; then
+            result=-1
+        else
+            result=1
+        fi
     else
         swupdateLog "SWUPDATE binary not found"
         result=-1
     fi
+    # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_FWDOWNLOAD_ERROR"
     fi
@@ -169,6 +146,18 @@ runMaintenanceSWUpdateTask()
 
 runMaintenanceLogUploadTask()
 {
+    # On Demand Log Upload and other initializations
+    ON_DEMAND_LOG_UPLOAD=5
+    useXpkiMtlsLogupload=false
+    TriggerType=$2 # Marked OnDemand LogUpload for second arg
+    tftp_server=$LOG_SERVER # from dcm.properties
+    
+    if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
+          . /opt/dcm.properties
+    else
+          . /etc/dcm.properties
+    fi
+    
     if [ -f "$LOGUPLOAD_SCRIPT" ]; then
         logUploadLog "Starting log upload"
         upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
@@ -193,10 +182,10 @@ runMaintenanceLogUploadTask()
 
         uploadOnReboot=0
         uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ "$uploadCheck" = "true" ] && [ "$reboot_flag" -eq 0 ]; then
+        if [ "$uploadCheck" = "true" ]; then
             logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
             uploadOnReboot=1
-        elif [ "$uploadCheck" = "false" ] && [ "$reboot_flag" -eq 0 ]; then
+        elif [ "$uploadCheck" = "false" ]; then
             logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"
         else
             logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
@@ -204,11 +193,13 @@ runMaintenanceLogUploadTask()
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
-            /bin/busybox sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+            sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
             result=$?
         else
             logUploadLog "Log upload triggered from regular execution"
-            nice -n 19 /bin/busybox sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+            nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+            bg_pid=$!
+            wait $bg_pid
             result=$?
         fi
     else
@@ -216,6 +207,7 @@ runMaintenanceLogUploadTask()
         result=-1
     fi
 
+    # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_LOGUPLOAD_ERROR"
     fi
@@ -243,7 +235,7 @@ case "$1" in
     *)
         # Handle invalid arguments
         echo "Invalid Task: $1"
-        echo "Usage: $0 [RFC|SWUPDATE|LOGUPLOAD]"
+        echo "Usage: $0 [RFC|SWUPDATE|LOGUPLOAD [TRIGGER_TYPE]]"
         exit 2
         ;;
 esac
