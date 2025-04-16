@@ -752,6 +752,7 @@ else
     # Added flag to confirm Xconf Upgrade is not running to perform Webpa CDL
     if [ -f $RCDL_FLAG ] || [ -f $DNDL_INPROGRESS_FLAG ]; then
 	swupdateLog "Image download already in progress, exiting!"
+        t2CountNotify "CDL_INFO_inprogressExit"
 	exit 1
     elif [ ! -z "$ImageName" ] && [ ! -z "$ImagePath" ]; then
         IsWebpacdlEnabledForProd

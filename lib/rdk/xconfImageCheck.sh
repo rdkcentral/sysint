@@ -155,6 +155,7 @@ if [ -f $PERSISTENT_PATH/swupdate.conf ] && [ $BUILD_TYPE != "prod" ] ; then
     echo "$urlString" | grep -q -i "^http.*://"
     if [ $? -ne 0 ]; then
         echo "`Timestamp` Device configured with an invalid overriden URL : $urlString !!! Exiting from Image Upgrade process..!"
+	t2ValNotify "SYST_WARN_UPGD_SKIP" "$urlString"
         exit 0
     fi
 fi
