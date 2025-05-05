@@ -516,7 +516,7 @@ ProcessImageUpgradeRequest()
         updateFWDnldStatus "$cloudProto" "No upgrade needed" "Versions Match" "$dnldVersion" "$UpgradeFile" "$runtime" "$CodebigFlag" "No upgrade needed"
     elif [ "$lastDnldFile" = "$dnldFile" ]; then
         swupdateLog "FW version of the standby image and the image to be upgraded are the same. No upgrade required."
-        t2CountNotify "SYST_INFO_swdlSameImg_Stndby"
+        t2CountNotify "SYST_INFO_SwdlSameImg_Stndby"
         updateFWDnldStatus "$cloudProto" "No upgrade needed" "Versions Match" "$dnldVersion" "$UpgradeFile" "$runtime" "$CodebigFlag" "No upgrade needed"
     else
         if [ $CodebigFlag -eq 1 ]; then
