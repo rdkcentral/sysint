@@ -31,10 +31,13 @@ echo "Warehouse Reset:Clearing Remote Pairing Data"
 # clear pairing data
 if [ -f /usr/bin/controlFactory ]; then
     controlFactory -f ;          # unpair controllers
-    /bin/systemctl stop ctrlm-main ;  # shut down controlMgr
-    rm -rf /opt/ctrlm.sql /opt/ctrlm.back # remove symlink
-    rm -rf /opt/secure/ctrlm.sql /opt/secure/ctrlm.back # remove original file
 fi
+ # shut down controlMgr
+/bin/systemctl stop ctrlm-main ;
+if [ -f /opt/ctrlm.back ]; then rm -rf /opt/ctrlm.back; fi # remove symlink
+if [ -f /opt/ctrlm.sql ]; then rm -rf /opt/ctrlm.sql; fi # remove symlink
+if [ -f /opt/secure/ctrlm.back ]; then rm -rf /opt/secure/ctrlm.back; fi # remove original file
+if [ -f /opt/secure/ctrlm.sql ]; then rm -rf /opt/secure/ctrlm.sql; fi # remove original file
 
 WIFI_BIN_LOC=${WIFI_BIN_LOC:=/usr/bin/}
 
