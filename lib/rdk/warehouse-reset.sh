@@ -32,7 +32,7 @@ echo "Warehouse Reset:Clearing Remote Pairing Data"
 if [ -f /usr/bin/controlFactory ]; then
     controlFactory -f ;          # unpair controllers
 fi
- # shut down controlMgr
+# shut down controlMgr
 /bin/systemctl stop ctrlm-main ;
 if [ -f /opt/ctrlm.back ]; then rm -rf /opt/ctrlm.back; fi # remove symlink
 if [ -f /opt/ctrlm.sql ]; then rm -rf /opt/ctrlm.sql; fi # remove symlink
