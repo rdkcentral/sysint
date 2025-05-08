@@ -558,19 +558,33 @@ HttpLogUpload()
             while [ "$retries" -lt $NUM_UPLOAD_ATTEMPTS ]
             do
                 uploadLog "HttpLogUpload: Attempting direct log upload"
-                sendTLSSSRRequest $1
-                ret=$TLSRet
-                http_code=$(awk '{print $1}' $CURL_INFO)
-                if [ "$http_code" = "200" ];then       # anything other than success causes retries
-                    uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
-                    break
-                elif [ "$http_code" = "404" ]; then
-                    uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
-                    break
-                fi
-                retries=`expr $retries + 1`
-                 uploadLog "HttpLogUpload: Direct log upload attempt return: retry=$retries, httpcode=$http_code"
-                sleep 60
+                if [ "x${COMMUNITY_BUILDS}" = "xtrue" ] && [ "x${BUILD_TYPE}" = "xdev" ]; then
+	    		CURL_CMD="curl -w '%{http_code}\n' -F \"filename=@$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout 10 -m 10"
+    			uploadLog "CURL_CMD:=======" $CURL_CMD
+    			ret= eval $CURL_CMD > $CURL_INFO
+ 			http_code=$(awk -F\" '{print $1}' $CURL_INFO)
+                	uploadLog "http_code"$http_code
+		        if [ "$http_code" = "200" ];then       # anything other than success causes retries
+                	   uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
+                    	   uploadLog "HttpLogupload is success"
+                    	   result=0
+                   	   break
+                        fi
+                else
+                	sendTLSSSRRequest $1
+              		ret=$TLSRet
+                	http_code=$(awk '{print $1}' $CURL_INFO)
+              		  if [ "$http_code" = "200" ];then       # anything other than success causes retries
+                    		uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
+                    		break
+                	 elif [ "$http_code" = "404" ]; then
+                    		uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
+                    		break
+                	 fi
+                	retries=`expr $retries + 1`
+                 	uploadLog "HttpLogUpload: Direct log upload attempt return: retry=$retries, httpcode=$http_code"
+                	sleep 60
+               fi
             done
         fi
 
@@ -621,7 +635,7 @@ HttpLogUpload()
         fi
     fi
 
-    if [ "$http_code" = "200" ];then
+    if [ "$http_code" = "200" ] && ["x${COMMUNITY_BUILDS}" != "xtrue" ]; then
         uploadLog "S3 upload query success. Got new S3 url to upload log"
         #Get the url from FILENAME
         if [ "$encryptionEnable" == "true" ]; then
