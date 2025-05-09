@@ -34,4 +34,6 @@ if [ "$VENDOR_ID" != "$AUTHORIZED_USB1" ] || [ "$VENDOR_ID" != "$AUTHORIZED_USB2
     else
         echo "FALSE"
     fi
+else
+    echo "FALSE"
 fi
