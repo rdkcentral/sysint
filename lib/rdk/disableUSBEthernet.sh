@@ -22,9 +22,18 @@
 if [ -f /etc/device.properties ];then
     . /etc/device.properties
 fi
-build=`echo $BUILD_TYPE | tr '[:upper:]' '[:lower:]'`
-if [ "$build" = "prod" ];then
-    echo "TRUE"
-else
-    echo "FALSE"
+
+VENDOR_ID=`udevadm info -q all /sys/class/net/wlan0 | grep ID_VENDOR_ID | cut -d " " -f2 | awk -F '=' '{print $2}'`
+AUTHORIZED_USB1=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); print $1}'`
+AUTHORIZED_USB2=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); print $2}'`
+echo "Vendor ID of Wifi Driver: $VENDOR_ID"
+echo "Authorized USB devices: $AUTHORIZED_USB_DEVICES"
+
+if [ "$VENDOR_ID" != "$AUTHORIZED_USB1" ] || [ "$VENDOR_ID" != "$AUTHORIZED_USB2" ];then
+    build=`echo $BUILD_TYPE | tr '[:upper:]' '[:lower:]'`
+    if [ "$build" = "prod" ];then
+        echo "TRUE"
+    else
+        echo "FALSE"
+    fi
 fi
