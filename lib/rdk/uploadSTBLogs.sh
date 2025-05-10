@@ -403,6 +403,7 @@ sendTLSSSRRequest()
     if [ "$useXpkiMtlsLogupload" == "true" ]; then
           msg_tls_source="mTLS certificate from xPKI"
           uploadLog "Connect with $msg_tls_source"
+          t2CountNotify "SYST_INFO_mtls_xpki"
           CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
     fi
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
@@ -418,7 +419,7 @@ sendTLSSSRRequest()
     port_num=$(awk '{print $3}' $CURL_INFO)
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
-
+    t2ValNotify "SYST_ERR_Curl28" "$TLSRet" "$http_code"
     logTLSError $TLSRet "SSR" $FQDN
 }
 
@@ -558,11 +559,13 @@ HttpLogUpload()
             while [ "$retries" -lt $NUM_UPLOAD_ATTEMPTS ]
             do
                 uploadLog "HttpLogUpload: Attempting direct log upload"
+		t2CountNotify "SYST_INFO_LUattempt"
                 sendTLSSSRRequest $1
                 ret=$TLSRet
                 http_code=$(awk '{print $1}' $CURL_INFO)
                 if [ "$http_code" = "200" ];then       # anything other than success causes retries
                     uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
+                    t2ValNotify "SYST_INFO_lu_success" "$http_code"
                     break
                 elif [ "$http_code" = "404" ]; then
                     uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
@@ -695,6 +698,7 @@ HttpLogUpload()
                 result=0
             else
                 uploadLog "Failed Uploading Logs through - HTTP"
+		t2CountNotify "SYSYST_ERR_LogUpload_Failedd"
             fi
         fi
     else
@@ -817,6 +821,7 @@ uploadLogOnDemand()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 echo "Upload failed"
+                t2CountNotify "SYST_INFO_LUfail"
                 maintenance_error_flag=1
             else
                 maintenance_error_flag=0
@@ -909,8 +914,10 @@ uploadLogOnReboot()
             driretval=$(HttpLogUpload $DRI_LOG_FILE)
             if [ $driretval -ne 0 ];then
                 uploadLog "Uploading DRI Logs through HTTP Failed!!"
+                t2CountNotify "SYST_INFO_PDRILogUpload"
             else
                 uploadLog "Uploading DRI Logs through HTTP Success..."
+                t2CountNotify "SYST_INFO_PDRILogUpload"
                 rm -rf $DRI_LOG_PATH
             fi
         fi
