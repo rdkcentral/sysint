@@ -1,9 +1,0 @@
-[Unit]
-Description=Vdec statistics for telemtry
-
-[Service]
-Type=simple
-ExecStart=/bin/sh -c '/lib/rdk/vdec-statistics.sh'
-
-[Install]
-WantedBy=multi-user.target
