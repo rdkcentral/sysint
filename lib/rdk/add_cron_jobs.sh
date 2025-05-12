@@ -89,6 +89,13 @@ if [ -f $RDK_PATH/hddStatusLogger.sh ]; then
     fi
 fi
 
+if [ -f $RDK_PATH/vm_cpu_temp-check.sh ]; then
+    systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
+    if [ "$systemHealthLog" == "0" ]; then
+        sh /lib/rdk/cronjobs_update.sh "add" "vm_cpu_temp-check.sh" "*/15 * * * * nice -n 10 sh $RDK_PATH/vm_cpu_temp-check.sh"
+    fi
+fi
+
 if [ "$DEVICE_NAME" == "X1" ]  && [ -f /etc/os-release ]; then
    if [ -f $RDK_PATH/system_info_collector.sh ]; then
       output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "system_info_collector.sh"`
