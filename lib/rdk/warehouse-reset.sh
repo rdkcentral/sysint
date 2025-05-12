@@ -50,7 +50,6 @@ if [ -f /etc/os-release ];then
     echo "Warehouse Reset:Stopping the services"
     /bin/systemctl stop rmfstreamer.service
     /bin/systemctl stop fog.service
-    /bin/systemctl stop authservice.service
     if [ "$WHITEBOX_ENABLED" == "true" ];  then
         /bin/systemctl stop whitebox.service
     fi
