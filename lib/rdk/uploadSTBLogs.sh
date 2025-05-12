@@ -419,7 +419,7 @@ sendTLSSSRRequest()
     port_num=$(awk '{print $3}' $CURL_INFO)
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
-    t2ValNotify "SYST_ERR_Curl28" "$TLSRet" "$http_code"
+    t2CountNotify "SYST_ERR_Curl28"
     logTLSError $TLSRet "SSR" $FQDN
 }
 
@@ -565,7 +565,7 @@ HttpLogUpload()
                 http_code=$(awk '{print $1}' $CURL_INFO)
                 if [ "$http_code" = "200" ];then       # anything other than success causes retries
                     uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
-                    t2ValNotify "SYST_INFO_lu_success" "$http_code"
+                    t2CountNotify "SYST_INFO_lu_success"
                     break
                 elif [ "$http_code" = "404" ]; then
                     uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
