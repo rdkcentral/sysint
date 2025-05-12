@@ -132,6 +132,7 @@ if [ "$version" != "" ] && [ ! -f /tmp/.eMMC_Upgrade ]; then
             fi
       else
             echo "`/bin/timestamp` : Cannot Upgrade. Either versions($version & $currVers) are same or Retry count($count) exceeded 5" >> $SWLOG_FILE
+            t2CountNotify "SCARD_INFO_emmc_noUpgd"
       fi
 else
       echo "`/bin/timestamp` : Cannot Upgrade. RFC version string is NULL or Upgrade already issued." >> $SWLOG_FILE
