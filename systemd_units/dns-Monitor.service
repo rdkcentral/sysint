@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor DNS
+After=network-online.target dnsmasq.service
+
+[Service]
+ExecStart=/lib/rdk/dns-monitor.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
