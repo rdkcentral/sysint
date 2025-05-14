@@ -19,7 +19,7 @@
 
 [Unit]
 Description=Timesyncd restart for ENV NTP URL
-After=authservice.service
+After=local-fs.target
 ConditionPathExists=/tmp/route_available
 
 
