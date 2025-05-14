@@ -66,4 +66,10 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
            echo "$DT_TIME getRouterInfo.sh" >> /opt/logs/NMMonitor.log 
        fi
     fi
+    if [ "$interfaceStatus" == "up" ]; then
+       if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+       echo "First time connectivity"
+       else
+       echo "Not Yet ready to connect"
+       fi
 fi
