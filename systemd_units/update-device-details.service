@@ -20,7 +20,7 @@
 [Unit]
 Description=Update device details cache file
 After=network-online.target
-Before=tr69hostif.service
+Before=wpeframework.service tr69hostif.service
 
 [Service]
 Type=forking
