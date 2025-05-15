@@ -419,7 +419,10 @@ sendTLSSSRRequest()
     port_num=$(awk '{print $3}' $CURL_INFO)
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
-    t2CountNotify "SYST_ERR_Curl28"
+
+    if [ "$TLSRet" == 28 ]; then
+        t2CountNotify "SYST_ERR_Curl28"
+    fi
     logTLSError $TLSRet "SSR" $FQDN
 }
 
@@ -698,7 +701,7 @@ HttpLogUpload()
                 result=0
             else
                 uploadLog "Failed Uploading Logs through - HTTP"
-		t2CountNotify "SYSYST_ERR_LogUpload_Failedd"
+		t2CountNotify "SYST_ERR_LogUpload_Failed"
             fi
         fi
     else
