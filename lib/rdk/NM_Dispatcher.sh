@@ -68,8 +68,11 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
     if [ "$interfaceStatus" == "up" ]; then
        if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
-       echo "First time connectivity"
+       echo "$DT_TIME First time connectivity" >>  /opt/logs/NMMonitor.log 
        else
-       echo "Not Yet ready to connect"
+       echo "$DT_TIME Not Yet ready to connect" >>  /opt/logs/NMMonitor.log 
        fi
-fi
+    fi
+    if [ "$interfaceStatus" == "down" ]; then
+    echo "$DT_TIME IP LOSS Event" >> /opt/logs/NMMonitor.log 
+    fi
