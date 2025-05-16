@@ -1,0 +1,7 @@
+[Unit]
+Description=Handle NTP status log update
+
+[Service]
+Type=oneshot
+ExecStart=/lib/rdk/update-ntp-response-telemetry.sh
+
