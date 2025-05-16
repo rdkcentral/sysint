@@ -26,9 +26,14 @@ touch /tmp/Dropbear_restart_disabled
 # clear pairing data
 if [ -f /usr/bin/controlFactory ]; then
     controlFactory -f ;                  # unpair controllers
-    /bin/systemctl stop ctrlm-main.service ;  # shut down controlMgr
-    rm -rf /opt/ctrlm.sql /opt/ctrlm.back
 fi
+
+# shut down controlMgr
+/bin/systemctl stop ctrlm-main ;
+if [ -f /opt/ctrlm.back ]; then rm -f /opt/ctrlm.back; fi # remove symlink
+if [ -f /opt/ctrlm.sql ]; then rm -f /opt/ctrlm.sql; fi # remove symlink
+if [ -f /opt/secure/ctrlm.back ]; then rm -f /opt/secure/ctrlm.back; fi # remove original file
+if [ -f /opt/secure/ctrlm.sql ]; then rm -f /opt/secure/ctrlm.sql; fi # remove original file
 
 if [ -f /etc/os-release ];then
     echo "Factory Reset:Stopping the services"
