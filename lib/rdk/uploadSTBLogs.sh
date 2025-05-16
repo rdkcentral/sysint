@@ -383,6 +383,9 @@ sendTLSSSRCodebigRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Curl return code: $TLSRet, http code: $http_code"
 
+    if [ "$TLSRet" != 0 ]; then
+        t2CountNotify "LUCurlErr_split"
+    fi
     logTLSError $TLSRet "Codebig SSR" $FQDN
 }
 
@@ -403,6 +406,7 @@ sendTLSSSRRequest()
     if [ "$useXpkiMtlsLogupload" == "true" ]; then
           msg_tls_source="mTLS certificate from xPKI"
           uploadLog "Connect with $msg_tls_source"
+          t2CountNotify "SYST_INFO_mtls_xpki"
           CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
     fi
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
@@ -419,6 +423,9 @@ sendTLSSSRRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
 
+    if [ "$TLSRet" == 28 ]; then
+        t2CountNotify "SYST_ERR_Curl28"
+    fi
     logTLSError $TLSRet "SSR" $FQDN
 }
 
@@ -558,11 +565,13 @@ HttpLogUpload()
             while [ "$retries" -lt $NUM_UPLOAD_ATTEMPTS ]
             do
                 uploadLog "HttpLogUpload: Attempting direct log upload"
+		t2CountNotify "SYST_INFO_LUattempt"
                 sendTLSSSRRequest $1
                 ret=$TLSRet
                 http_code=$(awk '{print $1}' $CURL_INFO)
                 if [ "$http_code" = "200" ];then       # anything other than success causes retries
                     uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
+                    t2CountNotify "SYST_INFO_lu_success"
                     break
                 elif [ "$http_code" = "404" ]; then
                     uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
@@ -657,6 +666,10 @@ HttpLogUpload()
         port_num=$(awk '{print $3}' $CURL_INFO)
         uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
         uploadLog "Curl return code: $ret, http code: $http_code"
+
+        if [ "$ret" != 0 ]; then
+            t2CountNotify "LUCurlErr_split"
+        fi
         rm $FILENAME
 
 	if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
@@ -685,6 +698,9 @@ HttpLogUpload()
                 uploadLog "Curl return code: $ret, http code: $http_code"
                 rm $FILENAME
 
+                if [ "$ret" != 0 ]; then
+                    t2CountNotify "LUCurlErr_split"
+                fi
                 if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
                       t2CountNotify "TEST_lu_success"
                 fi
@@ -695,6 +711,7 @@ HttpLogUpload()
                 result=0
             else
                 uploadLog "Failed Uploading Logs through - HTTP"
+		t2CountNotify "SYST_ERR_LogUpload_Failed"
             fi
         fi
     else
@@ -817,6 +834,7 @@ uploadLogOnDemand()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 echo "Upload failed"
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
                 maintenance_error_flag=1
             else
                 maintenance_error_flag=0
@@ -898,6 +916,7 @@ uploadLogOnReboot()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 maintenance_error_flag=1
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
             else
                 maintenance_error_flag=0
             fi
@@ -909,8 +928,10 @@ uploadLogOnReboot()
             driretval=$(HttpLogUpload $DRI_LOG_FILE)
             if [ $driretval -ne 0 ];then
                 uploadLog "Uploading DRI Logs through HTTP Failed!!"
+                t2CountNotify "SYST_INFO_PDRILogUpload"
             else
                 uploadLog "Uploading DRI Logs through HTTP Success..."
+                t2CountNotify "SYST_INFO_PDRILogUpload"
                 rm -rf $DRI_LOG_PATH
             fi
         fi
