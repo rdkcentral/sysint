@@ -3,7 +3,7 @@ Description=Monitor NM State
 After=network-online.target NetworkManager.service
 
 [Service]
-ExecStart=/lib/rdk/get_NM_state.sh
+ExecStart=/lib/rdk/get-nm-status.sh
 Restart=on-failure
 RestartSec=5
 
