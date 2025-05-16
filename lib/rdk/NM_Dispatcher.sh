@@ -76,3 +76,4 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "down" ]; then
     echo "$DT_TIME IP LOSS Event" >> /opt/logs/NMMonitor.log 
     fi
+fi
