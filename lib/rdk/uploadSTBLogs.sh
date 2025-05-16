@@ -383,6 +383,9 @@ sendTLSSSRCodebigRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Curl return code: $TLSRet, http code: $http_code"
 
+    if [ "$TLSRet" != 0 ]; then
+        t2CountNotify "LUCurlErr_split"
+    fi
     logTLSError $TLSRet "Codebig SSR" $FQDN
 }
 
@@ -663,6 +666,10 @@ HttpLogUpload()
         port_num=$(awk '{print $3}' $CURL_INFO)
         uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
         uploadLog "Curl return code: $ret, http code: $http_code"
+
+        if [ "$ret" != 0 ]; then
+            t2CountNotify "LUCurlErr_split"
+        fi
         rm $FILENAME
 
 	if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
@@ -691,6 +698,9 @@ HttpLogUpload()
                 uploadLog "Curl return code: $ret, http code: $http_code"
                 rm $FILENAME
 
+                if [ "$ret" != 0 ]; then
+                    t2CountNotify "LUCurlErr_split"
+                fi
                 if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
                       t2CountNotify "TEST_lu_success"
                 fi
@@ -824,7 +834,7 @@ uploadLogOnDemand()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 echo "Upload failed"
-                t2CountNotify "SYST_INFO_LUfail"
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
                 maintenance_error_flag=1
             else
                 maintenance_error_flag=0
@@ -906,6 +916,7 @@ uploadLogOnReboot()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 maintenance_error_flag=1
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
             else
                 maintenance_error_flag=0
             fi
