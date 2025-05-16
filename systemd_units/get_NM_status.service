@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor NM State
+After=network-online.target NetworkManager.service
+
+[Service]
+ExecStart=/lib/rdk/get_NM_state.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
