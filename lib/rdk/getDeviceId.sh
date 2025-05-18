@@ -27,6 +27,10 @@ deviceIdFile="/opt/www/authService/deviceid.dat"
 partnerIdFile="/opt/www/authService/partnerId3.dat"
 wbDeviceIdFile="/opt/www/whitebox/wbdevice.dat"
 
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
+fi
+
 if [ "$DEVICE_NAME" = "PLATCO" ]; then
 	defaultPartnerId="xglobal"
 else
@@ -70,3 +74,4 @@ else
 fi
 
 echo "{ \"deviceId\" : \"${deviceId}\", \"partnerId\" : \"${partnerId}\" }"
+t2ValNotify "SYST_INFO_PartnerId" "$partnerId"

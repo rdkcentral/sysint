@@ -412,7 +412,11 @@ sendTLSCodebigRequest()
     ;;
     esac
     echo "Curl return code : $TLSRet"
-    t2ValNotify "CurlRet_split" "$TLSRet"
+    if [ "$TLSRet" == 28 ]; then
+        t2CountNotify "SYST_WARN_dcm_curl28"
+    else
+        t2ValNotify "CurlRet_split" "$TLSRet"
+    fi
 }
 
 sendTLSRequest()
