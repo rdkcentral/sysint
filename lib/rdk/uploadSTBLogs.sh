@@ -423,6 +423,7 @@ sendTLSSSRRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
 
+    TLSRet=28
     if [ "$TLSRet" == 28 ]; then
         t2CountNotify "SYST_ERR_Curl28"
     fi
@@ -831,6 +832,7 @@ uploadLogOnDemand()
         if [ "$UploadProtocol" == "HTTP" ];then
             # Call loguploader function and get return status
             retval=$(HttpLogUpload $LOG_FILE)
+	    retval=404
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 echo "Upload failed"
@@ -913,6 +915,7 @@ uploadLogOnReboot()
         sleep 60
         if [ "$UploadProtocol" == "HTTP" ];then
             retval=$(HttpLogUpload $LOG_FILE)
+	    retval=404
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 maintenance_error_flag=1
