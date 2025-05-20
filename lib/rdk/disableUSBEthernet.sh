@@ -18,6 +18,7 @@
 # limitations under the License.
 ##############################################################################
 
+#Note: Vendor supporting wifi Driver with USB bus must provide the information of both Model_ID and Vendor_ID
 
 if [ -f /etc/device.properties ];then
     . /etc/device.properties
