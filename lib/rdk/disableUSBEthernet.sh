@@ -27,15 +27,15 @@ AUTHORIZED_USB1=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); prin
 AUTHORIZED_USB2=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); print $2}'`
 
 if [ ! -z "$ID_VENDOR_ID" ] && [ ! -z "$ID_MODEL_ID" ] ;then
-    if [ "$ID_VENDOR_ID" != "$AUTHORIZED_USB1" ] && [ "$ID_MODEL_ID" != "$AUTHORIZED_USB2" ];then
+    if [ "$ID_VENDOR_ID" == "$AUTHORIZED_USB1" ] && [ "$ID_MODEL_ID" == "$AUTHORIZED_USB2" ];then
+        echo "FALSE"
+    else
         build=`echo $BUILD_TYPE | tr '[:upper:]' '[:lower:]'`
         if [ "$build" = "prod" ];then
             echo "TRUE"
         else
             echo "FALSE"
         fi
-    else
-        echo "FALSE"
     fi
 else
     echo "TRUE"
