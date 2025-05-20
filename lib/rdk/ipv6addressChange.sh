@@ -19,6 +19,11 @@
 ##########################################################################
 ## invocation format
 ## add ipv4 interfacename address global
+
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
+fi
+
 IPV6_CHANGE_LOGFILE="/opt/logs/NMMonitor.log"
 ipv6ChangeLog() {
     echo "`/bin/timestamp` :$0: $*" >> $IPV6_CHANGE_LOGFILE
@@ -52,6 +57,13 @@ if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
    then
       if [ -f "$LOGMILESTONE_BIN" ]; then
           $LOGMILESTONE_BIN "IP_ACQUISTION_COMPLETED:$ifc"
+          if [ $ifc == "eth0" ]; then
+              ifc_uptime=$(awk '{printf "%.0f", $1 * 1000}' /proc/uptime)
+              t2ValNotify "btime_ipacqEth_split" "$ifc_uptime"
+	  elif [ $ifc == "wlan0" ]; then
+              ifc_uptime=$(awk '{printf "%.0f", $1 * 1000}' /proc/uptime)
+              t2ValNotify "btime_ipacqWifi_split" "$ifc_uptime"
+          fi
       fi
    fi
 
