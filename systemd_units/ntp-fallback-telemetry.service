@@ -1,0 +1,11 @@
+[Unit]
+Description=Get NTP Fallback info
+OnFailure=path-fail-notifier@%n.service
+
+[Service]
+ExecStart=/lib/rdk/get_fallback_info.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
