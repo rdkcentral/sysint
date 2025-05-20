@@ -42,3 +42,32 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   fi
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
+
+# Ethernet
+NSM_ETH_MARKER="/opt/persistent/ethernet_disallowed"
+NM_ETH_MARKER="/opt/persistent/ethernet.interface.disable"
+ETH_INTERFACE="eth0"
+
+# Wi-Fi
+NSM_WIFI_MARKER="/opt/persistent/wifi_disallowed"
+NM_WIFI_MARKER="/opt/persistent/wifi.interface.disable"
+WIFI_INTERFACE="wlan0"
+
+# Rename legacy netsrvmger markers to networkmanager markers if they exist
+if [ -f "$NSM_ETH_MARKER" ]; then
+    mv "$NSM_ETH_MARKER" "$NM_ETH_MARKER"
+fi
+
+if [ -f "$NSM_WIFI_MARKER" ]; then
+    mv "$NSM_WIFI_MARKER" "$NM_WIFI_MARKER"
+fi
+
+# If networkmanager Ethernet marker exists, make eth0 unmanaged
+if [ -f "$NM_ETH_MARKER" ]; then
+    nmcli dev set "$ETH_INTERFACE" managed no
+fi
+
+# If networkmanager Wi-Fi marker exists, make wlan0 unmanaged
+if [ -f "$NM_WIFI_MARKER" ]; then
+    nmcli dev set "$WIFI_INTERFACE" managed no
+fi
