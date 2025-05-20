@@ -1,5 +1,5 @@
 [Unit]
-Description=Get NTP Fallback info
+Description=Get NTP Fallback info path
 OnFailure=path-fail-notifier@%n.service
 
 [Path]
