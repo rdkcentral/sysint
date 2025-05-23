@@ -21,7 +21,6 @@
 [Unit]
 Description=State Red Firware Download App
 ConditionPathExists=/tmp/stateRedEnabled
-After=swupdate.service
 Requires=network-online.target
 
 [Service]

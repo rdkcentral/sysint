@@ -21,7 +21,7 @@
 Description=Cleans up Gstreamer Registry
 
 After=local-fs.target nvram.service network-online.target
-Before=swupdate.service wpeframework.service
+Before=wpeframework.service
 Requires=network-online.target
 
 [Service]
