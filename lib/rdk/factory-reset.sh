@@ -41,7 +41,6 @@ if [ -f /etc/os-release ];then
         /bin/systemctl stop whitebox.service
     fi
     /bin/systemctl stop sysmgr.service
-    /bin/systemctl stop swupdate.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop socprovisioning.service
     /bin/systemctl stop rf4ce.service

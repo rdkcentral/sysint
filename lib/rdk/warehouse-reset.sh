@@ -54,7 +54,6 @@ if [ -f /etc/os-release ];then
     if [ "$WHITEBOX_ENABLED" == "true" ];  then
         /bin/systemctl stop whitebox.service
     fi
-    /bin/systemctl stop swupdate.service
     /bin/systemctl stop dcm-log.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop xupnp.service
@@ -242,8 +241,6 @@ if [ "$MODEL_NUM" = "pi" ] || [ "$DEVICE_TYPE" = "mediaclient" ];then
 
          if [ ! -f /tmp/warehouse_reset_suppress_reboot_clear ]; then
              echo "Warehouse Reset:Restarting code download service"
-             /bin/systemctl restart swupdate.service
-
              sleep 20
          else
               #sending CLEAR_COMPLETED event
