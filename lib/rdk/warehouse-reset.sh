@@ -54,7 +54,6 @@ if [ -f /etc/os-release ];then
     if [ "$WHITEBOX_ENABLED" == "true" ];  then
         /bin/systemctl stop whitebox.service
     fi
-    /bin/systemctl stop dcm-log.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop xupnp.service
 
