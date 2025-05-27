@@ -156,10 +156,11 @@ pidCleanup()
 trap pidCleanup EXIT
 
 # Use flock to avoid race condition when creating/checking PID file
-PIDFILE="/tmp/.log-upload.pid"
-exec 200>"$PIDFILE.lock"
+LOCKFILE="/tmp/.log-upload.lock"
+exec 200>"$LOCKFILE"
 flock -n 200 || {
     uploadLog "Another instance of this app $0 is already running (flock lock held)..!"
+    uploadLog "Exiting without starting the $0..!"
     if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
         MAINT_LOGUPLOAD_INPROGRESS=16
         eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
@@ -167,23 +168,7 @@ flock -n 200 || {
     exit 1
 }
 
-if [ -f "$PIDFILE" ]; then
-    pid=$(cat "$PIDFILE")
-    if [ -n "$pid" ] && [ -d /proc/$pid ] && [ -f /proc/$pid/cmdline ]; then
-        processName=$(cat /proc/$pid/cmdline)
-        uploadLog "proc entry process name: $processName and running process name $(basename $0)"
-        if echo "$processName" | grep -q "$(basename $0)"; then
-            uploadLog "Another instance of this app $0 is already running..!"
-            uploadLog "Exiting without starting the $0..!"
-            if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-                MAINT_LOGUPLOAD_INPROGRESS=16
-                eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
-            fi
-            exit 1
-        fi
-    fi
-fi
-echo $$ > "$PIDFILE"
+# PID-based locking is deprecated in favor of flock-based locking.
 
 #get telemetry opt out status
 getOptOutStatus()
