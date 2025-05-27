@@ -90,7 +90,7 @@ elif [ "$1" = "bootup" ];then
           fi
     fi
 
-    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" > $LOG_FILE
     echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
     echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" >> $LOG_FILE
     echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE
