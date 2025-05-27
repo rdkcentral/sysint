@@ -1,4 +1,2 @@
 [keyfile]
 unmanaged-devices=interface-name:ap*;interface-name:dobby*;interface-name:lo;interface-name:p2p*;interface-name:veth*;interface-name:ip*;interface-name:wlan1
-path=/opt/secure/NetworkManager
-
