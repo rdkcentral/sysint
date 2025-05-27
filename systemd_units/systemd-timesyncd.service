@@ -1,0 +1,37 @@
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version
+
+[Unit]
+Description=Network Time Synchronization
+Documentation=man:systemd-timesyncd.service(8)
+ConditionCapability=CAP_SYS_TIME
+ConditionVirtualization=!container
+DefaultDependencies=no
+RequiresMountsFor=/var/lib/systemd/clock
+After=systemd-remount-fs.service systemd-tmpfiles-setup.service systemd-sysusers.service
+#Before=time-sync.target sysinit.target shutdown.target
+Before=time-sync.target shutdown.target
+Conflicts=shutdown.target
+Wants=time-sync.target
+#Wants=connectivitycheck.service
+After=connectivitycheck.service
+#Requires=connectivitycheck.service
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=0
+ExecStart=/lib/systemd/systemd-timesyncd
+CapabilityBoundingSet=CAP_SYS_TIME CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
+PrivateDevices=yes
+ProtectHome=yes
+WatchdogSec=3min
+
+[Install]
+WantedBy=connectivitycheck.service
+#WantedBy=sysinit.target
+#WantedBy=multi-user.target
