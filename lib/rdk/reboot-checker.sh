@@ -57,6 +57,7 @@ if [ "$1" = "shutdown" ];then
                 ;;
      esac
 elif [ "$1" = "bootup" ];then
+    echo "Reading Reboot information from rebootInfo.log file"
     last_reboot_file=""
     last_bootfile=$(find $PREV_LOG_PATH -name last_reboot)
     last_log_path=$(echo ${last_bootfile%/*})
