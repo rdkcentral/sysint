@@ -155,18 +155,26 @@ pidCleanup()
 
 trap pidCleanup EXIT
 
-# exit if an instance is already running
-if [ ! -f /tmp/.log-upload.pid ]; then
-    # store the PID
-    echo $$ > /tmp/.log-upload.pid
-else
-    pid=`cat /tmp/.log-upload.pid`
-    if [ -d /proc/$pid -a -f /proc/$pid/cmdline ];then
-	processName=`cat /proc/$pid/cmdline`
-        uploadLog "proc entry process name: $processName and running process name `basename $0`"
-        if echo "$processName" | grep -q `basename $0`; then
+# Use flock to avoid race condition when creating/checking PID file
+PIDFILE="/tmp/.log-upload.pid"
+exec 200>"$PIDFILE.lock"
+flock -n 200 || {
+    uploadLog "Another instance of this app $0 is already running (flock lock held)..!"
+    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+        MAINT_LOGUPLOAD_INPROGRESS=16
+        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
+    fi
+    exit 1
+}
+
+if [ -f "$PIDFILE" ]; then
+    pid=$(cat "$PIDFILE")
+    if [ -n "$pid" ] && [ -d /proc/$pid ] && [ -f /proc/$pid/cmdline ]; then
+        processName=$(cat /proc/$pid/cmdline)
+        uploadLog "proc entry process name: $processName and running process name $(basename $0)"
+        if echo "$processName" | grep -q "$(basename $0)"; then
             uploadLog "Another instance of this app $0 is already running..!"
-	    uploadLog "Exiting without starting the $0..!"
+            uploadLog "Exiting without starting the $0..!"
             if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
                 MAINT_LOGUPLOAD_INPROGRESS=16
                 eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
@@ -174,8 +182,8 @@ else
             exit 1
         fi
     fi
-    echo $$ > /tmp/.log-upload.pid
 fi
+echo $$ > "$PIDFILE"
 
 #get telemetry opt out status
 getOptOutStatus()
