@@ -41,7 +41,6 @@ if [ -f /etc/os-release ];then
         /bin/systemctl stop whitebox.service
     fi
     /bin/systemctl stop sysmgr.service
-    /bin/systemctl stop swupdate.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop socprovisioning.service
     /bin/systemctl stop rf4ce.service
@@ -49,7 +48,6 @@ if [ -f /etc/os-release ];then
     /bin/systemctl stop dump-backup.service
     /bin/systemctl stop dnsmasq.service
     /bin/systemctl stop authservice.service
-    /bin/systemctl stop dcm-log.service
     /bin/systemctl stop syslog.socket
     /bin/systemctl stop wpeframework.service
     if [ "$DOBBY_ENABLED" == "true" ]; then
