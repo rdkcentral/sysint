@@ -363,7 +363,7 @@ sendTLSSSRCodebigRequest()
     uploadLog "Curl return code: $TLSRet, http code: $http_code"
 
     if [ "$TLSRet" != 0 ]; then
-        t2CountNotify "LUCurlErr_split"
+        t2ValNotify "LUCurlErr_split" "$TLSRet"
     fi
     logTLSError $TLSRet "Codebig SSR" $FQDN
 }
@@ -647,7 +647,7 @@ HttpLogUpload()
         uploadLog "Curl return code: $ret, http code: $http_code"
 
         if [ "$ret" != 0 ]; then
-            t2CountNotify "LUCurlErr_split"
+            t2ValNotify "LUCurlErr_split" "$ret"
         fi
         rm $FILENAME
 
@@ -678,7 +678,7 @@ HttpLogUpload()
                 rm $FILENAME
 
                 if [ "$ret" != 0 ]; then
-                    t2CountNotify "LUCurlErr_split"
+                    t2ValNotify "LUCurlErr_split" "$ret"
                 fi
                 if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
                       t2CountNotify "TEST_lu_success"
