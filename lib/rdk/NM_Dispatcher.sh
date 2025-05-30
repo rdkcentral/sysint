@@ -25,6 +25,18 @@ echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NMMonitor.log
 interfaceName=$1
 interfaceStatus=$2
 
+if [ "$interfaceStatus" == "up" ]; then
+    /usr/bin/nm-online -q -t 120
+    CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
+    echo "$DT_TIME Satya value =$CON_STATE"
+    if [ "$CON_STATE" = "100 (connected)" ] || [ "$CON_STATE" = "120 (connected (site only))" ]; then
+        echo "$DT_TIME Satya Device $interfaceName is connected. Starting service." >> /opt/logs/NMMonitor.log
+        touch /tmp/connectivity_check
+    else
+        echo "$DT_TIME Satya Device $interfaceName Up But Not Fully connected." >> /opt/logs/NMMonitor.log
+    fi
+fi
+
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
         mode="ipv4"
