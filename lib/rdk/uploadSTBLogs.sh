@@ -141,21 +141,9 @@ eventSender()
     fi
 }
 
-#PID Cleanup function
-pidCleanup()
-{
-    # PID file cleanup
-    exit_code=$?
-    if [ $exit_code != 1 ]; then
-        if [ -f /tmp/.log-upload.pid ]; then
-            rm -rf /tmp/.log-upload.pid
-        fi
-    fi
-}
-
-trap pidCleanup EXIT
-
 # Use flock to avoid race condition when creating/checking PID file
+# PID-based locking is deprecated in favor of flock-based locking.
+
 LOCKFILE="/tmp/.log-upload.lock"
 exec 200>"$LOCKFILE"
 flock -n 200 || {
@@ -167,8 +155,6 @@ flock -n 200 || {
     fi
     exit 1
 }
-
-# PID-based locking is deprecated in favor of flock-based locking.
 
 #get telemetry opt out status
 getOptOutStatus()
