@@ -18,6 +18,7 @@
 # limitations under the License.
 ##############################################################################
 
+#Note: Vendor supporting wifi Driver with USB bus must provide the information of both Model_ID and Vendor_ID
 
 if [ -f /etc/device.properties ];then
     . /etc/device.properties
@@ -26,16 +27,16 @@ fi
 AUTHORIZED_USB1=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); print $1}'`
 AUTHORIZED_USB2=`echo $AUTHORIZED_USB_DEVICES | awk -F ":" '{gsub(/"/, ""); print $2}'`
 
-if [ ! -z "$ID_VENDOR_ID" ];then
-    if [ "$ID_VENDOR_ID" != "$AUTHORIZED_USB1" ] || [ "$ID_VENDOR_ID" != "$AUTHORIZED_USB2" ];then
+if [ ! -z "$ID_VENDOR_ID" ] && [ ! -z "$ID_MODEL_ID" ] ;then
+    if [ "$ID_VENDOR_ID" == "$AUTHORIZED_USB1" ] && [ "$ID_MODEL_ID" == "$AUTHORIZED_USB2" ];then
+        echo "FALSE"
+    else
         build=`echo $BUILD_TYPE | tr '[:upper:]' '[:lower:]'`
         if [ "$build" = "prod" ];then
             echo "TRUE"
         else
             echo "FALSE"
         fi
-    else
-        echo "FALSE"
     fi
 else
     echo "TRUE"
