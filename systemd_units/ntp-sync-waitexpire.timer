@@ -18,16 +18,12 @@
 ##############################################################################
 
 [Unit]
-Description=NTP event 
-ConditionPathExists=/tmp/clock-event
-# If we go via path based approch then no need below 2 line TODO: Need to decide
-#Wants=ntp-sync-complete.target
-#After=ntp-sync-complete.target
+Description=Custom target start if NTP sync not happen 3min
 
-[Service]
-Type=oneshot
-Environment="EVENT_NAME=NTPReceivedEvent"
-Environment="EVENT_VALUE=1"
-ExecStartPre= /bin/sh -c 'if [ ! -f /tmp/stt_received ];then /bin/touch /tmp/stt_received; if [ -f /usr/bin/rdkLogMileStone ];then /usr/bin/rdkLogMileStone "CONNECT_TO_NTP_SERVER"; fi; fi'
-ExecStart=/usr/bin/IARM_event_sender $EVENT_NAME $EVENT_VALUE
-RemainAfterExit=yes
+[Timer]
+OnBootSec=180s
+OnStartupSec=180s
+Unit=ntp-sync-waitexpire.target
+
+[Install]
+WantedBy=multi-user.target

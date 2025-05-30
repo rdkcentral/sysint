@@ -1,0 +1,8 @@
+[Unit]
+Description=Custom target start if NTP sync not happen 3min
+#Requires=ntp-event.service
+#After=ntp-event.service
+#Wants=ntp-event.service
+
+#[Install]
+#WantedBy=multi-user.target
