@@ -32,6 +32,7 @@ fi
 
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
+    IS_T2_ENABLED="true"
 fi
 
 MEMORY_LOG="/opt/logs/core_log.txt"
@@ -77,6 +78,7 @@ upload() {
 
 notifyCrashedMarker()
 {
+   t2CountNotify "SYST_ERR_ProcessCrash"
    crashedProcess=$1 
    case $crashedProcess in
            *mfr_sv*)
@@ -144,10 +146,16 @@ dumpInfo()
 {
    echo $(/bin/timestamp) "process crashed = $1" >> $LOG_PATH/core_log.txt
    notifyCrashedMarker "$1"
+   t2ValNotify "CrashedProc_split" "$1"
+   t2ValNotify "SYST_INFO_CrashedProc_accum" "$1"
    echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/core_log.txt
+   t2ValNotify "SYST_INFO_SigDump_split" "$2"
+   t2CountNotify "SYST_ERR_CrashSig$2"
    echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/core_log.txt
+   t2ValNotify "SYST_INFO_CoreFull_accum" "$1,$2,$3,$4,$5"
+   t2ValNotify "SYST_INFO_CoreIMP_accum" "$1,$2"
 }
 
 dumpCoreInfo()
@@ -155,6 +163,7 @@ dumpCoreInfo()
    echo $(/bin/timestamp) "$process crash and uploading the cores" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "corename = $corename" >> $LOG_PATH/core_log.txt
    t2ValNotify "core_split" "$corename"
+   t2ValNotify "SYST_INFO_Core_accum" "$corename"
    echo $(/bin/timestamp) "processing_corename = $processing_corename" >> $LOG_PATH/core_log.txt
 }
 
@@ -165,11 +174,15 @@ dumpFile()
     echo $(/bin/timestamp) "core-shell core started pid : $$"  >> /opt/logs/core_log.txt
     nice -n 19 gzip -f > $CORE_PATH/$processing_corename
     if [[ $? -ne 0 ]]; then
+         t2CountNotify "SYST_ERR_COREGZIP"
+         echo $(/bin/timestamp) "core-shell error in creating the gzip file exiting"  >> /opt/logs/core_log.txt
          rm $CORE_PATH/$processing_corename
          exit 1
     fi
     mv $CORE_PATH/$processing_corename $CORE_PATH/$corename
     echo $(/bin/timestamp) "core-shell core created pid : $$"  >> /opt/logs/core_log.txt
+    t2CountNotify "SYST_INFO_CoreProcessed"
+    t2ValNotify "SYST_INFO_CoreProcessed_accum" "$process"
     # fix file permissions
     chmod a+r $CORE_PATH/$corename
     touch /tmp/.$corename.core_dump
@@ -348,6 +361,10 @@ fi
     done
     
 echo $(/bin/timestamp) "$1 process is not listed to upload, we are not processing the core file" >> $LOG_PATH/core_log.txt
+if [ "$IS_T2_ENABLED" == "true" ]; then
+    t2CountNotify "SYST_INFO_CoreNotProcessed"
+    t2ValNotify "SYST_WARN_CoreNP_accum" "$1"
+fi
 
 exit 0
 
