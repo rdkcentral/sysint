@@ -143,7 +143,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                 /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
                 /bin/systemctl set-environment IP_ADDRESS_PARAM="$IP_ADDRESS_PARAM"
           else
-              dropbear -s -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 $IP_ADDRESS_PARAM &
+              dropbear -s -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 $IP_ADDRESS_PARAM $USE_DEVKEYS &
           fi
      fi
      exit 0
@@ -162,7 +162,7 @@ startDropbear()
           fi
           /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
      else
-          dropbear -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 -p $ipAddress:22 &
+          dropbear -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 -p $ipAddress:22 $USE_DEVKEYS &
      fi
      echo "$ipAddress" > /tmp/.dropbearBoundIp
 }
