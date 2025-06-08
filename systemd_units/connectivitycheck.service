@@ -21,15 +21,8 @@
 Description=Connectivity check 
 #ConditionPathExists=/tmp/connectivity_check
 #Before=systemd-timesyncd.service
-#WantedBy=systemd-timesyncd.service
-#DefaultDependencies=no
-#After=network-online.target systemd-remount-fs.service
-#Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=/bin/sh -c '/lib/rdk/connectivitycheck.sh'
 RemainAfterExit=yes
-
-#[Install]
-#WantedBy=multi-user.target
