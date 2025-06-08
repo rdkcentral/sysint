@@ -22,8 +22,6 @@ Description=NTP Sync Complete Path
 #OnFailure=path-fail-notifier@%n.service
 
 [Path]
-#PathChanged=/tmp/ntp-sync-complete
-# TODO: Decide which approch is good whether path based or add Wants and After in the ntp-event.service
 PathChanged=/tmp/clock-event
 Unit=ntp-sync-complete.target
 
