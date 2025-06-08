@@ -34,7 +34,6 @@ if [ "$interfaceStatus" = "up" ]; then
         touch /tmp/connectivity_check
     else
         echo "$DT_TIME Connection state of $interfaceName Up But Not Fully connected." >> /opt/logs/NMMonitor.log
-        touch /tmp/connectivity_check
     fi
 fi
 
