@@ -19,13 +19,11 @@
 
 [Unit]
 Description=Custom target start if NTP sync not happen 3min
-#OnFailure=path-fail-notifier@%n.service
 
-[Path]
-#PathChanged=/tmp/ntp-sync-complete
-# TODO: Decide which approch is good whether path based or add Wants and After in the ntp-event.service
-PathChanged=/tmp/clock-event
-Unit=ntp-sync-waitexpire.target
+[Timer]
+OnBootSec=180s
+OnStartupSec=180s
+Unit=ntp-sync.target
 
 [Install]
 WantedBy=multi-user.target

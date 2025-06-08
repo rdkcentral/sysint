@@ -18,12 +18,12 @@
 ##############################################################################
 
 [Unit]
-Description=NTP Sync Complete Path
+Description=Custom target start after systime manager set the time
 #OnFailure=path-fail-notifier@%n.service
 
 [Path]
-PathChanged=/tmp/clock-event
-Unit=ntp-sync-complete.target
+PathChanged=/tmp/systimeset
+Unit=systime-set.target
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Custom target start after systime manager set the time
+#Requires=ntp-event.service
+#After=ntp-event.service
+#Wants=ntp-event.service
+
