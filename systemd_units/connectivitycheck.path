@@ -19,7 +19,6 @@
 
 [Unit]
 Description=Check internet connectivity and start ntp
-#DefaultDependencies=no
 
 [Path]
 PathChanged=/tmp/connectivity_check
