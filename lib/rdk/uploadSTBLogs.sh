@@ -156,24 +156,6 @@ flock -n 200 || {
     exit 1
 }
 
-#get telemetry opt out status
-getOptOutStatus()
-{
-    optoutStatus=0
-    currentVal="false"
-    #check if feature is enabled through rfc
-    rfcStatus=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.TelemetryOptOut.Enable 2>&1 > /dev/null)
-    #check the current option
-    if [ -f /opt/tmtryoptout ]; then
-        currentVal=$(cat /opt/tmtryoptout)
-    fi
-    if [ "x$rfcStatus" == "xtrue" ]; then
-        if [ "x$currentVal" == "xtrue" ]; then
-            optoutStatus=1
-        fi
-    fi
-    return $optoutStatus
-}
 
 #MTLS Upload Check
 checkXpkiMtlsBasedLogUpload()
@@ -1020,14 +1002,7 @@ else
             exit 0
         fi
     fi
-    getOptOutStatus
-    opt_out=$?
-    if [ $opt_out -eq 1 ]; then
-        uploadLog "Logupload is disabled as TelemetryOptOut is set"
-        MAINT_LOGUPLOAD_COMPLETE=4
-        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_COMPLETE
-        exit 0
-    fi
+    
     if [ $DCM_FLAG -eq 0 ] ; then
         uploadLog "Uploading Without DCM"
         uploadLogOnReboot true
