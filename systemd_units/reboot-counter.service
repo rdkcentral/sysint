@@ -18,15 +18,23 @@
 ##############################################################################
 
 [Unit]
-Description=Software Update Service
-
-After=local-fs.target nvram.service previous-log-backup.service network-online.target dcm-log.service systemd-timesyncd.service tr69hostif.service
-Requires=network-online.target 
+Description=Reboot Counter Reset Service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '/lib/rdk/swupdate_utility.sh &'
 RemainAfterExit=yes
+ExecStart=/bin/sh -c ' if [ -f /opt/.rmfstreamer_restart_count ];then \
+                            echo "Deleting /opt/.rmfstreamer_restart_count " ; \
+			    rm -rf /opt/.rmfstreamer_restart_count ; fi'
+ExecStart=/bin/sh -c ' if [ -f /opt/.runpod_restart_count ];then \
+                            echo "Deleting /opt/.runpod_restart_count " ; \
+			    rm -rf /opt/.runpod_restart_count ; fi'
+ExecStart=/bin/sh -c ' if [ -f /opt/.iarmbusd_restart_count ];then \
+                            echo "Deleting /opt/.iarmbusd_restart_count " ; \
+			    rm -rf /opt/.iarmbusd_restart_count ; fi'
+ExecStart=/bin/sh -c ' if [ -f /opt/.dsmgr_restart_count ];then \
+                            echo "Deleting /opt/.dsmgr_restart_count " ; \
+			    rm -rf /opt/.dsmgr_restart_count ; fi'
 
-[Install]
-WantedBy=multi-user.target
+
+			    
