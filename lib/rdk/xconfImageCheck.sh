@@ -143,7 +143,10 @@ LOGMILESTONE_BIN="/usr/bin/rdkLogMileStone"
 
 WHOAMI_SUPPORT=$(grep '^WHOAMI_SUPPORT=' /etc/device.properties | cut -d'=' -f2 | tr -d '"')
 if [ "$WHOAMI_SUPPORT" == "true" ]; then
+    echo "`Timestamp` WhoAmI support is enabled"
     osClass=$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.OsClass 2>&1)
+else
+    echo "`Timestamp` WhoAmI support is disabled"
 fi
 
 if [ -z $LOG_PATH ]; then
