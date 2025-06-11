@@ -17,9 +17,6 @@ After=systemd-remount-fs.service systemd-tmpfiles-setup.service systemd-sysusers
 Before=time-sync.target shutdown.target
 Conflicts=shutdown.target
 Wants=time-sync.target
-#Wants=connectivitycheck.service
-After=connectivitycheck.service
-#Requires=connectivitycheck.service
 
 [Service]
 Type=notify
@@ -32,6 +29,5 @@ ProtectHome=yes
 WatchdogSec=3min
 
 [Install]
-WantedBy=connectivitycheck.service
+WantedBy=network-up.target
 #WantedBy=sysinit.target
-#WantedBy=multi-user.target
