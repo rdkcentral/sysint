@@ -21,12 +21,6 @@
 . /etc/include.properties
 . /etc/device.properties
 
-if [ "$DEVICE_TYPE" == "mediaclient" ]; then
-    . /etc/common.properties
-fi 
-
-# DT_TIME=$(date +'%Y-%m-%d:%H:%M:%S:%6N')
-# echo "$DT_TIME From connectivitycheck.sh" >> /opt/logs/NMMonitor.log
 CONNCHECK_LOG_FILE="$LOG_PATH/NMMonitor.log"
 connectivityCheckLog()
 {
