@@ -45,7 +45,7 @@ while true; do
     ELAPSED=$((NOW - START))
     #sleep 60 #Use for testing
     if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-        connectivityCheckLog "connectivitycheck.sh Failed to get HTTP 204 within $TIMEOUT seconds."
+        connectivityCheckLog "Failed to get HTTP 204 within $TIMEOUT seconds."
         # Add Telemetry
         exit 0
     fi
@@ -53,7 +53,7 @@ while true; do
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
 
     if [ "$HTTP_CODE" -eq 204 ]; then
-        connectivityCheckLog "connectivitycheck.sh  Connected: Received HTTP 204"
+        connectivityCheckLog "Connected: Received HTTP 204"
         # Add Telemetry
         exit 0
     else
