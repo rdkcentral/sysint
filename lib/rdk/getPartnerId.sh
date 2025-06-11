@@ -56,6 +56,11 @@ getPartnerId()
 {
     WHOAMI_SUPPORT=$(grep '^WHOAMI_SUPPORT=' /etc/device.properties | cut -d'=' -f2 | tr -d '"')
     if [ "$WHOAMI_SUPPORT" == "true" ]; then
+        echo "WhoAmI support is enabled"
+    else
+        echo "WhoAmI support is disabled"
+    fi
+    if [ "$WHOAMI_SUPPORT" == "true" ]; then
         partnerName="$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1)"
         echo "$partnerName"
         return;
