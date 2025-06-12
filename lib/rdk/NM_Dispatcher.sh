@@ -31,7 +31,7 @@ if [ "$interfaceStatus" = "up" ]; then
     echo "$DT_TIME Connection state of interface $interfaceName=$CON_STATE" >> /opt/logs/NMMonitor.log
     if [ "$CON_STATE" = "100 (connected)" ] || [ "$CON_STATE" = "120 (connected (site only))" ]; then
         echo "$DT_TIME Connection state of $interfaceName is connected." >> /opt/logs/NMMonitor.log
-        touch /tmp/connectivity_check
+        sh /lib/rdk/connectivitycheck.sh &
     else
         echo "$DT_TIME Connection state of $interfaceName Up But Not Fully connected." >> /opt/logs/NMMonitor.log
     fi
