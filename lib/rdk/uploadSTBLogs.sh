@@ -141,60 +141,21 @@ eventSender()
     fi
 }
 
-#PID Cleanup function
-pidCleanup()
-{
-    # PID file cleanup
-    exit_code=$?
-    if [ $exit_code != 1 ]; then
-        if [ -f /tmp/.log-upload.pid ]; then
-            rm -rf /tmp/.log-upload.pid
-        fi
+# Use flock to avoid race condition when creating/checking PID file
+# PID-based locking is deprecated in favor of flock-based locking.
+
+LOCKFILE="/tmp/.log-upload.lock"
+exec 200>"$LOCKFILE"
+flock -n 200 || {
+    uploadLog "Another instance of this app $0 is already running (flock lock held)..!"
+    uploadLog "Exiting without starting the $0..!"
+    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+        MAINT_LOGUPLOAD_INPROGRESS=16
+        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
     fi
+    exit 1
 }
 
-trap pidCleanup EXIT
-
-# exit if an instance is already running
-if [ ! -f /tmp/.log-upload.pid ]; then
-    # store the PID
-    echo $$ > /tmp/.log-upload.pid
-else
-    pid=`cat /tmp/.log-upload.pid`
-    if [ -d /proc/$pid -a -f /proc/$pid/cmdline ];then
-	processName=`cat /proc/$pid/cmdline`
-        uploadLog "proc entry process name: $processName and running process name `basename $0`"
-        if echo "$processName" | grep -q `basename $0`; then
-            uploadLog "Another instance of this app $0 is already running..!"
-	    uploadLog "Exiting without starting the $0..!"
-            if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-                MAINT_LOGUPLOAD_INPROGRESS=16
-                eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
-            fi
-            exit 1
-        fi
-    fi
-    echo $$ > /tmp/.log-upload.pid
-fi
-
-#get telemetry opt out status
-getOptOutStatus()
-{
-    optoutStatus=0
-    currentVal="false"
-    #check if feature is enabled through rfc
-    rfcStatus=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.TelemetryOptOut.Enable 2>&1 > /dev/null)
-    #check the current option
-    if [ -f /opt/tmtryoptout ]; then
-        currentVal=$(cat /opt/tmtryoptout)
-    fi
-    if [ "x$rfcStatus" == "xtrue" ]; then
-        if [ "x$currentVal" == "xtrue" ]; then
-            optoutStatus=1
-        fi
-    fi
-    return $optoutStatus
-}
 
 #MTLS Upload Check
 checkXpkiMtlsBasedLogUpload()
@@ -384,7 +345,7 @@ sendTLSSSRCodebigRequest()
     uploadLog "Curl return code: $TLSRet, http code: $http_code"
 
     if [ "$TLSRet" != 0 ]; then
-        t2CountNotify "LUCurlErr_split"
+        t2ValNotify "LUCurlErr_split" "$TLSRet"
     fi
     logTLSError $TLSRet "Codebig SSR" $FQDN
 }
@@ -668,7 +629,7 @@ HttpLogUpload()
         uploadLog "Curl return code: $ret, http code: $http_code"
 
         if [ "$ret" != 0 ]; then
-            t2CountNotify "LUCurlErr_split"
+            t2ValNotify "LUCurlErr_split" "$ret"
         fi
         rm $FILENAME
 
@@ -699,7 +660,7 @@ HttpLogUpload()
                 rm $FILENAME
 
                 if [ "$ret" != 0 ]; then
-                    t2CountNotify "LUCurlErr_split"
+                    t2ValNotify "LUCurlErr_split" "$ret"
                 fi
                 if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
                       t2CountNotify "TEST_lu_success"
@@ -1041,14 +1002,7 @@ else
             exit 0
         fi
     fi
-    getOptOutStatus
-    opt_out=$?
-    if [ $opt_out -eq 1 ]; then
-        uploadLog "Logupload is disabled as TelemetryOptOut is set"
-        MAINT_LOGUPLOAD_COMPLETE=4
-        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_COMPLETE
-        exit 0
-    fi
+    
     if [ $DCM_FLAG -eq 0 ] ; then
         uploadLog "Uploading Without DCM"
         uploadLogOnReboot true

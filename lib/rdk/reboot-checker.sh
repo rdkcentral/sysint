@@ -57,6 +57,7 @@ if [ "$1" = "shutdown" ];then
                 ;;
      esac
 elif [ "$1" = "bootup" ];then
+    echo "Reading Reboot information from rebootInfo.log file"
     last_reboot_file=""
     last_bootfile=$(find $PREV_LOG_PATH -name last_reboot)
     last_log_path=$(echo ${last_bootfile%/*})
@@ -90,7 +91,7 @@ elif [ "$1" = "bootup" ];then
           fi
     fi
 
-    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" > $LOG_FILE
     echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
     echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" >> $LOG_FILE
     echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE

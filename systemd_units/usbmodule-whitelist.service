@@ -19,7 +19,7 @@
 
 [Unit]
 Description=Modprobe USB Input Modules based on image
-After=securemount.service rfc-config.service
+After=securemount.service
 
 [Service]
 Type=oneshot
