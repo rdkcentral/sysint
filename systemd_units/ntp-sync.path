@@ -22,7 +22,7 @@ Description=NTP Sync Complete Path
 #OnFailure=path-fail-notifier@%n.service
 
 [Path]
-PathChanged=/tmp/clock-event
+PathChanged=/tmp/systimemgr/ntp
 Unit=ntp-sync.target
 
 [Install]
