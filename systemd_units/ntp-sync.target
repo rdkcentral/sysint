@@ -1,5 +1,2 @@
 [Unit]
 Description=Custom target after NTP sync event
-#Requires=ntp-event.service
-#After=ntp-event.service
-#Wants=ntp-event.service
