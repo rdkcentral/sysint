@@ -31,6 +31,7 @@ if [ -n "$CONNECTIVITY_CHECK_URL" ]; then
     URL="$CONNECTIVITY_CHECK_URL"
 else
     connectivityCheckLog "CONNECTIVITY_CHECK_URL not set. Exiting."
+    touch /tmp/connectivity_check
     exit 0
 fi
 
@@ -54,10 +55,12 @@ while true; do
 
     if [ "$HTTP_CODE" -eq 204 ]; then
         connectivityCheckLog "Connected: Received HTTP 204"
+        touch /tmp/connectivity_check
         # Add Telemetry
         exit 0
     else
         connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $INTERVAL seconds..."
+        touch /tmp/connectivity_check
     fi
 
     sleep $INTERVAL
