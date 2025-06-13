@@ -23,6 +23,7 @@ ConditionPathExists=/tmp/clock-event
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 Environment="EVENT_NAME=NTPReceivedEvent"
 Environment="EVENT_VALUE=1"
 ExecStartPre= /bin/sh -c 'if [ ! -f /tmp/stt_received ];then /bin/touch /tmp/stt_received; if [ -f /usr/bin/rdkLogMileStone ];then /usr/bin/rdkLogMileStone "CONNECT_TO_NTP_SERVER"; fi; fi'

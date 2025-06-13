@@ -22,6 +22,7 @@ Description=Reboot Counter Reset Service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/bin/sh -c ' if [ -f /opt/.rmfstreamer_restart_count ];then \
                             echo "Deleting /opt/.rmfstreamer_restart_count " ; \
 			    rm -rf /opt/.rmfstreamer_restart_count ; fi'
