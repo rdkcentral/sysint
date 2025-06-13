@@ -31,7 +31,9 @@ if [ -n "$CONNECTIVITY_CHECK_URL" ]; then
     URL="$CONNECTIVITY_CHECK_URL"
 else
     connectivityCheckLog "CONNECTIVITY_CHECK_URL not set. Exiting."
-    touch /tmp/connectivity_check
+    if [ ! -f /tmp/connectivity_check ]; then
+        touch /tmp/connectivity_check
+    fi
     exit 0
 fi
 
@@ -47,7 +49,9 @@ while true; do
     #sleep 60 #Use for testing
     if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
         connectivityCheckLog "Failed to get HTTP 204 within $TIMEOUT seconds."
-        touch /tmp/connectivity_check
+        if [ ! -f /tmp/connectivity_check ]; then
+            touch /tmp/connectivity_check
+        fi
         # Add Telemetry
         exit 0
     fi
@@ -56,7 +60,9 @@ while true; do
 
     if [ "$HTTP_CODE" -eq 204 ]; then
         connectivityCheckLog "Connected: Received HTTP 204"
-        touch /tmp/connectivity_check
+        if [ ! -f /tmp/connectivity_check ]; then
+            touch /tmp/connectivity_check
+        fi
         # Add Telemetry
         exit 0
     else
