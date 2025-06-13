@@ -1,0 +1,10 @@
+[Unit]
+Description=This is for Tesing. Do not Merge
+After=ntp-sync.target
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'touch /tmp/dbus_satya_service'
+
+[Install]                                          
+WantedBy=ntp-sync.target
