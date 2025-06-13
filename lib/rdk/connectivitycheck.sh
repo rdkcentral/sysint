@@ -47,6 +47,7 @@ while true; do
     #sleep 60 #Use for testing
     if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
         connectivityCheckLog "Failed to get HTTP 204 within $TIMEOUT seconds."
+        touch /tmp/connectivity_check
         # Add Telemetry
         exit 0
     fi
@@ -60,7 +61,6 @@ while true; do
         exit 0
     else
         connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $INTERVAL seconds..."
-        touch /tmp/connectivity_check
     fi
 
     sleep $INTERVAL
