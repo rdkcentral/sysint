@@ -50,12 +50,9 @@ if [ -f /etc/os-release ];then
     echo "Warehouse Reset:Stopping the services"
     /bin/systemctl stop rmfstreamer.service
     /bin/systemctl stop fog.service
-    /bin/systemctl stop authservice.service
     if [ "$WHITEBOX_ENABLED" == "true" ];  then
         /bin/systemctl stop whitebox.service
     fi
-    /bin/systemctl stop swupdate.service
-    /bin/systemctl stop dcm-log.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop xupnp.service
 
@@ -240,19 +237,12 @@ if [ "$MODEL_NUM" = "pi" ] || [ "$DEVICE_TYPE" = "mediaclient" ];then
         
          /bin/systemctl restart iarmbusd.service
 
-         if [ ! -f /tmp/warehouse_reset_suppress_reboot_clear ]; then
-             echo "Warehouse Reset:Restarting code download service"
-             /bin/systemctl restart swupdate.service
-
-             sleep 20
-         else
-              #sending CLEAR_COMPLETED event
-              result=$( curl -H "Content-Type: application/json"  -H "Authorization: Bearer $t" -X POST -d '{"jsonrpc":"2.0", "id":3, "method":"org.rdk.PersistentStore.1.setValue", "params":{"namespace":"FactoryTest", "key":"FTAClearStatus", "value":"CLEAR_COMPLETED"}}' http://127.0.0.1:9998/jsonrpc )
-              echo "Warehouse_clear set value: $result"
-	      rm -rf /opt/secure/persistent/rdkservicestore
-              rm -rf /opt/secure/persistent/rdkservicestore-journal
-              rm -f /tmp/warehouse_reset_suppress_reboot_clear
-         fi
+         #sending CLEAR_COMPLETED event
+         result=$( curl -H "Content-Type: application/json"  -H "Authorization: Bearer $t" -X POST -d '{"jsonrpc":"2.0", "id":3, "method":"org.rdk.PersistentStore.1.setValue", "params":{"namespace":"FactoryTest", "key":"FTAClearStatus", "value":"CLEAR_COMPLETED"}}' http://127.0.0.1:9998/jsonrpc )
+         echo "Warehouse_clear set value: $result"
+	 rm -rf /opt/secure/persistent/rdkservicestore
+         rm -rf /opt/secure/persistent/rdkservicestore-journal
+         rm -f /tmp/warehouse_reset_suppress_reboot_clear
          echo "Warehouse Reset:Deleting receiver.conf override"
          rm /opt/receiver.conf
      fi
