@@ -23,7 +23,7 @@ After=network-online.target dnsmasq.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/lib/rdk/uploadDumps.sh  "" 1 
+ExecStart=/usr/bin/crash-upload 1 "" ""
 KillSignal=SIGKILL
 
 [Install]
