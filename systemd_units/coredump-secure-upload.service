@@ -25,7 +25,7 @@ After=network-online.target dnsmasq.service tr69hostif.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/lib/rdk/uploadDumps.sh  "" 1 secure
+ExecStart=/usr/bin/crash-upload 2 "secure" ""
 KillSignal=SIGKILL
 
 [Install]
