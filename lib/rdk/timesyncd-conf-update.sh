@@ -82,7 +82,12 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                cp /etc/systemd/timesyncd.conf /tmp/timesyncd.conf
                sed -i "s/^NTP=.*/NTP=/g" /tmp/timesyncd.conf
                sed -i "s/^NTP=/NTP=$updateHostname $defaultHostName2/" /tmp/timesyncd.conf
-               cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
+               systemd_ver=`systemctl --version | grep systemd | awk '{print $2}'`
+	       if [ "$systemd_ver" -ge 248 ]; then
+		   # For systemd version >= 248, add the ConnectionRetrySec parameter
+		   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
+	       fi
+	       cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
                rm -rf /tmp/timesyncd.conf
 
                # Restart the service to reflect the new conf
