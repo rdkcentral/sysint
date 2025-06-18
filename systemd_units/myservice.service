@@ -3,8 +3,9 @@ Description=This is for Tesing. Do not Merge
 After=ntp-sync.target
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/bin/sh -c 'exit 1'
+RemainAfterExit=true
 
 
 [Install]                                          
