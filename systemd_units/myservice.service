@@ -4,7 +4,8 @@ After=ntp-sync.target
 
 [Service]
 Type=simple
-ExecStart=/bin/sh -c 'touch /tmp/dbus_satya_service'
+ExecStart=/bin/sh -c 'exit 1'
+
 
 [Install]                                          
 WantedBy=ntp-sync.target
