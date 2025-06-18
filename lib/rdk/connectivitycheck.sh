@@ -21,6 +21,10 @@
 . /etc/include.properties
 . /etc/device.properties
 
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+      source /lib/rdk/t2Shared_api.sh
+fi
+
 CONNCHECK_LOG_FILE="$LOG_PATH/NMMonitor.log"
 connectivityCheckLog()
 {
@@ -34,6 +38,7 @@ else
     if [ ! -f /tmp/connectivity_check ]; then
         touch /tmp/connectivity_check
     fi
+    t2CountNotify "SYST_WARN_connectivitycheck_nourl_set"
     exit 0
 fi
 
@@ -52,7 +57,7 @@ while true; do
         if [ ! -f /tmp/connectivity_check ]; then
             touch /tmp/connectivity_check
         fi
-        # Add Telemetry
+        t2CountNotify "SYST_WARN_connectivitycheck_time_expire"
         exit 0
     fi
 
@@ -63,7 +68,7 @@ while true; do
         if [ ! -f /tmp/connectivity_check ]; then
             touch /tmp/connectivity_check
         fi
-        # Add Telemetry
+        t2CountNotify "SYST_INFO_connectivitycheck_success"
         exit 0
     else
         connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $INTERVAL seconds..."
