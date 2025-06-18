@@ -77,10 +77,10 @@ checkForInterface()
 DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1 > /dev/null)
 if [ $DEVICETYPE = "TEST" ] && [ $USE_DYNAMICKEYING = "TRUE" ]; then
     USE_DEVKEYS="-f authorized_keys_dev"
-    echo "[utopia]: dropbear using dev authorization keys"
+    echo " dropbear using dev authorization keys"
 else
     USE_DEVKEYS=""
-    echo "[utopia]: dropbear using prod authorization keys"
+    echo " dropbear using prod authorization keys"
 fi
 /bin/systemctl set-environment USE_DEVKEYS="$USE_DEVKEYS"
 
