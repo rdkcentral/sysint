@@ -18,11 +18,11 @@
 ##############################################################################
 
 [Unit]
-Description=Custom target start after systime manager set the time
+Description=system time set target by systime manager
 
 [Path]
 PathChanged=/tmp/systimeset
-Unit=systime-set.target
+Unit=system-time-set.target
 
 [Install]
 WantedBy=multi-user.target

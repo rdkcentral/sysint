@@ -23,7 +23,7 @@ Description=Timer based ntp-time-sync.target activation
 [Timer]
 OnBootSec=180s
 OnStartupSec=180s
-Unit=ntp-sync.target
+Unit=ntp-time-sync.target
 
 [Install]
 WantedBy=multi-user.target

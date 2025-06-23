@@ -23,8 +23,8 @@ After=dbus.service
 
 [Service]
 Type=oneshot
-ExecStart=/lib/rdk/send-dbus.sh "ntpsyncset" 
+ExecStart=/lib/rdk/send-time-events.sh "ntpsyncset" 
 RemainAfterExit=true
 
 [Install]
-WantedBy=ntp-sync.target
+WantedBy=ntp-time-sync.target

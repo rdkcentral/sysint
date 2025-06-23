@@ -26,8 +26,7 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
 fi
 
 CONNCHECK_LOG_FILE="$LOG_PATH/NMMonitor.log"
-CONNCHECK_FILE="/tmp/connectivity_check_done
-"
+CONNCHECK_FILE="/tmp/connectivity_check_done"
 CONNCHECK_TIMEOUT=120   # 2 minutes
 CONNCHECK_RETRY_INTERVAL=10    # 10 seconds
 

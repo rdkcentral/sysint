@@ -23,8 +23,8 @@ After=dbus.service
 
 [Service]
 Type=oneshot
-ExecStart=/lib/rdk/send-dbus.sh "systimeset"
+ExecStart=/lib/rdk/send-time-events.sh "systimeset"
 RemainAfterExit=true
 
 [Install]
-WantedBy=systime-set.target
+WantedBy=system-time-set.target
