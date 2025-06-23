@@ -18,4 +18,4 @@
 ##############################################################################
 
 [Unit]
-Description=Custom target check internet connectivity or 120sec expire
+Description=Network Up

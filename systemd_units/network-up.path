@@ -18,10 +18,10 @@
 ##############################################################################
 
 [Unit]
-Description=Custom target to network-up.target once internet connected or 120sec time expire
+Description=Path based network-up.target activation
 
 [Path]
-PathChanged=/tmp/connectivity_check
+PathChanged=/tmp/connectivity_check_done
 Unit=network-up.target
 
 [Install]

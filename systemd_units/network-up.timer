@@ -18,7 +18,7 @@
 ##############################################################################
 
 [Unit]
-Description=Custom target start once internet connected or 120sec fro bootup
+Description=Timer based network-up.target activation
 
 [Timer]
 OnBootSec=120s
