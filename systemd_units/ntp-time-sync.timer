@@ -18,7 +18,7 @@
 ##############################################################################
 
 [Unit]
-Description=Custom target start if NTP sync not happen 3min
+Description=Timer based ntp-time-sync.target activation
 
 [Timer]
 OnBootSec=180s

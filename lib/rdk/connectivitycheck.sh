@@ -26,6 +26,11 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
 fi
 
 CONNCHECK_LOG_FILE="$LOG_PATH/NMMonitor.log"
+CONNCHECK_FILE="/tmp/connectivity_check_done
+"
+CONNCHECK_TIMEOUT=120   # 2 minutes
+CONNCHECK_RETRY_INTERVAL=10    # 10 seconds
+
 connectivityCheckLog()
 {
     echo "$(/bin/timestamp) : $0: $*" >> $CONNCHECK_LOG_FILE
@@ -35,15 +40,12 @@ if [ -n "$CONNECTIVITY_CHECK_URL" ]; then
     URL="$CONNECTIVITY_CHECK_URL"
 else
     connectivityCheckLog "CONNECTIVITY_CHECK_URL not set. Exiting."
-    if [ ! -f /tmp/connectivity_check ]; then
-        touch /tmp/connectivity_check
+    if [ ! -f $CONNCHECK_FILE ]; then
+        touch $CONNCHECK_FILE
     fi
     t2CountNotify "SYST_WARN_connectivitycheck_nourl_set"
     exit 0
 fi
-
-TIMEOUT=120   # 2 minutes
-INTERVAL=10    # 10 seconds
 
 # Get start time from /proc/uptime (integer part only)
 START=$(cut -d. -f1 /proc/uptime)
@@ -51,11 +53,11 @@ START=$(cut -d. -f1 /proc/uptime)
 while true; do
     NOW=$(cut -d. -f1 /proc/uptime)
     ELAPSED=$((NOW - START))
-    #sleep 60 #Use for testing
-    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-        connectivityCheckLog "Failed to get HTTP 204 within $TIMEOUT seconds."
-        if [ ! -f /tmp/connectivity_check ]; then
-            touch /tmp/connectivity_check
+
+    if [ "$ELAPSED" -ge "$CONNCHECK_TIMEOUT" ]; then
+        connectivityCheckLog "Failed to get HTTP 204 within $CONNCHECK_TIMEOUT seconds."
+        if [ ! -f $CONNCHECK_FILE ]; then
+            touch $CONNCHECK_FILE
         fi
         t2CountNotify "SYST_WARN_connectivitycheck_time_expire"
         exit 0
@@ -65,8 +67,8 @@ while true; do
 
     if [ "$HTTP_CODE" -eq 204 ]; then
         connectivityCheckLog "Connected: Received HTTP 204"
-        if [ ! -f /tmp/connectivity_check ]; then
-            touch /tmp/connectivity_check
+        if [ ! -f $CONNCHECK_FILE ]; then
+            touch $CONNCHECK_FILE
         fi
         t2CountNotify "SYST_INFO_connectivitycheck_success"
         exit 0
@@ -74,5 +76,5 @@ while true; do
         connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $INTERVAL seconds..."
     fi
 
-    sleep $INTERVAL
+    sleep $CONNCHECK_RETRY_INTERVAL
 done

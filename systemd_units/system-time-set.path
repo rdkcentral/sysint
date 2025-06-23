@@ -19,7 +19,6 @@
 
 [Unit]
 Description=Custom target start after systime manager set the time
-#OnFailure=path-fail-notifier@%n.service
 
 [Path]
 PathChanged=/tmp/systimeset
