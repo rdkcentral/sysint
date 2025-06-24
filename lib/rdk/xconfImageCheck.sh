@@ -141,7 +141,6 @@ isStateRedSupported()
 
 LOGMILESTONE_BIN="/usr/bin/rdkLogMileStone"
 
-WHOAMI_SUPPORT=$(grep '^WHOAMI_SUPPORT=' /etc/device.properties | cut -d'=' -f2 | tr -d '"')
 if [ "$WHOAMI_SUPPORT" == "true" ]; then
     osClass=$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.OsClass 2>&1)
 fi
@@ -175,6 +174,12 @@ fi
 
 if [ -f $CURL_PROGRESS ]; then
     rm $CURL_PROGRESS
+fi
+
+if [ "$WHOAMI_SUPPORT" == "true" ]; then
+    echo "WHOAMI_SUPPORT is enabled"
+else
+    echo "WHOAMI_SUPPORT is disabled"
 fi
 
 DisableForcedHttps=`tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.EnableHttpCDL.Enable 2>&1 > /dev/null`
