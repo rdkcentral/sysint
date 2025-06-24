@@ -72,7 +72,7 @@ while true; do
         t2CountNotify "SYST_INFO_connectivitycheck_success"
         exit 0
     else
-        connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $INTERVAL seconds..."
+        connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $CONNCHECK_RETRY_INTERVAL seconds..."
     fi
 
     sleep $CONNCHECK_RETRY_INTERVAL
