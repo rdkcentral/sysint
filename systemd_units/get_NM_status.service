@@ -1,6 +1,8 @@
 [Unit]
 Description=Monitor NM State
-After=network-online.target NetworkManager.service
+After=dbus.service
+Requires=dbus.service
+Before=NetworkManager.service
 
 [Service]
 ExecStart=/lib/rdk/get-nm-status.sh
