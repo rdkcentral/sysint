@@ -45,7 +45,12 @@ then
   exit 1
 fi
 
-WHOAMI_SUPPORT=$(grep '^WHOAMI_SUPPORT=' /etc/device.properties | cut -d'=' -f2 | tr -d '"')
+if [ "$WHOAMI_SUPPORT" == "true" ]; then
+    echo "WHOAMI_SUPPORT is enabled"
+else
+    echo "WHOAMI_SUPPORT is disabled"
+fi
+
 if [ "$DEVICE_TYPE" = "mediaclient" ];then
     if [ "$WHOAMI_SUPPORT" = "true" ];then
         eventManager
