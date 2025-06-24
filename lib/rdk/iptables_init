@@ -288,23 +288,6 @@ waitForIpAcquisition() {
 #####################################################################
 
 #####################################################################
-preventNeighOverflow() {
-    ## Start of changes for avoiding neighbourtable overflow
-    solmcast=$(awk '/'$WAN_INTERFACE'/ {print "ff02::1:ff" substr($0,27,2) ":" substr($0,29,4);}' /proc/net/if_inet6)
-
-    for line in ${solmcast}; do
-        $IPV6_BIN -A PREROUTING -t mangle -d $line -j ACCEPT
-    done
-    $IPV6_BIN -A PREROUTING -t mangle -p icmpv6 --icmpv6-type neighbor-solicitation -i $WAN_INTERFACE -d ff02::1:ff00:0/104 -j DROP 
-    if [ -x $IPV6_BIN_PATH ] && [ -f /tmp/estb_ipv4 ]; then
-        $IPV6_BIN -I INPUT -p ipv6-icmp --icmpv6-type router-advertisement -j DROP
-        ip -6 route del default
-    fi
-    ## End of changes for avoiding neighbour table overflow
-}
-#####################################################################
-
-#####################################################################
 addDynamicRules() {
     if [ -f /tmp/estb_ipv4 ]; then
         ## Use actual port number with --dport, instead of xxxx, yyyy.
@@ -550,7 +533,6 @@ else
 
     addStaticRules
     waitForIpAcquisition
-    preventNeighOverflow
     addDynamicRules
 
     ipTableLogging "Done with Static and Dynamic Rules"
