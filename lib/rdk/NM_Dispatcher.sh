@@ -19,8 +19,12 @@
 # limitations under the License.
 ####################################################################################
 
-DT_TIME=$(date +'%Y-%m-%d:%H:%M:%S:%6N')
-echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NMMonitor.log
+NM_LOG_FILE="/opt/logs/NMMonitor.log"
+NMdispatcherLog()
+{
+    echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
+}
+NMdispatcherLog "From NM_Dispatcher.sh $1 $2"
 
 interfaceName=$1
 interfaceStatus=$2
