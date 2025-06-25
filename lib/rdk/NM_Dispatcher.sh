@@ -26,7 +26,7 @@ interfaceName=$1
 interfaceStatus=$2
 
 if [ "$interfaceStatus" = "up" ]; then
-    /usr/bin/nm-online -q -t 60 # If Network manager is not online wait for 60 sec
+    # /usr/bin/nm-online -q -t 60 # If Network manager is not online wait for 60 sec. TODO: Revisit this during connectivity check enable time
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
     echo "$DT_TIME Connection state of interface $interfaceName=$CON_STATE" >> /opt/logs/NMMonitor.log
     if [ "$CON_STATE" = "100 (connected)" ] || [ "$CON_STATE" = "120 (connected (site only))" ]; then
