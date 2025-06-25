@@ -18,10 +18,10 @@
 # limitations under the License.
 ##############################################################################
 
-if [ "$1" = "systimeset" ]; then
+if [ "x$1" = "xsystimeset" ]; then
 	/usr/bin/dbus-send --system --type=signal --dest=org.Systime /org/Systime org.Systime.TimeSet \
     		string:"System time has been set to LKG or BUILD"
-elif [ "$1" = "ntpsyncset" ]; then
+elif [ "x$1" = "xntpsyncset" ]; then
 	/usr/bin/dbus-send --system --type=signal --dest=org.NtpSync /org/NtpSync org.NtpSync.TimeSet \
     		string:"NTP Sync Completed or 180sec time expire"
 else
