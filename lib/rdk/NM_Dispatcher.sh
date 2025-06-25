@@ -30,14 +30,14 @@ interfaceName=$1
 interfaceStatus=$2
 
 if [ "$interfaceStatus" = "up" ]; then
-    # /usr/bin/nm-online -q -t 60 # If Network manager is not online wait for 60 sec. TODO: Revisit this during connectivity check enable time
+    /usr/bin/nm-online -q -t 60 # If Network manager is not online wait for 60 sec. TODO: Revisit this during connectivity check enable time
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
-    echo "$DT_TIME Connection state of interface $interfaceName=$CON_STATE" >> /opt/logs/NMMonitor.log
+    NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
     if [ "$CON_STATE" = "100 (connected)" ] || [ "$CON_STATE" = "120 (connected (site only))" ]; then
-        echo "$DT_TIME Connection state of $interfaceName is connected." >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "Connection state of $interfaceName is connected."
         sh /lib/rdk/connectivitycheck.sh &
     else
-        echo "$DT_TIME Connection state of $interfaceName Up But Not Fully connected." >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "Connection state of $interfaceName Up But Not Fully connected."
     fi
 fi
 
@@ -56,22 +56,22 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
         sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
-        echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "networkLinkEvent.sh"
 
         sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "updateGlobalIPInfo.sh"
         
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "ipv6addressChange.sh"
 
         sh /lib/rdk/networkInfoLogger.sh "add" $mode $interfaceName $ipaddr "global"
-        echo "$DT_TIME networkInfoLogger.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "networkInfoLogger.sh"
 
         sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "checkDefaultRoute.sh"
 
         sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
+        NMdispatcherLog "ipmodechange.sh"
     fi
     if [ "$interfaceName" == "wlan0" ]; then
         touch /tmp/wifi-on
@@ -79,7 +79,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [[ "$interfaceName" == "wlan0" || "$interfaceName" == "eth0" ]]; then
        if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then 
            sh /lib/rdk/getRouterInfo.sh $interfaceName
-           echo "$DT_TIME getRouterInfo.sh" >> /opt/logs/NMMonitor.log 
+           NMdispatcherLog "getRouterInfo.sh"
        fi
     fi
 fi
