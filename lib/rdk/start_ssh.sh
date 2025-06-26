@@ -75,7 +75,7 @@ checkForInterface()
 }
 
 DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1 > /dev/null)
-if [ $DEVICETYPE = "TEST" ] && [ $USE_DYNAMICKEYING = "TRUE" ]; then
+if [ "$DEVICETYPE" = "TEST" ] && [ "$USE_DYNAMICKEYING" = "TRUE" ]; then
     USE_DEVKEYS="-f authorized_keys_dev"
     echo " dropbear using dev authorization keys"
 else
