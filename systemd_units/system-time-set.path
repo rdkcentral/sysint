@@ -17,13 +17,12 @@
 # limitations under the License.
 ##############################################################################
 
-
 [Unit]
-Description=State Red Firware Download App
-ConditionPathExists=/tmp/stateRedEnabled
-Requires=network-online.target
+Description=system time set target by systime manager
 
-[Service]
-Type=oneshot
-ExecStart=/bin/sh -c '/lib/rdk/stateRedRecovery.sh'
+[Path]
+PathChanged=/tmp/systimeset
+Unit=system-time-set.target
 
+[Install]
+WantedBy=multi-user.target

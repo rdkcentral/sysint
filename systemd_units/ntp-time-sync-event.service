@@ -18,19 +18,13 @@
 ##############################################################################
 
 [Unit]
-Description=RFC Log Service
-
-After=local-fs.target nvram.service network-online.target tr69hostif.service
-#Requires=network-online.target
+Description=Send D-Bus signal on ntp-sync completed
+After=dbus.service
 
 [Service]
 Type=oneshot
-SyslogIdentifier=rfc-config
-EnvironmentFile=/etc/rfc.properties
-ExecStartPre=/bin/sh -c '/bin/touch /opt/logs/rfcscript.log'
-ExecStart=/bin/busybox sh -c '/lib/rdk/RFCbase.sh &'
-RemainAfterExit=yes
+ExecStart=/lib/rdk/send-time-events.sh "ntpsyncset" 
+RemainAfterExit=true
 
 [Install]
-WantedBy=multi-user.target
-
+WantedBy=ntp-time-sync.target

@@ -1,3 +1,4 @@
+#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -17,13 +18,13 @@
 # limitations under the License.
 ##############################################################################
 
-
-[Unit]
-Description=State Red Firware Download App
-ConditionPathExists=/tmp/stateRedEnabled
-Requires=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/bin/sh -c '/lib/rdk/stateRedRecovery.sh'
+if [ "x$1" = "xsystimeset" ]; then
+	/usr/bin/dbus-send --system --type=signal --dest=org.Systime /org/Systime org.Systime.TimeSet \
+    		string:"System time has been set to LKG or BUILD"
+elif [ "x$1" = "xntpsyncset" ]; then
+	/usr/bin/dbus-send --system --type=signal --dest=org.NtpSync /org/NtpSync org.NtpSync.TimeSet \
+    		string:"NTP Sync Completed or 180sec time expire"
+else
+  echo "Usage: $0 [systimeset|ntpsyncset]"
+fi
 
