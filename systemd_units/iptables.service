@@ -25,6 +25,7 @@ After=securemount.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 EnvironmentFile=/etc/device.properties
 ExecStart=/lib/rdk/iptables_init
 

@@ -26,6 +26,7 @@ DefaultDependencies=no
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/bin/rdkLogMileStone "RDK_STARTED"
 
 [Install]
