@@ -26,4 +26,5 @@ Requires=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/bin/sh -c '/lib/rdk/stateRedRecovery.sh'
+RemainAfterExit=yes
 
