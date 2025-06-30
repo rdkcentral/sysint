@@ -147,8 +147,6 @@ decoderStatusLog="procStatus.log"
 decoderStatusLogsBackup="procStatus.log.*"
 recorderLog="/opt/rec_debug.log"
 psLogsBackup="ps_out.txt*"
-netsrvLog="netsrvmgr.log"
-netsrvLogsBackup="netsrvmgr.log.*"
 fogLog="fog.log"
 fogLogsBackup="fog.log.*"
 hddStatusLog="diskinfo.log"
@@ -510,7 +508,6 @@ backupAppBackupLogFiles()
      	moveFiles $opern $source $gpLogsBackup $destn
      	moveFiles $opern $source $psLogsBackup $destn
      	moveFiles $opern $source $topLogsBackup $destn
-     	moveFiles $opern $source $netsrvLogsBackup $destn
      	moveFiles $opern $source $diskCleanupLogsBackup $destn
         moveFiles $opern $source $fogLogsBackup $destn 
      	moveFiles $opern $source $hddStatusLogsBackup $destn
@@ -795,7 +792,6 @@ backupSystemLogFiles()
 	if [ -f $source$MediaRiteLog ] ; then $operation $source$MediaRiteLog $destn; fi
      fi
 
-     if [ -f $source/$netsrvLog ] ; then $operation $source/$netsrvLog $destn; fi
   
 	  
     
