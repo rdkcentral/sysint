@@ -1,0 +1,10 @@
+[Unit]
+Description=Connectivity D-Bus Service
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.NetworkManager.connectivity
+ExecStart=/bin/sh -c '[ -f /lib/rdk/logMilestone.sh ] && /bin/sh /lib/rdk/logMilestone.sh "INTERNET_FULLY_CONNECTED"'
+
+[Install]
+WantedBy=multi-user.target
