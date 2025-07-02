@@ -19,7 +19,7 @@
 
 [Unit]
 Description=SSH Per-Connection Server
-After=network-online.target
+After=network-online.target tr69hostif.service
 
 [Service]
 Type=forking
