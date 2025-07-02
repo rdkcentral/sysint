@@ -50,7 +50,7 @@ else
 fi
 
 START=$(cut -d. -f1 /proc/uptime)
-SLEEP_INTERVAL=$CONNCHECK_INITIAL_INTERVAL    # ADDED
+SLEEP_INTERVAL=$CONNCHECK_INITIAL_INTERVAL
 
 while true; do
     NOW=$(cut -d. -f1 /proc/uptime)
