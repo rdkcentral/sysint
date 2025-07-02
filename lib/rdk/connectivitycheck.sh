@@ -83,7 +83,10 @@ while true; do
     if [ "$SLEEP_INTERVAL" -gt "$REMAIN" ]; then
         SLEEP_INTERVAL=$REMAIN
     fi
-
+    if [ "$SLEEP_INTERVAL" -le 0 ]; then
+        connectivityCheckLog "Timeout reached. Exiting."
+        exit 0
+    fi
     sleep $SLEEP_INTERVAL
 
     # Exponential backoff: double the interval, up to max
