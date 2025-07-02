@@ -30,7 +30,7 @@ CONNCHECK_FILE="/tmp/connectivity_check_done"
 CONNCHECK_TIMEOUT=120   # 2 minutes
 
 # Exponential backoff parameters
-CONNCHECK_INITIAL_INTERVAL=1         # 1 second, ADDED
+CONNCHECK_INITIAL_INTERVAL=1         # Start From 1 second
 CONNCHECK_MAX_INTERVAL=10            # Optional: cap to 10 seconds
 
 connectivityCheckLog()
