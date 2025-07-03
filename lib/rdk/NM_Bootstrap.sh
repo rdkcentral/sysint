@@ -42,3 +42,6 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   fi
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
+
+mkdir -p /opt/secure/NetworkManager/system-connections
+cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
