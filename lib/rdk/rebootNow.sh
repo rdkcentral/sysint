@@ -344,7 +344,7 @@ setPreviousRebootInfo()
     echo "\"otherReason\":\"$other\"" >> $REBOOT_INFO_FILE
     echo "}" >> $REBOOT_INFO_FILE
 
-    echo "PreviousRebootInfo:$timestamp,$customReason,$source,$reason" >> $PARODUS_REBOOT_INFO_FILE
+    echo "PreviousRebootInfo:$timestamp,$custom,$source,$reason" >> $PARODUS_REBOOT_INFO_FILE
     rebootLog "${FUNCNAME[0]}: Updated Reboot Reason information in $REBOOT_INFO_FILE and $PARODUS_REBOOT_INFO_FILE"
 }
 
