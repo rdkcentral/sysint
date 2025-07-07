@@ -18,18 +18,12 @@
 ##############################################################################
 
 [Unit]
-Description=Update device details cache file
-After=network-online.target
-Before=wpeframework.service tr69hostif.service
+Description=Timer based ntp-time-sync.target activation
 
-[Service]
-Type=forking
-RemainAfterExit=yes
-SyslogIdentifier="getDeviceDetails"
-ExecStart=/bin/sh -c '/lib/rdk/getDeviceDetails.sh "" "" "true" &'
-ExecStop=/bin/kill -9 $MAINPID
-TimeoutStopSec=3
+[Timer]
+OnBootSec=180s
+OnStartupSec=180s
+Unit=ntp-time-sync.target
 
 [Install]
 WantedBy=multi-user.target
-

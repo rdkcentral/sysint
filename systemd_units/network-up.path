@@ -1,4 +1,4 @@
-##############################################################################
+#############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
@@ -18,15 +18,11 @@
 ##############################################################################
 
 [Unit]
-Description=Software Update Service
+Description=Path based network-up.target activation
 
-After=local-fs.target nvram.service previous-log-backup.service network-online.target dcm-log.service systemd-timesyncd.service tr69hostif.service
-Requires=network-online.target 
-
-[Service]
-Type=oneshot
-ExecStart=/bin/sh -c '/lib/rdk/swupdate_utility.sh &'
-RemainAfterExit=yes
+[Path]
+PathChanged=/tmp/connectivity_check_done
+Unit=network-up.target
 
 [Install]
 WantedBy=multi-user.target
