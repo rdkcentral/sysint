@@ -92,8 +92,15 @@ setPreviousRebootInfo()
     echo "}" >> $PREVIOUS_REBOOT_INFO_FILE
 
     rebootLog "Updating previous reboot reason in $PARODUS_LOG"
-    echo "`/bin/timestamp` Updating previous reboot info to Parodus" >> $PARODUS_LOG
-    echo "`/bin/timestamp` : $0: PreviousRebootInfo:$timestamp,$reason,$customReason,$source" >> $PARODUS_LOG
+    existing_reboot_info=$(grep "PreviousRebootInfo" "$PARODUS_LOG" 2>/dev/null | tail -1)
+
+    if [ -z "$existing_reboot_info" ]; then
+        echo "$(/bin/timestamp): $0: Updating previous reboot info to Parodus" >> "$PARODUS_LOG"
+        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$custom,$source,$reason" >> "$PARODUS_LOG"
+        rebootLog "Reboot Information Updated to parodus log:$timestamp,$custom,$source,$reason"
+    else
+        rebootLog "${FUNCNAME[0]}: Reboot info already present in $PARODUS_LOG as $existing_reboot_info, skipping update"
+    fi
 
     # Set Hard Power reset time with timestamp
     if [ "$reason" == "HARD_POWER" ] || [ "$reason" == "POWER_ON_RESET" ] || [ "$reason" == "UNKNOWN_RESET" ] || [ ! -f "$PREVIOUS_HARD_REBOOT_INFO_FILE" ];then
