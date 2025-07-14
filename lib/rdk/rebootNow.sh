@@ -475,13 +475,18 @@ touch $REBOOTNOW_FLAG
 rebootLog "Rebooting the Device Now"
 rm -rf $pid_file
 reboot
-if [ $? -eq 1 ]; then #Force reboot when reboot fails
-    rebootLog "Reboot Failed, trying force reboot..."
-    if [ -f /tmp/systemd_freeze_reboot_on ];then
-        rebootLog "Force Reboot After First Reboot Attempt Failure"
-        reboot -f
+
+sleep 15
+
+rebootLog "System still running after reboot command, Reboot Failed..."
+rebootLog "Invoking Systemctl Reboot After First Reboot Attempt Failure"
+systemctl reboot
+if [ $? -eq 1 ]; then
+    rebootLog "Reboot failed due to systemctl hang or connection timeout, trying force reboot..."
+    if [ -f /tmp/systemd_freeze_reboot_on ]; then
+        rebootLog "Force Reboot due to systemd freeze detection"
     else
-        rebootLog "Force Reboot with systemctl After First Reboot Attempt Failure"
-        systemctl --force --force reboot
+        rebootLog "Force Reboot after systemd reboot failure"
     fi
+    reboot -f
 fi
