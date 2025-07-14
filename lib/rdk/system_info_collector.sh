@@ -27,7 +27,6 @@
 . /etc/env_setup.sh
 
 count=0
-SYSTEM_METRIC_CRON_INTERVAL="*/15 * * * *"
 
 log_disk_usage() {
     echo "********** Disk Space Usage **********" 
@@ -62,11 +61,8 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     . /lib/rdk/t2Shared_api.sh
 fi
 
-systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
-if [ "$systemHealthLog" != "0" ]; then
-    sh /lib/rdk/cronjobs_update.sh "remove" "vm_cpu_temp-check.sh"
-fi
-sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 sh $RDK_PATH/vm_cpu_temp-check.sh"
+echo "Update VM and CPU stats to the messages.txt file"
+sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
