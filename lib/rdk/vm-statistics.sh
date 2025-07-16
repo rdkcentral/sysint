@@ -1,3 +1,4 @@
+#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -16,18 +17,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
-[Unit]
-Description=Set up IP tables
-Wants=network-online.target
-After=network-online.target
-After=securemount.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-EnvironmentFile=/etc/device.properties
-ExecStart=/lib/rdk/iptables_init
-
-[Install]
-WantedBy=multi-user.target
+# this script uses vmstat to print out following information
+# vmInfoHeader: swpd,free,buff,cache,si,so
+# vmInfoValues: <int>,<int>,<int>,<int>,<int>,<int>
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
+fi
+vmstat > /tmp/.intermediate_calc_vm
+echo "VM STATS SINCE BOOT"
+values1=`sed '2q;d' /tmp/.intermediate_calc_vm| awk '{print $3","$4","$5","$6","$7","$8}'`
+values2=`sed '3q;d' /tmp/.intermediate_calc_vm| awk '{print $3","$4","$5","$6","$7","$8}'`
+echo vmInfoHeader: $values1
+echo vmInfoValues: $values2
+t2ValNotify "vmstats_split" "$values2"
