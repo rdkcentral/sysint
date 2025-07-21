@@ -1,4 +1,4 @@
-##############################################################################
+#############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
@@ -18,19 +18,11 @@
 ##############################################################################
 
 [Unit]
-Description=RFC Log Service
+Description=Path based network-up.target activation
 
-After=local-fs.target nvram.service network-online.target tr69hostif.service
-#Requires=network-online.target
-
-[Service]
-Type=oneshot
-SyslogIdentifier=rfc-config
-EnvironmentFile=/etc/rfc.properties
-ExecStartPre=/bin/sh -c '/bin/touch /opt/logs/rfcscript.log'
-ExecStart=/bin/busybox sh -c '/lib/rdk/RFCbase.sh &'
-RemainAfterExit=yes
+[Path]
+PathChanged=/tmp/connectivity_check_done
+Unit=network-up.target
 
 [Install]
 WantedBy=multi-user.target
-
