@@ -25,7 +25,7 @@ After=network-online.target dnsmasq.service tr69hostif.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/usr/bin/crash-upload 1 "secure" ""
+ExecStart=/bin/bash -c 'if [ -f /tmp/rustEnable ]; then /usr/bin/crash-upload 1 "secure" ""; else /lib/rdk/uploadDumps.sh "" 1 secure; fi'
 KillSignal=SIGKILL
 
 [Install]

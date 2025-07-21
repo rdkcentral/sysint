@@ -24,7 +24,7 @@ After=network-online.target dnsmasq.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/usr/bin/crash-upload 2 "" ""
+ExecStart=/bin/bash -c 'if [ -f /tmp/rustEnable ]; then /usr/bin/crash-upload 2 "" ""; else /lib/rdk/uploadDumps.sh "" 0; fi'
 KillSignal=SIGKILL
 
 [Install]
