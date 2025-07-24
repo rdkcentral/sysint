@@ -35,12 +35,12 @@ if [ -z $RFC_PATH ]; then
     RFC_PATH="/opt/secure/RFC"
 fi
 
-rfcLogging ()
+webLogging ()
 {
-    echo "`/bin/timestamp` [RFC]:WEB_INSPECTOR : $1" >> $LOG_PATH/rfcscript.log
+    echo "`/bin/timestamp` WEB_INSPECTOR : $1" >> $LOG_PATH/NMMonitor.log
 }
 
-rfcLogging "Executing enableWebInspector.sh with arguments - $*"
+webLogging "Executing enableWebInspector.sh with arguments - $*"
 
 
 if [ ! -f /etc/os-release ]; then
@@ -81,7 +81,7 @@ if [ -f  /lib/rdk/getRFC.sh ]; then
     . /lib/rdk/getRFC.sh WEBKIT_INSPECTOR
 fi
 
-rfcLogging "RFC_ENABLE_WEBKIT_INSPECTOR is $RFC_ENABLE_WEBKIT_INSPECTOR and BUILD_TYPE is $BUILD_TYPE"
+webLogging "RFC_ENABLE_WEBKIT_INSPECTOR is $RFC_ENABLE_WEBKIT_INSPECTOR and BUILD_TYPE is $BUILD_TYPE"
 if [ "$RFC_ENABLE_WEBKIT_INSPECTOR" == "true" ] || [ "$BUILD_TYPE" != "prod" ]; then
 
     iface_type=0
@@ -91,16 +91,16 @@ if [ "$RFC_ENABLE_WEBKIT_INSPECTOR" == "true" ] || [ "$BUILD_TYPE" != "prod" ]; 
     RWI_PORTS=(9224 10000 10001 10002 10003 10004)
 
     if [ 1 -le $iface_type ] && [ $iface_type -le 4 ] ;then
-        rfcLogging "$iface is a valid interface !!"
+        webLogging "$iface is a valid interface !!"
         if [ "$ip_event" = "delete" ];then
 
-            rfcLogging "ip_event : $ip_event"
+            webLogging "ip_event : $ip_event"
             if [ -x $IPV4_BIN_PATH ]; then
                 for port in ${RWI_PORTS[@]}; do
                   $IPV4_BIN -D INPUT -i $iface -p tcp --dport $port -j ACCEPT
                 done
             else
-                rfcLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
+                webLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
             fi
             if [ -x $IPV6_BIN_PATH ]; then 
                 #enable Web Inspector for WPE
@@ -108,13 +108,13 @@ if [ "$RFC_ENABLE_WEBKIT_INSPECTOR" == "true" ] || [ "$BUILD_TYPE" != "prod" ]; 
                   $IPV6_BIN -D INPUT -i $iface -p tcp --dport $port -j ACCEPT
                 done
             else
-                rfcLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
+                webLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
             fi
         else
            [ -f $NET_SYS_PATH/$iface/operstate ] && iface_status=`cat $NET_SYS_PATH/$iface/operstate` || iface_status="down"
-               rfcLogging "[$0]:Interface = $iface Status = $iface_status"
+                webLogging "[$0]:Interface = $iface Status = $iface_status"
            if [ "$iface_status" = "up" ] && [ "$ip_event" = "add" ];then
-                rfcLogging "ip_event : $ip_event"
+                webLogging "ip_event : $ip_event"
 		#Restart DHCPC if the global v6 Ip is not assigned to eth
                 sleep 5
                 globalIP=`ip addr show dev $iface | grep -i global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n`
@@ -132,7 +132,7 @@ if [ "$RFC_ENABLE_WEBKIT_INSPECTOR" == "true" ] || [ "$BUILD_TYPE" != "prod" ]; 
                           $IPV4_BIN -I INPUT -i $iface -p tcp --dport $port -j ACCEPT
                         done
                 else
-                        rfcLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
+                        webLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
                 fi
                 if [ -x $IPV6_BIN_PATH ]; then 
                         #enable Web Inspector for WPE
@@ -140,7 +140,7 @@ if [ "$RFC_ENABLE_WEBKIT_INSPECTOR" == "true" ] || [ "$BUILD_TYPE" != "prod" ]; 
                           $IPV6_BIN -I INPUT -i $iface -p tcp --dport $port -j ACCEPT
                         done
                 else
-                        rfcLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
+                        webLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
                 fi
             fi
          fi
