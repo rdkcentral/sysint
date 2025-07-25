@@ -19,14 +19,15 @@
 
 [Unit]
 Description=SSH Per-Connection Server
-After=network-online.target
+After=network-online.target tr69hostif.service
 
 [Service]
 Type=forking
 EnvironmentFile=-/etc/default/dropbear
 EnvironmentFile=/etc/device.properties
 ExecStartPre=/bin/sh /lib/rdk/start_ssh.sh
-ExecStart=/bin/sh -c '/usr/sbin/dropbear -b /etc/sshbanner.txt ${DROPBEAR_PARAMS} ${DROPBEAR_EXTRA_ARGS} ${IP_ADDRESS_PARAM}'
+ExecStartPre=/bin/systemctl import-environment USE_DEVKEYS
+ExecStart=/bin/sh -c '/usr/sbin/dropbear -b /etc/sshbanner.txt ${DROPBEAR_PARAMS} ${DROPBEAR_EXTRA_ARGS} ${IP_ADDRESS_PARAM} ${USE_DEVKEYS}'
 ExecStartPost=/bin/sh -c "rm -rf /tmp/.dropbear"
 RestartSec=5s
 KillSignal=SIGHUP
