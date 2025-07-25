@@ -61,11 +61,11 @@ cpu_statistics() {
 
 systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
 if [ "$systemHealthLog" != "0" ]; then
-    echo "Remove existing cron Update VM and CPU stats to the messages.txt file"
-    sh /lib/rdk/cronjobs_update.sh "remove" "vm_cpu_temp-check.sh"
+    echo "Cron Job exists to update VM and CPU stats to the messages.txt file"
+else
+    echo "Scheduling Cron update VM and CPU stats to the messages.txt file"
+    sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
 fi
-echo "Scheduling Cron Update VM and CPU stats to the messages.txt file"
-sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
 
 # Adding the Clock Frequency Info
 echo "Clock Frequency Info:"
