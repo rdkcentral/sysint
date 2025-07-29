@@ -22,6 +22,7 @@
 ## Script to Check Firmware Update Status from XConf
 ##################################################################
 
+
 . /etc/include.properties
 . /etc/device.properties
 
