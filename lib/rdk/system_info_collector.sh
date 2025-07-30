@@ -64,7 +64,7 @@ if [ "$systemHealthLog" != "0" ]; then
     echo "Cron Job exists to update VM and CPU stats to the messages.txt file"
 else
     echo "Scheduling Cron update VM and CPU stats to the messages.txt file"
-    sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
+    sh /lib/rdk/cronjobs_update.sh "add" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
 fi
 
 # Adding the Clock Frequency Info
