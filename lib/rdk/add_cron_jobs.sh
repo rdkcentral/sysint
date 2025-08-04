@@ -23,9 +23,11 @@
 . /etc/device.properties
 . /etc/env_setup.sh
 
+echo "Calling add_cron_jobs script"
 export PATH=$PATH:/usr/sbin:/sbin
 CRON_SPOOL=/var/spool/cron
 # kill any existing crond services
+echo "Killing cronjobs"
 killall crond > /dev/null
 
 if [ "x$BIND_ENABLED" = "xtrue" ];then
@@ -77,6 +79,14 @@ if [ -f $RDK_PATH/dmesg-logs-timestamp.sh ] && [ -f $RDK_PATH/dmesg_logs.sh ]; t
        if [ "$output" == "0" ]; then
             sh /lib/rdk/cronjobs_update.sh "add" "dmesg-logs-timestamp.sh" "*/5 * * * * nice -n 19 sh $RDK_PATH/dmesg-logs-timestamp.sh" 
        fi
+fi
+
+echo "Calling cronjob for cpu_tem_check"
+if [ -f $RDK_PATH/vm_cpu_temp-check.sh ]; then
+    systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
+    if [ "$systemHealthLog" == "0" ]; then
+        sh /lib/rdk/cronjobs_update.sh "add" "vm_cpu_temp-check.sh" "*/15 * * * * nice -n 10 sh $RDK_PATH/vm_cpu_temp-check.sh"
+    fi
 fi
 
 if [ "$DEVICE_NAME" == "X1" ]  && [ -f /etc/os-release ]; then
