@@ -19,8 +19,8 @@
 [Unit]
 Description=COREDUMP UPLOAD
 
-After=network-online.target dnsmasq.service
-Requires=network-online.target
+After=network-up.target dnsmasq.service
+Requires=network-up.target
 
 [Service]
 ExecStart=/lib/rdk/uploadDumps.sh  "" 1 
