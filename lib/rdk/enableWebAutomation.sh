@@ -35,12 +35,12 @@ if [ -z $RFC_PATH ]; then
     RFC_PATH="/opt/secure/RFC"
 fi
 
-rfcLogging ()
+webLogging ()
 {
-    echo "`/bin/timestamp` [RFC]:WEB_INSPECTOR : $1" >> $LOG_PATH/rfcscript.log
+    echo "`/bin/timestamp` WEB_INSPECTOR : $1" >> $LOG_PATH/NMMonitor.log
 }
 
-rfcLogging "Executing enableWebAutomation.sh !!"
+webLogging "Executing enableWebAutomation.sh !!"
 
 
 if [ ! -f /etc/os-release ]; then
@@ -105,7 +105,7 @@ if [ -f  /lib/rdk/getRFC.sh ]; then
     . /lib/rdk/getRFC.sh WEBAUTOMATION
 fi
 
-rfcLogging "RFC_ENABLE_WEBAUTOMATION is $RFC_ENABLE_WEBAUTOMATION"
+webLogging "RFC_ENABLE_WEBAUTOMATION is $RFC_ENABLE_WEBAUTOMATION"
 if [ "$RFC_ENABLE_WEBAUTOMATION" == "true" ]; then
 
     iface_type=0
@@ -113,38 +113,38 @@ if [ "$RFC_ENABLE_WEBAUTOMATION" == "true" ]; then
     iface_type=$?
 
     if [ 2 -le $iface_type ] && [ $iface_type -le 4 ] ;then
-        rfcLogging "RFC_ENABLE_WEBAUTOMATION Valid Interface !!"
+        webLogging "RFC_ENABLE_WEBAUTOMATION Valid Interface !!"
         if [ "$ip_event" = "delete" ];then
 
-            rfcLogging "RFC_ENABLE_WEBAUTOMATION ip_event : delete!!"
+            webLogging "RFC_ENABLE_WEBAUTOMATION ip_event : delete!!"
             if [ -x $IPV4_BIN_PATH ]; then
                 $IPV4_BIN -D INPUT -i $iface -p tcp --dport 9517 -j ACCEPT
             else
-                rfcLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
+                webLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
             fi
             if [ -x $IPV6_BIN_PATH ]; then
                 #enable Web Automation for WPE
                 $IPV6_BIN -D INPUT -i $iface -p tcp --dport 9517 -j ACCEPT
             else
-                rfcLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
+                webLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
             fi
         else
            iface_status=$(enable_interface $iface)
-           rfcLogging "[$0]:Interface = $iface Status = $iface_status"
+           webLogging "[$0]:Interface = $iface Status = $iface_status"
            if [ "$iface_status" = "up" ] && [ "$ip_event" = "add" ];then
-                rfcLogging "RFC_ENABLE_WEBAUTOMATION add!!"
+                webLogging "RFC_ENABLE_WEBAUTOMATION add!!"
                 sleep 5
                 if [ -x $IPV4_BIN_PATH ]; then
                         #enable Web Automaion for WPE
                         $IPV4_BIN -I INPUT -i $iface -p tcp --dport 9517 -j ACCEPT
                 else
-                        rfcLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
+                        webLogging " $IPV4_BIN not found. Not applying ipv4 firewall rules"
                 fi
                 if [ -x $IPV6_BIN_PATH ]; then
                         #enable Web Automation for WPE
                         $IPV6_BIN -I INPUT -i $iface -p tcp --dport 9517 -j ACCEPT
                 else
-                        rfcLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
+                        webLogging " $IPV6_BIN not found. Not applying ipv6 firewall rules"
                 fi
             fi
          fi

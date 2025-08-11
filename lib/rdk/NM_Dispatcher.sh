@@ -62,9 +62,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
 
         sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         NMdispatcherLog "checkDefaultRoute.sh"
-
-        sh /lib/rdk/ipmodechange.sh $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        NMdispatcherLog "ipmodechange.sh"
     fi
     if [ "$interfaceName" == "wlan0" ]; then
         touch /tmp/wifi-on
