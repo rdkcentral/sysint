@@ -55,8 +55,4 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode4 $interfaceName $ipaddr4 "global"
         sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode6 $interfaceName $ipaddr6 "global"
         echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
-
-        sh /lib/rdk/ipmodechange.sh $imode4 $interfaceName $ipaddr4 $gwip4 $interfaceName "metric" "delete"
-        sh /lib/rdk/ipmodechange.sh $imode6 $interfaceName $ipaddr6 $gwip6 $interfaceName "metric" "delete"
-        echo "$DT_TIME ipmodechange.sh" >> /opt/logs/NMMonitor.log
 fi
