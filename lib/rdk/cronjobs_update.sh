@@ -26,6 +26,8 @@ if [ -f /etc/env_setup.sh ]; then
 fi
 
 log_file="$LOG_PATH/cronjobs_update.log"
+
+echo "saranya cronjobs_update.sh " >> $log_file
 help_strings()
 {
     echo "`/bin/timestamp` ERROR: Argument mismatch" >> $log_file
@@ -40,11 +42,13 @@ if [ $# -eq 0 ]; then
 fi
 #remove/check-entry operation check
 if [ $# -ne 2 ] && [ "$1" = "remove" -o "$1" = "check-entry" ]; then
+    echo "saranya cronjobs_update inside check_entry $1" >> $log_file
     help_strings
     exit 1
 fi
 #add/update operation check
 if [ $# -ne 3 ] && [ "$1" = "add" -o "$1" = "update" ]; then
+    echo "saranya cronjobs_update inside add $1" >> $log_file
     help_strings
     exit 1
 fi
@@ -74,10 +78,12 @@ check_entry()
 #main app
 # Start crond daemon for yocto builds if not running
 if [ -f /etc/os-release ]; then
+    echo "saranya cronjob_update starting crond deamon" >> $log_file
     touch /var/spool/cron/root
     pid=`pidof crond`
     echo "`/bin/timestamp` crond pid: $pid" >> $log_file
     if [ -z $pid ]; then
+	echo "saranya cronjob_update command to start crond" >> $log_file
         crond -b -L /dev/null -c /var/spool/cron/
     fi
 fi
