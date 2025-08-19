@@ -19,7 +19,7 @@
 [Unit]
 Description=COREDUMP UPLOAD
 
-After=network-up.target dnsmasq.service
+After=network-up.target
 Requires=network-up.target
 
 [Service]
