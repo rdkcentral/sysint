@@ -19,8 +19,46 @@
 # limitations under the License.
 ####################################################################################
 
+if [ -f /etc/device.properties ];then
+    . /etc/device.properties
+fi
+
+if [ -f /etc/common.properties ];then
+    . /etc/common.properties
+fi
+
 DT_TIME=$(date +'%Y-%m-%d:%H:%M:%S:%6N')
 echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NMMonitor.log
+
+NM_LOG_FILE="/opt/logs/NMMonitor.log"
+FILE=/tmp/.GatewayIP_dfltroute
+
+NMdispatcherLog()
+{
+    echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
+}
+
+checkDefaultRoute_Delete() {
+        #Condition to check for arguments are 7 and not 0.
+        if [ $# -eq 0 ] || [ $# -ne 7 ];then
+                echo "No. of arguments supplied are not satisfied, Exiting..!!!"
+                echo "Arguments accepted are [ family | interface | destinationip | gatewayip | preferred_src | metric | add/delete]"
+                return 1
+        fi
+
+        NMdispatcherLog "Input Arguments : $* "
+        opern="$7"
+        gtwip="$4"
+
+        if [ "$opern" = "delete" ]; then
+                #Remove flag and IP for delete operation
+                NMdispatcherLog "Deleting Route Flag"
+                sed -i "/$gtwip/d" $FILE
+                [ -s $FILE ] || rm -rf /tmp/route_available
+        else
+                NMdispatcherLog "Received operation:$opern is Invalid..!!"
+        fi
+}
 
 interfaceName=$1
 interfaceStatus=$2
@@ -48,9 +86,9 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         sh /lib/rdk/ipv6addressChange.sh "delete" $mode6 $interfaceName $ipaddr6 "global"
         echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
 
-        sh /lib/rdk/checkDefaultRoute.sh  $imode4 $interfaceName $ipaddr4 $gwip4 $interfaceName "metric" "delete"
-        sh /lib/rdk/checkDefaultRoute.sh  $imode6 $interfaceName $ipaddr6 $gwip6 $interfaceName "metric" "delete"
-        echo "$DT_TIME checkDefaultRoute.sh" >> /opt/logs/NMMonitor.log
+        checkDefaultRoute_Delete  $imode4 $interfaceName $ipaddr4 $gwip4 $interfaceName "metric" "delete"
+        checkDefaultRoute_Delete  $imode6 $interfaceName $ipaddr6 $gwip6 $interfaceName "metric" "delete"
+        echo "$DT_TIME checkDefaultRoute_Delete" >> /opt/logs/NMMonitor.log
 
         sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode4 $interfaceName $ipaddr4 "global"
         sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode6 $interfaceName $ipaddr6 "global"
