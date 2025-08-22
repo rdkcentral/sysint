@@ -41,16 +41,6 @@ if [ "$#" -eq 2 ];then
         exit
     fi
 
-    if [ -f /lib/systemd/system/pni_controller.service ]; then
-        . /etc/device.properties
-        if [ "$interfaceName" == "$ETHERNET_INTERFACE" ]; then
-            if systemctl is-active netsrvmgr.service > /dev/null || systemctl is-failed netsrvmgr.service > /dev/null; then
-                networkEventLog "[networkLinkEvent.sh#$$]: $* - systemctl restart pni_controller.service &"
-                systemctl restart pni_controller.service &
-            fi
-        fi
-    fi
-
     #Skip event received before ipremote boot scan
     sh /lib/rdk/enable_ipremote.sh $interfaceName $interfaceStatus
     networkEventLog "enable_ipremote.sh"
