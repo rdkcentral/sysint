@@ -135,9 +135,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-        sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
-        NMdispatcherLog "networkLinkEvent.sh"
-
         sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "updateGlobalIPInfo.sh"
         

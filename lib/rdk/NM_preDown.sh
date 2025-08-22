@@ -78,10 +78,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         imode6=10
         gwip6=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
 
-
-        sh /lib/rdk/networkLinkEvent.sh $interfaceName "delete"
-        echo "$DT_TIME networkLinkEvent.sh" >> /opt/logs/NMMonitor.log
-
         sh /lib/rdk/ipv6addressChange.sh "delete" $mode4 $interfaceName $ipaddr4 "global"
         sh /lib/rdk/ipv6addressChange.sh "delete" $mode6 $interfaceName $ipaddr6 "global"
         echo "$DT_TIME ipv6addressChange.sh" >> /opt/logs/NMMonitor.log
