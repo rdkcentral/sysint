@@ -19,12 +19,45 @@
 # limitations under the License.
 ####################################################################################
 
+# Include File check
+if [ -f /etc/device.properties ];then
+    . /etc/device.properties
+fi
+
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
+fi
+
 NM_LOG_FILE="/opt/logs/NMMonitor.log"
+LOG_FILE="/opt/logs/ipSetupLogs.txt"
+
 NMdispatcherLog()
 {
     echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
 }
 NMdispatcherLog "From NM_Dispatcher.sh $1 $2"
+
+netInfoLog() {
+    echo "`/bin/timestamp` :$0: $*" >> "$LOG_FILE"
+    echo "`/bin/timestamp` :$0: $*" >> "$NM_LOG_FILE"
+}
+
+networkInfoLogger() {
+    # Arguments: $1 event, $2 ipaddress type, $3 interface name, $4 ipaddress, $5 ipaddress scope
+    local cmd="$1"
+    local flags="$5"
+
+    netInfoLog "Input Parameters : $*"
+    if [ "x$cmd" = "xadd" ] && [ "x$flags" = "xglobal" ]; then
+        netInfoLog "IP Informations `ifconfig`"
+        wifiMac=$(grep 'wifi_mac=' /tmp/.deviceDetails.cache | sed -e "s/wifi_mac=//g")
+        t2ValNotify "Xi_wifiMAC_split" "$wifiMac"
+        netInfoLog "Route Informations `route -n`"
+        netInfoLog "DNS Servers Informations"
+        netInfoLog "DNS Masq File: /etc/resolv.dnsmasq `cat /etc/resolv.dnsmasq`"
+        netInfoLog "DNS Resolve: /etc/resolv.conf `cat /etc/resolv.conf`"
+    fi
+}
 
 interfaceName=$1
 interfaceStatus=$2
@@ -64,8 +97,8 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "ipv6addressChange.sh"
 
-        sh /lib/rdk/networkInfoLogger.sh "add" $mode $interfaceName $ipaddr "global"
-        NMdispatcherLog "networkInfoLogger.sh"
+        networkInfoLogger "add" $mode $interfaceName $ipaddr "global"
+        NMdispatcherLog "networkInfoLogger"
 
         sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         NMdispatcherLog "checkDefaultRoute.sh"
@@ -75,7 +108,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
     if [[ "$interfaceName" == "wlan0" || "$interfaceName" == "eth0" ]]; then
        if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then 
-           sh /lib/rdk/getRouterInfo.sh $interfaceName
+           sh /lib/rdk/getRouterInfo.sh $interfaceName $interfaceStatus
            NMdispatcherLog "getRouterInfo.sh"
        fi
     fi
