@@ -59,13 +59,8 @@ cpu_statistics() {
 	t2ValNotify "FREE_MEM_split" "$mem"
 }
 
-systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
-if [ "$systemHealthLog" != "0" ]; then
-    echo "Cron Job exists to update VM and CPU stats to the messages.txt file"
-else
-    echo "Scheduling Cron update VM and CPU stats to the messages.txt file"
-    sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
-fi
+echo "Update VM and CPU stats to the messages.txt file"
+sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Adding the Clock Frequency Info
 echo "Clock Frequency Info:"
