@@ -21,7 +21,7 @@
 Description=Timer based network-up.target activation
 
 [Timer]
-OnBootSec=420s
+OnBootSec=120s
 Unit=network-up.target
 
 [Install]
