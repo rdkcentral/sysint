@@ -23,7 +23,17 @@ WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 
 if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w psk= | cut -d '"' -f 2)
+  PSK_LINE=$(grep -w psk= "$WIFI_WPA_SUPPLICANT_CONF")
+
+  # Case 1: Quoted passphrase
+  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
+      PSK="${BASH_REMATCH[1]}"
+  # Case 2: Unquoted 64-char raw PSK
+  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
+      PSK="${BASH_REMATCH[1]}"
+  else
+      PSK=""
+  fi
 
   if [ -z "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
       if [ -z $SSID ]; then
