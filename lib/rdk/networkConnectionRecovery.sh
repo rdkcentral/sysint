@@ -71,6 +71,7 @@ StoreTotmpFile()
     echo "IsWifiReset=$IsWifiReset" ;
     echo "WifiResetTime=$WifiResetTime" ;
     echo "dnsFailures=$dnsFailures" ;
+	echo "count=$count" ;
   } >> "$tmpFile"
 }
 
@@ -88,6 +89,7 @@ if [ ! -f "$tmpFile" ] ; then
   IsWifiReset=0
   WifiResetTime=0
   dnsFailures=0
+  count=0
   { echo "EthernetLogTimeStamp=$EthernetLogTimeStamp" ;
     echo "WifiLogTimeStamp=$WifiLogTimeStamp" ;
     echo "GatewayLogTimeStamp=$GatewayLogTimeStamp" ;
@@ -98,6 +100,7 @@ if [ ! -f "$tmpFile" ] ; then
     echo "IsWifiReset=$IsWifiReset" ;
     echo "WifiResetTime=$WifiResetTime" ;
     echo "dnsFailures=$dnsFailures" ;
+	echo "count=$count" ;
   } >> "$tmpFile"
 
 else
@@ -111,6 +114,7 @@ else
   IsWifiReset=$(grep "IsWifiReset" $tmpFile|awk -F  "=" '{print $2}')
   WifiResetTime=$(grep "WifiResetTime" $tmpFile|awk -F  "=" '{print $2}')
   dnsFailures=$(grep "dnsFailures" $tmpFile|awk -F  "=" '{print $2}')
+  count=$(grep "count" $tmpFile|awk -F  "=" '{print $2}')
 fi
 }
 
@@ -134,18 +138,26 @@ checkEthernetConnected()
       if [ $ret -eq  0 ] ; then
         if [ "$lnfSSIDConnected" = "1" ]; then
           echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED_LNF" >> "$logsFile"
+		  #Reset count when lnf ssid is connected
+          count=0
           t2CountNotify "SYST_INFO_WIFIConn"
         else
-          echo "$(/bin/timestamp) TELEMETRY_WIFI_NOT_CONNECTED" >> "$logsFile"
+          #Skip printing wifi not connected log for the first time
+          [ $count -gt 0 ] && echo "$(/bin/timestamp) TELEMETRY_WIFI_NOT_CONNECTED" >> "$logsFile"
+          count=$((count + 1))
         fi
         return 0
       else
         echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED" >> "$logsFile"
+		#Reset count when connectivity is good
+        count=0
         t2CountNotify "SYST_INFO_WIFIConn"
         return 0
       fi
     else
       echo "$(/bin/timestamp) TELEMETRY_ETHERNET_CONNECTED" >> "$logsFile"
+	  #Reset count when connectivity is good
+      count=0
       t2CountNotify "SYST_INFO_ETHConn"
       return 1
     fi
