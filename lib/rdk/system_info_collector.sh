@@ -26,6 +26,10 @@
 . /etc/device.properties
 . /etc/env_setup.sh
 
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    . /lib/rdk/t2Shared_api.sh
+fi
+
 count=0
 
 log_disk_usage() {
@@ -57,25 +61,27 @@ cpu_statistics() {
 echo "Clock Frequency Info:"
 grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' 
 
-if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    . /lib/rdk/t2Shared_api.sh
-fi
+# Adding the Memory Available Info
+echo "Available Memory Info:"
+MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
+echo $MEM_AVAILABLE
+t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
 
 echo "Update VM and CPU stats to the messages.txt file"
 sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
-    echo "Logging for Yocto platforms..."
-    /bin/timestamp 
-    uptime 
-    run_top_command
-    log_disk_usage
-    cpu_statistics
+echo "Logging for Yocto platforms..."
+/bin/timestamp 
+uptime 
+run_top_command
+log_disk_usage
+cpu_statistics
 
-    if [ -f /tmp/.top_count ]; then
+if [ -f /tmp/.top_count ]; then
 	curr_count=`cat /tmp/.top_count`
-        count=$(( curr_count + 1 ))
+    count=$(( curr_count + 1 ))
 	if [ $count -eq 6 ]; then
 		top -b -n1 | grep -vE 'grep|run.sh'
 		cat /proc/meminfo
