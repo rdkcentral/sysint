@@ -85,9 +85,6 @@ checkDefaultRoute_Add() {
         if [ ! -f /tmp/route_available ];then
             NMdispatcherLog "Creating the Route Flag /tmp/route_available"
             touch /tmp/route_available
-            if [ "x${INIT_SYSTEM}" = "xs6" ] ; then
-                s6-ftrig-notify /tmp/.pathfifo path-route-available
-            fi
         fi
 
         #Add Default route IP to the /tmp/.GatewayIP_dfltroute file
