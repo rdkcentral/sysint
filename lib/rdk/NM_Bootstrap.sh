@@ -23,23 +23,19 @@ WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 
 if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep -w psk= "$WIFI_WPA_SUPPLICANT_CONF")
-  echo "`/bin/timestamp` : $0: Found PSK line: $PSK_LINE" >> /opt/logs/NMMonitor.log
+  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
 
   # Case 1: Quoted passphrase
   if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
     PSK="${BASH_REMATCH[1]}"
-    echo "`/bin/timestamp` : $0: PSK extracted as quoted passphrase: $PSK" >> /opt/logs/NMMonitor.log
 
   # Case 2: Unquoted 64-char raw PSK
   elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
     PSK="${BASH_REMATCH[1]}"
-    echo "`/bin/timestamp` : $0: PSK extracted as 64-char hex: $PSK" >> /opt/logs/NMMonitor.log
 
   # No match
   else
     PSK=""
-    echo "`/bin/timestamp` : $0: No valid PSK format found" >> /opt/logs/NMMonitor.log
   fi
 
   if [ -z "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
