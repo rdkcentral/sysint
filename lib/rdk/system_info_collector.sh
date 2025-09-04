@@ -64,7 +64,7 @@ grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g'
 # Adding the Memory Available Info
 echo "Available Memory Info:"
 MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
-echo $MEM_AVAILABLE
+echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
 
 echo "Update VM and CPU stats to the messages.txt file"
