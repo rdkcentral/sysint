@@ -30,15 +30,9 @@ interfaceName=$1
 interfaceStatus=$2
 
 if [ "$interfaceStatus" = "up" ]; then
-    /usr/bin/nm-online -q -t 60 # If Network manager is not online wait for 60 sec. TODO: Revisit this during connectivity check enable time
+   
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
     NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
-    if [ "$CON_STATE" = "100 (connected)" ] || [ "$CON_STATE" = "120 (connected (site only))" ]; then
-        NMdispatcherLog "Connection state of $interfaceName is connected."
-        sh /lib/rdk/connectivitycheck.sh &
-    else
-        NMdispatcherLog "Connection state of $interfaceName Up But Not Fully connected."
-    fi
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
