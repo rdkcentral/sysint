@@ -24,12 +24,17 @@ if [ -f /etc/device.properties ];then
     . /etc/device.properties
 fi
 
+if [ -f /etc/common.properties ];then
+    . /etc/common.properties
+fi
+
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
 NM_LOG_FILE="/opt/logs/NMMonitor.log"
 LOG_FILE="/opt/logs/ipSetupLogs.txt"
+FILE=/tmp/.GatewayIP_dfltroute
 
 NMdispatcherLog()
 {
@@ -59,6 +64,45 @@ networkInfoLogger() {
     fi
 }
 
+checkDefaultRoute_Add() {
+    #Condition to check for arguments are 7 and not 0.
+    if [ $# -eq 0 ] || [ $# -ne 7 ];then
+        echo "No. of arguments supplied are not satisfied, Exiting..!!!"
+        echo "Arguments accepted are [ family | interface | destinationip | gatewayip | preferred_src | metric | add/delete]"
+        return 1
+    fi
+
+    NMdispatcherLog "Input Arguments : $* "
+    opern="$7"
+    mode="$1"
+    gtwip="$4"
+
+    if [ "$opern" = "add" ]; then
+        #Check and create the route flag
+        route -n
+        ip -6 route
+        NMdispatcherLog "Route is available"
+        if [ ! -f /tmp/route_available ];then
+            NMdispatcherLog "Creating the Route Flag /tmp/route_available"
+            touch /tmp/route_available
+        fi
+
+        #Add Default route IP to the /tmp/.GatewayIP_dfltroute file
+        if ! grep -q "$gtwip" $FILE; then
+            if [ "$mode" = "2" ]; then
+                echo "IPV4 $gtwip" >> $FILE
+            elif [ "$mode" = "10" ]; then
+                echo "IPV6 $gtwip" >> $FILE
+            else
+                NMdispatcherLog "Invalid Mode"
+                return 1
+            fi
+        fi
+    else
+        NMdispatcherLog "Received operation:$opern is Invalid..!!"
+    fi
+}
+
 interfaceName=$1
 interfaceStatus=$2
 
@@ -83,9 +127,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-        sh /lib/rdk/networkLinkEvent.sh $interfaceName "add"
-        NMdispatcherLog "networkLinkEvent.sh"
-
         sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "updateGlobalIPInfo.sh"
         
@@ -95,8 +136,8 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         networkInfoLogger "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "networkInfoLogger"
 
-        sh /lib/rdk/checkDefaultRoute.sh  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
-        NMdispatcherLog "checkDefaultRoute.sh"
+        checkDefaultRoute_Add  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
+        NMdispatcherLog "checkDefaultRoute_Add"
     fi
     if [ "$interfaceName" == "wlan0" ]; then
         touch /tmp/wifi-on

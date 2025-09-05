@@ -21,7 +21,6 @@
 Description=Log Rotation Timer Service (R)
 
 [Service]
-Type=forking
+Type=oneshot
 SyslogIdentifier=logrotate
-ExecStart=/usr/sbin/logrotate -s /tmp/logrotatedata.status /etc/logrotatedata.conf -l /opt/logs/logrotate.log
-Restart=always
+ExecStart=/usr/sbin/logrotate -s /tmp/logrotatedata.status /etc/logrotatedata.conf -l /opt/logs/logrotate.log --skip-state-lock
