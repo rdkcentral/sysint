@@ -832,18 +832,27 @@ uploadLogOnReboot()
             exit 0
         fi
     fi
-    uploadLog "Sleeping for seven minutes"
-    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-        #run sleep in a background job
-        sleep 330 &
-        # store and remember the sleep's PID
-        sleep_pid="$!"
-        # wait here for the sleep to complete
-        wait
+    # Get system uptime in seconds
+    uptime_seconds=$(cut -d' ' -f1 /proc/uptime)
+    uptime_seconds=${uptime_seconds%.*}
+
+    if [ "$uptime_seconds" -lt 900 ]; then
+        uploadLog "Sleeping for seven minutes"
+        if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+            #run sleep in a background job
+            sleep 330 &
+            # store and remember the sleep's PID
+            sleep_pid="$!"
+            # wait here for the sleep to complete
+            wait
+        else
+            sleep 330
+        fi
+        uploadLog "Done sleeping"
     else
-        sleep 330
+        uploadLog "Device uptime is more than 15min. Skip Sleep"
     fi
-    uploadLog "Done sleeping"
+
     # Special processing - Permanently backup logs on box delete the logs older than
     # 3 days to take care of old filename
     stat=`find /opt/logs -name "*-*-*-*-*M-" -mtime +3 -exec rm -rf {} \;`
