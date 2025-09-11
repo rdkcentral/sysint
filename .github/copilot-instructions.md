@@ -53,6 +53,5 @@
 
 - All source files will be linted using astyle with the configuration file located at `.astyle.rc`.
 - Use autotools for build configuration and Makefiles for compilation.
-- Use a busy box style applet implementation for command line tools or binaries that are generated.
-- There shall be a single binary built for all applets.
+- Use `gcc` as the primary compiler, ensuring compatibility with `clang` where possible.
 
