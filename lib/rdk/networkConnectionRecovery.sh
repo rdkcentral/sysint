@@ -71,7 +71,7 @@ StoreTotmpFile()
     echo "IsWifiReset=$IsWifiReset" ;
     echo "WifiResetTime=$WifiResetTime" ;
     echo "dnsFailures=$dnsFailures" ;
-	echo "count=$count" ;
+    echo "count=$count" ;
   } >> "$tmpFile"
 }
 
@@ -100,7 +100,7 @@ if [ ! -f "$tmpFile" ] ; then
     echo "IsWifiReset=$IsWifiReset" ;
     echo "WifiResetTime=$WifiResetTime" ;
     echo "dnsFailures=$dnsFailures" ;
-	echo "count=$count" ;
+    echo "count=$count" ;
   } >> "$tmpFile"
 
 else
@@ -138,7 +138,7 @@ checkEthernetConnected()
       if [ $ret -eq  0 ] ; then
         if [ "$lnfSSIDConnected" = "1" ]; then
           echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED_LNF" >> "$logsFile"
-		  #Reset count when lnf ssid is connected
+          #Reset count when lnf ssid is connected
           count=0
           t2CountNotify "SYST_INFO_WIFIConn"
         else
@@ -149,14 +149,14 @@ checkEthernetConnected()
         return 0
       else
         echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED" >> "$logsFile"
-		#Reset count when connectivity is good
+        #Reset count when connectivity is good
         count=0
         t2CountNotify "SYST_INFO_WIFIConn"
         return 0
       fi
     else
       echo "$(/bin/timestamp) TELEMETRY_ETHERNET_CONNECTED" >> "$logsFile"
-	  #Reset count when connectivity is good
+      #Reset count when connectivity is good
       count=0
       t2CountNotify "SYST_INFO_ETHConn"
       return 1
