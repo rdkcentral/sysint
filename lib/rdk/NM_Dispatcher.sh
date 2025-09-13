@@ -64,7 +64,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
             DNSMASQ_PID=$(cat "$DNSMASQ_PID_FILE")
             if [ -n "$DNSMASQ_PID" ]; then
                 echo "$DT_TIME Killing dnsmasq PID $DNSMASQ_PID" >> /opt/logs/NMMonitor.log
-                kill -9 "$DNSMASQ_PID"
+                kill -TERM "$DNSMASQ_PID"
             else
                 echo "$DT_TIME dnsmasq PID not running or invalid" >> /opt/logs/NMMonitor.log
             fi
