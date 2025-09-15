@@ -30,6 +30,10 @@
 if [ "$DEVICE_TYPE" != "mediaclient" ]; then
      . $RDK_PATH/interfaceCalls.sh
 fi
+if [ -f /lib/rdk/exec_curl_mtls.sh ]
+then
+   source /lib/rdk/exec_curl_mtls.sh
+fi
 
 MAC=`getMacAddressOnly`
 dt=`date "+%m-%d-%y-%I-%M%p"`
@@ -93,16 +97,16 @@ HttpLogUpload()
     EnableOCSP="/tmp/.EnableOCSPCA"
 
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
-        CURL_CMD="curl -w '%{http_code}\n' -d \"filename=$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --cert-status --connect-timeout 10 -m 10"
+        CURL_CMD="-w '%{http_code}\n' -d \"filename=$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --cert-status --connect-timeout 10 -m 10"
     else
-        CURL_CMD="curl -w '%{http_code}\n' -d \"filename=$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout 10 -m 10"
+        CURL_CMD="-w '%{http_code}\n' -d \"filename=$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout 10 -m 10"
     fi
     echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/dcmscript.log
     
     retries=0
     while [ "$retries" -lt 3 ]
     do        
-        ret= eval $CURL_CMD > $HTTP_CODE
+        ret= ` exec_curl_mtls "$CURL_CMD" "echo"`
         http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
         if [ $http_code -eq 200 ];then
             break
@@ -117,13 +121,13 @@ HttpLogUpload()
         #Get the url from FILENAME
         NewUrl=$(awk -F\" '{print $1}' $FILENAME)
         if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
-            CURL_CMD="curl -w '%{http_code}\n' -T \"$1\" -o \"$FILENAME\" \"$NewUrl\" --cert-status --connect-timeout 60 -m 120 -v"
+            CURL_CMD="-w '%{http_code}\n' -T \"$1\" -o \"$FILENAME\" \"$NewUrl\" --cert-status --connect-timeout 60 -m 120 -v"
         else
-            CURL_CMD="curl -w '%{http_code}\n' -T \"$1\" -o \"$FILENAME\" \"$NewUrl\" --connect-timeout 60 -m 120 -v"
+            CURL_CMD="-w '%{http_code}\n' -T \"$1\" -o \"$FILENAME\" \"$NewUrl\" --connect-timeout 60 -m 120 -v"
         fi
         echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/dcmscript.log
 
-        ret= eval $CURL_CMD > $HTTP_CODE
+        ret=` exec_curl_mtls "$CURL_CMD" "echo"`
         http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
         if [ $http_code -eq 200 ];then
             result=0
