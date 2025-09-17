@@ -26,11 +26,14 @@
 . /etc/device.properties
 . /etc/env_setup.sh
 
+
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     . /lib/rdk/t2Shared_api.sh
 fi
 
 count=0
+SYSTEM_METRIC_CRON_INTERVAL="*/15 * * * *"
+
 
 log_disk_usage() {
     echo "********** Disk Space Usage **********" 
@@ -55,7 +58,6 @@ cpu_statistics() {
 	mem=`free | awk '/Mem/{printf $4}'`
 	t2ValNotify "FREE_MEM_split" "$mem"
 }
-
 
 # Adding the Clock Frequency Info
 echo "Clock Frequency Info:"
