@@ -29,8 +29,11 @@ if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
 fi
 
+APP_LOG="apps"
 PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
 PREV_LOG_BACKUP_PATH="$LOG_PATH/PreviousLogs_backup"
+APP_LOG_PATH="$LOG_PATH/apps"
+APP_PREV_LOG_PATH="$PREV_LOG_PATH/apps"
 
 backupLog() {
     timestamp=$(/bin/timestamp)
@@ -42,9 +45,19 @@ if [ ! -d "$LOG_PATH" ];then
     mkdir -p "$LOG_PATH"
 fi
 
+# create app log workspace if not there
+if [ ! -d "$APP_LOG_PATH" ];then
+    mkdir -p "$APP_LOG_PATH"
+fi
+
 # create intermediate log workspace if not there
 if [ ! -d $PREV_LOG_PATH ];then
     mkdir -p $PREV_LOG_PATH
+fi
+
+# create intermediate app log workspace if not there
+if [ ! -d $APP_PREV_LOG_PATH ];then
+    mkdir -p $APP_PREV_LOG_PATH
 fi
 
 # create log backup workspace if not there
@@ -104,21 +117,36 @@ if [ "$HDD_ENABLED" = "false" ]; then
             if [ $? -ne 0 ]; then
                 backupLog "Error:Failed to Move the logs from  $LOG_PATH to $PREV_LOG_PATH"
             fi
+
+	    find $APP_LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" \) -exec mv '{}' $APP_PREV_LOG_PATH \;
+            if [ $? -ne 0 ]; then
+                backupLog "Error:Failed to Move the app logs from  $APP_LOG_PATH to $APP_PREV_LOG_PATH"
+            fi
+
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK1" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK1
+        backupAndRecoverLogs "$APP_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "" $BAK1
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK2" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK2
+	backupAndRecoverLogs "$APP_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "" $BAK2
     elif [ ! -f "$PREV_LOG_PATH/$sysLogBAK3" ]; then
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" $BAK3
+	backupAndRecoverLogs "$APP_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "" $BAK3
     else
         # box reboot within 8 minutes after reboot
         backupAndRecoverLogs "$PREV_LOG_PATH/" "$PREV_LOG_PATH/" mv "$BAK1" ""
         backupAndRecoverLogs "$PREV_LOG_PATH/" "$PREV_LOG_PATH/" mv "$BAK2" "$BAK1"
         backupAndRecoverLogs "$PREV_LOG_PATH/" "$PREV_LOG_PATH/" mv "$BAK3" "$BAK2"
         backupAndRecoverLogs "$LOG_PATH/" "$PREV_LOG_PATH/" mv "" "$BAK3"
+
+	#backup for apps log
+	backupAndRecoverLogs "$APP_PREV_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "$BAK1" ""
+	backupAndRecoverLogs "$APP_PREV_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "$BAK2" "$BAK1"
+	backupAndRecoverLogs "$APP_PREV_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "$BAK3" "$BAK2"
+	backupAndRecoverLogs "$APP_LOG_PATH/" "$APP_PREV_LOG_PATH/" mv "" "$BAK3"
     fi
   
    /bin/touch "$PREV_LOG_PATH/last_reboot"
@@ -132,14 +160,17 @@ else
     if [ ! -f "$PREV_LOG_PATH/$sysLog" ]; then
        backupLog "Move logs from $LOG_PATH to $PREV_LOG_PATH"
        find $LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \) -exec mv '{}' $PREV_LOG_PATH \;
+       find $APP_LOG_PATH -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" \) -exec mv '{}' $APP_PREV_LOG_PATH \;
        /bin/touch $PREV_LOG_PATH/last_reboot
     else
        find "$PREV_LOG_PATH" -name last_reboot | xargs rm >/dev/null
        timestamp=$(date "+%m-%d-%y-%I-%M-%S%p")
        LogFilePathPerm="$PREV_LOG_PATH/logbackup-$timestamp"
        mkdir -p "$LogFilePathPerm"
+       mkdir -p "$LogFilePathPerm/$APP_LOG"
        backupLog "Move logs from $LOG_PATH to $LogFilePathPerm"
        find "$LOG_PATH" -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" -o -name "bootlog" \)  -exec mv '{}' "$LogFilePathPerm" \;
+       find "$APP_LOG_PATH" -maxdepth 1 -mindepth 1 \( -type l -o -type f \) \( -iname "*.txt*" -o -iname "*.log*" \)  -exec mv '{}' "$LogFilePathPerm/$APP_LOG" \;
        /bin/touch "$LogFilePathPerm/last_reboot"
     fi
 fi
