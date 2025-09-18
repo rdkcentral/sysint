@@ -32,6 +32,10 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
+if [ -f /lib/rdk/utils.sh ]; then
+    source /lib/rdk/utils.sh
+fi
+
 NM_LOG_FILE="/opt/logs/NMMonitor.log"
 LOG_FILE="/opt/logs/ipSetupLogs.txt"
 FILE=/tmp/.GatewayIP_dfltroute
@@ -103,6 +107,34 @@ checkDefaultRoute_Add() {
     fi
 }
 
+updateGlobalIPInfo_add() {
+    cmd=$1
+    mode=$2
+    ifc=$3
+    addr=$4
+    flags=$5
+    
+    NMdispatcherLog "Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5" 
+
+    if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
+        if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
+            check_valid_IPaddress
+            NMdispatcherLog "Updating Box/ESTB IP"
+            echo "$addr" > /tmp/.$mode$ESTB_INTERFACE
+            refresh_devicedetails "estb_ip"
+        elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
+            NMdispatcherLog "Updating MoCA IP"
+            echo "$addr" > /tmp/.$mode$MOCA_INTERFACE
+            refresh_devicedetails "moca_ip"
+        elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
+            check_valid_IPaddress
+            NMdispatcherLog "Updating Wi-Fi IP"
+            echo "$addr" > /tmp/.$mode$WIFI_INTERFACE
+            refresh_devicedetails "boxIP"
+        fi
+    fi
+}
+
 interfaceName=$1
 interfaceStatus=$2
 
@@ -132,8 +164,8 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        NMdispatcherLog "updateGlobalIPInfo.sh"
+        updateGlobalIPInfo_add "add" $mode $interfaceName $ipaddr "global"
+        NMdispatcherLog "updateGlobalIPInfo_add"
         
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "ipv6addressChange.sh"
