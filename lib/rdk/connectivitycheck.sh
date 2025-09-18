@@ -28,7 +28,10 @@ fi
 CONNCHECK_LOG_FILE="$LOG_PATH/NMMonitor.log"
 CONNCHECK_FILE="/tmp/connectivity_check_done"
 CONNCHECK_TIMEOUT=120   # 2 minutes
-CONNCHECK_RETRY_INTERVAL=10    # 10 seconds
+
+# Exponential backoff parameters
+CONNCHECK_INITIAL_INTERVAL=1         # Start From 1 second
+CONNCHECK_MAX_INTERVAL=10            # Optional: cap to 10 seconds
 
 connectivityCheckLog()
 {
@@ -46,8 +49,8 @@ else
     exit 0
 fi
 
-# Get start time from /proc/uptime (integer part only)
 START=$(cut -d. -f1 /proc/uptime)
+SLEEP_INTERVAL=$CONNCHECK_INITIAL_INTERVAL
 
 while true; do
     NOW=$(cut -d. -f1 /proc/uptime)
@@ -63,17 +66,32 @@ while true; do
     fi
 
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-
+    CURL_STATUS=$?
     if [ "$HTTP_CODE" -eq 204 ]; then
-        connectivityCheckLog "Connected: Received HTTP 204"
+        connectivityCheckLog "Connected: Received HTTP 204 and curlstatus=$CURL_STATUS"
         if [ ! -f $CONNCHECK_FILE ]; then
             touch $CONNCHECK_FILE
         fi
         t2CountNotify "SYST_INFO_connectivitycheck_success"
         exit 0
     else
-        connectivityCheckLog "connectivitycheck.sh Not connected yet (HTTP $HTTP_CODE). Retrying in $CONNCHECK_RETRY_INTERVAL seconds..."
+        connectivityCheckLog "connectivitycheck.sh Not connected Http=$HTTP_CODE curlstatus$CURL_STATUS=. Retrying in $SLEEP_INTERVAL seconds..."
     fi
 
-    sleep $CONNCHECK_RETRY_INTERVAL
+    # Calculate remaining time to avoid sleeping past the timeout
+    REMAIN=$((CONNCHECK_TIMEOUT - ELAPSED))
+    if [ "$SLEEP_INTERVAL" -gt "$REMAIN" ]; then
+        SLEEP_INTERVAL=$REMAIN
+    fi
+    if [ "$SLEEP_INTERVAL" -le 0 ]; then
+        connectivityCheckLog "Timeout reached. Exiting."
+        exit 0
+    fi
+    sleep $SLEEP_INTERVAL
+
+    # Exponential backoff: double the interval, up to max
+    SLEEP_INTERVAL=$((SLEEP_INTERVAL * 2))
+    if [ "$SLEEP_INTERVAL" -gt "$CONNCHECK_MAX_INTERVAL" ]; then
+        SLEEP_INTERVAL=$CONNCHECK_MAX_INTERVAL
+    fi
 done
