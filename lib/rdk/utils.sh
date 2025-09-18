@@ -282,30 +282,3 @@ getPrivacyControlMode()
     #Implement own logic to get the privicyMode settings
     return
 }
-
-refresh_devicedetails()
-{
-    #Refresh device cache info
-    if [ -f /lib/rdk/getDeviceDetails.sh ]; then
-        sh /lib/rdk/getDeviceDetails.sh refresh $1
-    else
-        echo "DeviceDetails file not present" >> opt/logs/NMMonitor.log
-    fi
-}
-
-check_valid_IPaddress()
-{
-    mode=$1
-    addr=$2
-    # Neglect IPV6 ULA address and autoconfigured IPV4 address 
-    if [ "x$mode" == "xipv6" ]; then
-        if [[ $addr == fc* || $addr == fd* ]]; then
-            return 1
-        fi
-    elif [ "x$mode" == "xipv4" ]; then
-        autoIPTrunc=`echo $addr | cut -d "." -f1-2 `
-        if [ "$autoIPTrunc" == "169.254" ]; then
-            return 1
-        fi
-    fi
-}
