@@ -109,7 +109,7 @@ refresh_devicedetails()
     if [ -f /lib/rdk/getDeviceDetails.sh ]; then
         sh /lib/rdk/getDeviceDetails.sh refresh $1
     else
-        echo "DeviceDetails file not present" >> opt/logs/NMMonitor.log
+        NMdispatcherLog "DeviceDetails file not present"
     fi
 }
 
