@@ -27,6 +27,10 @@ if [ -f /etc/common.properties ];then
     . /etc/common.properties
 fi
 
+if [ -f /lib/rdk/utils.sh ]; then
+    source /lib/rdk/utils.sh
+fi
+
 DT_TIME=$(date +'%Y-%m-%d:%H:%M:%S:%6N')
 echo "$DT_TIME From NM_Dispatcher.sh $1 $2" >> /opt/logs/NMMonitor.log
 
@@ -60,6 +64,35 @@ checkDefaultRoute_Delete() {
         fi
 }
 
+updateGlobalIPInfo_delete() {
+    cmd=$1
+    mode=$2
+    ifc=$3
+    addr=$4
+    flags=$5
+    
+    NMdispatcherLog "Arguments: cmd:$1, mode:$2, ifc:$3, addr:$4, flags:$5" 
+
+    if [ "x$cmd" == "xdelete" ] && [ "x$flags" == "xglobal" ]; then
+
+        if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
+            check_valid_IPaddress
+            NMdispatcherLog "Updating Box/ESTB IP"
+            rm /tmp/.$mode$ESTB_INTERFACE
+            refresh_devicedetails "estb_ip"
+        elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
+            NMdispatcherLog "Updating MoCA IP"
+            rm /tmp/.$mode$MOCA_INTERFACE
+            refresh_devicedetails "moca_ip"
+        elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
+            check_valid_IPaddress
+            NMdispatcherLog "Updating Wi-Fi IP"
+            rm /tmp/.$mode$WIFI_INTERFACE
+            refresh_devicedetails "boxIP"
+        fi
+    fi
+}
+
 interfaceName=$1
 interfaceStatus=$2
 
@@ -86,7 +119,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         checkDefaultRoute_Delete  $imode6 $interfaceName $ipaddr6 $gwip6 $interfaceName "metric" "delete"
         echo "$DT_TIME checkDefaultRoute_Delete" >> /opt/logs/NMMonitor.log
 
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode4 $interfaceName $ipaddr4 "global"
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "delete" $mode6 $interfaceName $ipaddr6 "global"
-        echo "$DT_TIME updateGlobalIPInfo.sh" >> /opt/logs/NMMonitor.log
+        updateGlobalIPInfo_delete "delete" $mode4 $interfaceName $ipaddr4 "global"
+        updateGlobalIPInfo_delete "delete" $mode6 $interfaceName $ipaddr6 "global"
+        echo "$DT_TIME updateGlobalIPInfo_delete" >> /opt/logs/NMMonitor.log
 fi
