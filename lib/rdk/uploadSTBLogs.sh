@@ -884,7 +884,7 @@ uploadLogOnReboot()
     rm $LOG_FILE
     modifyFileWithTimestamp $PREV_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
 
-    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot"`
+    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot\|MAINTENANCE_REBOOT"`
     DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT=`/usr/bin/tr181 -g $UNSCHEDULEDREBOOT_TR181_NAME 2>&1 > /dev/null`
     uploadLog "reboot_reason: $reboot_reason , uploadLog:$uploadLog and UploadLogsOnUnscheduledReboot.Disable RFC: $DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT"
     if [ "$uploadLog" == "true" ] || [ -z "$reboot_reason" -a "$DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT" == "false" ]; then
