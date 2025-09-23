@@ -472,21 +472,23 @@ rebootLog "End of the sync"
 
 rebootLog "Creating $REBOOTNOW_FLAG as the reboot was triggred by RDK software"
 touch $REBOOTNOW_FLAG
-rebootLog "Rebooting the Device Now"
 rm -rf $pid_file
-reboot
 
-sleep 15
+rebootLog "Rebooting the Device Now"
+reboot &
+REBOOT_PID=$!
 
-rebootLog "System still running after reboot command, Reboot Failed..."
-rebootLog "Invoking Systemctl Reboot After First Reboot Attempt Failure"
-systemctl reboot
-if [ $? -eq 1 ]; then
-    rebootLog "Reboot failed due to systemctl hang or connection timeout, trying force reboot..."
-    if [ -f /tmp/systemd_freeze_reboot_on ]; then
-        rebootLog "Force Reboot due to systemd freeze detection"
-    else
-        rebootLog "Force Reboot after systemd reboot failure"
-    fi
-    reboot -f
+sleep 90
+
+rebootLog "System still running after reboot command, Reboot Failed for $REBOOT_PID..."
+
+# Kill background reboot if still running
+kill $REBOOT_PID 2>/dev/null
+
+if [ -f /tmp/systemd_freeze_reboot_on ]; then
+    rebootLog "Force Reboot due to systemd freeze detection"
+else
+    rebootLog "Force Reboot after standard reboot failure"
 fi
+
+reboot -f
