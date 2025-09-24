@@ -478,7 +478,15 @@ rebootLog "Rebooting the Device Now"
 reboot &
 REBOOT_PID=$!
 
+sleep 90
 rebootLog "System still running after reboot command, Reboot Failed for $REBOOT_PID..."
+
+systemctl reboot
+if [ $? -eq 0 ]; then
+    rebootLog "D-Bus is running fine"
+else
+    rebootLog "D-Bus has issues (return code: $?)"
+fi
 
 # Kill background reboot if still running
 kill $REBOOT_PID 2>/dev/null
