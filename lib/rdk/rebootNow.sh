@@ -478,8 +478,6 @@ rebootLog "Rebooting the Device Now"
 reboot &
 REBOOT_PID=$!
 
-sleep 90
-
 rebootLog "System still running after reboot command, Reboot Failed for $REBOOT_PID..."
 
 # Kill background reboot if still running
