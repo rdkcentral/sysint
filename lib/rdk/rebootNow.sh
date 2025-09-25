@@ -484,14 +484,6 @@ systemctl reboot
 if [ $? -eq 1 ]; then
     rebootLog "Reboot failed due to systemctl hang or connection timeout"
 fi    
-
-# Kill background reboot if still running
 kill $REBOOT_PID 2>/dev/null
-
-if [ -f /tmp/systemd_freeze_reboot_on ]; then
-    rebootLog "Force Reboot due to systemd freeze detection"
-else
-    rebootLog "Force Reboot after standard reboot failure"
-fi
-
+rebootLog "Triggering force Reboot after standard soft reboot failure"
 reboot -f
