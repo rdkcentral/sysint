@@ -1,5 +1,3 @@
-#!/bin/sh
-
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -19,24 +17,14 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+[Unit]
+Description=Send D-Bus signal on systime set
+After=dbus.service
 
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
+[Service]
+Type=oneshot
+ExecStart=/lib/rdk/send-time-events.sh "systimeset"
+RemainAfterExit=true
 
-  # Case 1: Quoted passphrase
-  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # Case 2: Unquoted 64-char raw PSK
-  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # No match
-  else
-    PSK=""
-  fi
-  echo "`/bin/timestamp` :$0: Removed nmcli SSID connect" >>  /opt/logs/NMMonitor.log
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
-fi
+[Install]
+WantedBy=system-time-set.target

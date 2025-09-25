@@ -1,4 +1,3 @@
-#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -18,15 +17,5 @@
 # limitations under the License.
 ##############################################################################
 
-
-cd /mnt/nfs/env
-
-#set environment
-export SNMPCONFPATH=/mnt/nfs/bin/target-snmp/sbin
-export MIBS=ALL
-export MIBDIRS=/mnt/nfs/bin/target-snmp/share/snmp/mibs
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/nfs/bin/target-snmp/lib:/mnt/nfs/usr/lib
-export PATH=$PATH:/mnt/nfs/bin/target-snmp/bin
-
-#start snmp daemon
-sh ../bin/target-snmp/sbin/restart_snmpd.sh &
+[Unit]
+Description=Target For NTP Time sync

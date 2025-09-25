@@ -832,18 +832,27 @@ uploadLogOnReboot()
             exit 0
         fi
     fi
-    uploadLog "Sleeping for seven minutes"
-    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-        #run sleep in a background job
-        sleep 330 &
-        # store and remember the sleep's PID
-        sleep_pid="$!"
-        # wait here for the sleep to complete
-        wait
+    # Get system uptime in seconds
+    uptime_seconds=$(cut -d' ' -f1 /proc/uptime)
+    uptime_seconds=${uptime_seconds%.*}
+
+    if [ "$uptime_seconds" -lt 900 ]; then
+        uploadLog "Sleeping for seven minutes"
+        if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+            #run sleep in a background job
+            sleep 330 &
+            # store and remember the sleep's PID
+            sleep_pid="$!"
+            # wait here for the sleep to complete
+            wait
+        else
+            sleep 330
+        fi
+        uploadLog "Done sleeping"
     else
-        sleep 330
+        uploadLog "Device uptime is more than 15min. Skip Sleep"
     fi
-    uploadLog "Done sleeping"
+
     # Special processing - Permanently backup logs on box delete the logs older than
     # 3 days to take care of old filename
     stat=`find /opt/logs -name "*-*-*-*-*M-" -mtime +3 -exec rm -rf {} \;`
@@ -857,7 +866,7 @@ uploadLogOnReboot()
     rm $LOG_FILE
     modifyFileWithTimestamp $PREV_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
 
-    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot"`
+    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot\|MAINTENANCE_REBOOT"`
     DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT=`/usr/bin/tr181 -g $UNSCHEDULEDREBOOT_TR181_NAME 2>&1 > /dev/null`
     uploadLog "reboot_reason: $reboot_reason , uploadLog:$uploadLog and UploadLogsOnUnscheduledReboot.Disable RFC: $DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT"
     if [ "$uploadLog" == "true" ] || [ -z "$reboot_reason" -a "$DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT" == "false" ]; then

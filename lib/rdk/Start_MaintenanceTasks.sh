@@ -68,7 +68,6 @@ SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
-RFC_SCRIPT="$RDK_PATH/RFCbase.sh"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
 LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
 
@@ -105,10 +104,6 @@ runMaintenanceRFCTask()
     if [ -f "$RFC_BIN" ]; then
         rfcLog "Starting rfcMgr Binary"
         "$RFC_BIN" >> "$RFC_LOG_FILE"
-        result=$?
-    elif [ -f "$RFC_SCRIPT" ]; then
-        rfcLog "Starting RFCBase.sh"
-        sh "$RFC_SCRIPT"
         result=$?
     else
         rfcLog "No RFC Bin/ Script"

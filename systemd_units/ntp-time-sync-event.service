@@ -18,9 +18,13 @@
 ##############################################################################
 
 [Unit]
-Description=Disk Health Logger Service
-After=tmp.mount 
+Description=Send D-Bus signal on ntp-sync completed
+After=dbus.service
 
 [Service]
-ExecStart=/bin/sh -c '/lib/rdk/hddStatusLogger.sh'
+Type=oneshot
+ExecStart=/lib/rdk/send-time-events.sh "ntpsyncset" 
+RemainAfterExit=true
 
+[Install]
+WantedBy=ntp-time-sync.target

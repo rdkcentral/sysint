@@ -79,16 +79,6 @@ if [ -f $RDK_PATH/dmesg-logs-timestamp.sh ] && [ -f $RDK_PATH/dmesg_logs.sh ]; t
        fi
 fi
 
-
-if [ -f $RDK_PATH/hddStatusLogger.sh ]; then     
-    if [ ! -f /etc/os-release ]; then
-       output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "hddStatusLogger.sh"`
-       if [ "$output" == "0" ]; then
-             sh /lib/rdk/cronjobs_update.sh "add" "hddStatusLogger.sh" "*/30 * * * * nice -n 19 sh $RDK_PATH/hddStatusLogger.sh"
-       fi
-    fi
-fi
-
 if [ "$DEVICE_NAME" == "X1" ]  && [ -f /etc/os-release ]; then
    if [ -f $RDK_PATH/system_info_collector.sh ]; then
       output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "system_info_collector.sh"`
@@ -100,12 +90,6 @@ if [ "$DEVICE_NAME" == "X1" ]  && [ -f /etc/os-release ]; then
       output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "getGdlFreeMemory.sh"`
       if [ "$output" == "0" ]; then
             sh /lib/rdk/cronjobs_update.sh "add" "getGdlFreeMemory.sh" "*/10 * * * * nice -n 19 sh $RDK_PATH/getGdlFreeMemory.sh | /usr/local/bin/logger -t getGdlFreeMemory.sh"
-      fi
-   fi
-   if [ -f $RDK_PATH/hddStatusLogger.sh ]; then
-      output=`sh /lib/rdk/cronjobs_update.sh "check-entry" "hddStatusLogger.sh"`
-      if [ "$output" == "0" ]; then
-            sh /lib/rdk/cronjobs_update.sh "add" "hddStatusLogger.sh" "*/30 * * * * nice -n 19 sh $RDK_PATH/hddStatusLogger.sh"
       fi
    fi
 fi

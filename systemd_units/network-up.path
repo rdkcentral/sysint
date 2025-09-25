@@ -1,5 +1,4 @@
-#!/bin/sh
-##############################################################################
+#############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
@@ -18,16 +17,12 @@
 # limitations under the License.
 ##############################################################################
 
+[Unit]
+Description=Path based network-up.target activation
 
-gateway=$1
-interface=$2
+[Path]
+PathChanged=/tmp/connectivity_check_done
+Unit=network-up.target
 
-route add default gw $gateway dev $interface
-route | grep "default"
-while [ $? = 1 ];
-do
-    sleep 1
-    route add default gw $gateway dev $interface
-    route | grep "default"
-done;
-echo "Completed configuring gateway"
+[Install]
+WantedBy=multi-user.target

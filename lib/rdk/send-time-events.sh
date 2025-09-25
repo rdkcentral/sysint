@@ -1,5 +1,4 @@
 #!/bin/sh
-
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -19,24 +18,13 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
-
-  # Case 1: Quoted passphrase
-  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # Case 2: Unquoted 64-char raw PSK
-  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # No match
-  else
-    PSK=""
-  fi
-  echo "`/bin/timestamp` :$0: Removed nmcli SSID connect" >>  /opt/logs/NMMonitor.log
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+if [ "x$1" = "xsystimeset" ]; then
+	/usr/bin/dbus-send --system --type=signal --dest=org.Systime /org/Systime org.Systime.TimeSet \
+    		string:"System time has been set to LKG or BUILD"
+elif [ "x$1" = "xntpsyncset" ]; then
+	/usr/bin/dbus-send --system --type=signal --dest=org.NtpSync /org/NtpSync org.NtpSync.TimeSet \
+    		string:"NTP Sync Completed or 180sec time expire"
+else
+  echo "Usage: $0 [systimeset|ntpsyncset]"
 fi
+

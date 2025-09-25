@@ -1,5 +1,4 @@
 #!/bin/sh
-
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -18,25 +17,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
-WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
-
-  # Case 1: Quoted passphrase
-  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # Case 2: Unquoted 64-char raw PSK
-  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
-    PSK="${BASH_REMATCH[1]}"
-
-  # No match
-  else
-    PSK=""
-  fi
-  echo "`/bin/timestamp` :$0: Removed nmcli SSID connect" >>  /opt/logs/NMMonitor.log
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+# this script uses vmstat to print out following information
+# vmInfoHeader: swpd,free,buff,cache,si,so
+# vmInfoValues: <int>,<int>,<int>,<int>,<int>,<int>
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
 fi
+vmstat > /tmp/.intermediate_calc_vm
+echo "VM STATS SINCE BOOT"
+values1=`sed '2q;d' /tmp/.intermediate_calc_vm| awk '{print $3","$4","$5","$6","$7","$8}'`
+values2=`sed '3q;d' /tmp/.intermediate_calc_vm| awk '{print $3","$4","$5","$6","$7","$8}'`
+echo vmInfoHeader: $values1
+echo vmInfoValues: $values2
+t2ValNotify "vmstats_split" "$values2"

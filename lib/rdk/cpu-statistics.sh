@@ -17,26 +17,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
-
-count=0
-loop=0
-while [ $loop -eq 0 ]
-do
-   if [ -f /tmp/snmpd.conf ];then
-        snmpCommunityVal=`head -n 1 /tmp/snmpd.conf | awk '{print $4}'`
-        if [ "$snmpCommunityVal" ]; then 
-               echo "$snmpCommunityVal"
-               exit 0
-        fi
-    else
-        count=`expr $count + 1`
-        sleep 5
-    fi
-    if [ $count -eq 24 ]; then
-         loop=1
-    fi
-done
-
-echo ""
-exit 0
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    source /lib/rdk/t2Shared_api.sh
+fi
+iostat -c 1 2 > /tmp/.intermediate_calc
+sed -i '/^$/d' /tmp/.intermediate_calc
+echo "INSTANTANEOUS CPU INFORMATIONS"
+values1=`sed '4q;d' /tmp/.intermediate_calc| tr -s " " | cut -c10-| tr ' ' ','`
+values2=`sed '5q;d' /tmp/.intermediate_calc| tr -s " " | cut -c2-| tr ' ' ','`
+echo cpuInfoHeader: $values1
+echo cpuInfoValues: $values2
+t2ValNotify "cpuinfo_split" "$values2"
+free | awk '/Mem/{printf("USED_MEM:%d\nFREE_MEM:%d\n"),$3,$4}'
+mem=`free | awk '/Mem/{printf $4}'`
+t2ValNotify "FREE_MEM_split" "$mem"

@@ -18,15 +18,11 @@
 ##############################################################################
 
 [Unit]
-Description=RDNSS starter for IPv6
-After=network-online.target var-lib.mount
-Requires=network-online.target var-lib.mount
+Description=system time set target by systime manager
 
-[Service]
-Type=forking
-ExecStart=/usr/sbin/rdnssd -u root -r /tmp/resolv.dnsmasq.rdnssd -H /lib/rdk/rdnssd-hook.sh &
-TimeoutStartSec=10s
-Restart=always
+[Path]
+PathChanged=/tmp/systimeset
+Unit=system-time-set.target
 
 [Install]
 WantedBy=multi-user.target
