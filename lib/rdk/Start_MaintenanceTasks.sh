@@ -88,17 +88,6 @@ logUploadLog()
 }
 
 # Utility Function
-checkXpkiMtlsBasedLogUpload()
-{
-    dycredpath="/opt/lxy"
-    if [ -d "$dycredpath" ] && [ -f "/usr/bin/rdkssacli" ] && { [ -f "/opt/certs/devicecert_1.pk12" ] || [ -f "/etc/ssl/certs/staticXpkiCrt.pk12" ]; }; then
-        useXpkiMtlsLogupload="true"
-    else
-        useXpkiMtlsLogupload="false"
-    fi
-    logUploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
-}
-
 runMaintenanceRFCTask()
 {
     if [ -f "$RFC_BIN" ]; then
@@ -143,7 +132,6 @@ runMaintenanceLogUploadTask()
 {
     # On Demand Log Upload and other initializations
     ON_DEMAND_LOG_UPLOAD=5
-    useXpkiMtlsLogupload=false
     TriggerType=$2 # Marked OnDemand LogUpload for second arg
     tftp_server=$LOG_SERVER # from dcm.properties
     
@@ -166,7 +154,6 @@ runMaintenanceLogUploadTask()
             logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
         fi
 
-        checkXpkiMtlsBasedLogUpload
         if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
             logUploadLog "opt override is present. Ignore settings from Bootstrap config"
         else
