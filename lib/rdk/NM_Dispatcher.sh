@@ -144,18 +144,6 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         checkDefaultRoute_Add  $imode $interfaceName $ipaddr $gwip $interfaceName "metric" "add"
         NMdispatcherLog "checkDefaultRoute_Add"
     fi
-    # Restart dnsmasq if it's running under NetworkManager
-    DNSMASQ_PID_FILE="/var/run/NetworkManager/dnsmasq.pid"
-    
-    if [ -f "$DNSMASQ_PID_FILE" ]; then
-        DNSMASQ_PID=$(cat "$DNSMASQ_PID_FILE")
-        if [ -n "$DNSMASQ_PID" ]; then
-            echo "$DT_TIME Killing dnsmasq PID $DNSMASQ_PID" >> /opt/logs/NMMonitor.log
-            kill -TERM "$DNSMASQ_PID"
-        else
-            echo "$DT_TIME dnsmasq PID not running or invalid" >> /opt/logs/NMMonitor.log
-        fi
-    fi
     if [ "$interfaceName" == "wlan0" ]; then
         touch /tmp/wifi-on
     fi
