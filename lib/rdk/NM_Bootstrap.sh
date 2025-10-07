@@ -29,7 +29,15 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
           echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       else
           if [ -n "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
-              rm -rf /opt/NetworkManager/system-connections/*
+              for file in "$CONNECTIONS_DIR"/*; do
+                  NM_SSID=$(grep '^ssid=' "$file" | cut -d '=' -f 2)
+                  NM_PSK=$(grep '^psk=' "$file" | cut -d '=' -f 2)
+                  if [ "$SSID" == "$NM_SSID" ] && [ "$PSK" == "$NM_PSK" ]; then
+                       echo "`/bin/timestamp` :$0: Matching SSID $SSID and PSK found from previous RDKE" >>  /opt/logs/NMMonitor.log
+                  else
+                      rm -rf "$file"
+                  fi
+              done    
           fi
           if [ -z $PSK ]; then
               #connect to wifi
