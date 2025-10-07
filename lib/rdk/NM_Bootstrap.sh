@@ -28,6 +28,9 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
       if [ -z $SSID ]; then
           echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       else
+          if [ -n "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
+              rm -rf /opt/NetworkManager/system-connections/*
+          fi
           if [ -z $PSK ]; then
               #connect to wifi
               nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
