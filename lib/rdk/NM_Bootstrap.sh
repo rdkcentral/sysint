@@ -19,35 +19,45 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w psk= | cut -d '"' -f 2)
-
-      if [ -z $SSID ]; then
-          echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
-      else
-          if [ -n "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
-              for file in "$CONNECTIONS_DIR"/*; do
-                  NM_SSID=$(grep '^ssid=' "$file" | cut -d '=' -f 2)
-                  NM_PSK=$(grep '^psk=' "$file" | cut -d '=' -f 2)
-                  if [ "$SSID" == "$NM_SSID" ] && [ "$PSK" == "$NM_PSK" ]; then
-                       echo "`/bin/timestamp` :$0: Matching SSID $SSID and PSK found from previous RDKE" >>  /opt/logs/NMMonitor.log
-                  else
-                      rm -rf "$file"
-                  fi
-              done    
-          fi
-          if [ -z $PSK ]; then
-              #connect to wifi
-              nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
-              nmcli conn reload
-          else
-              #connect to wifi
-              nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
-              nmcli conn reload
-          fi
+RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+if [ -f $RDKV_SUPP_CONF ]; then
+  if [ -f "/opt/secure/migration/migration_data_store.json" ]; then
+      bootType=$(cat /tmp/boottype)
+      bootMigration="BOOT_MIGRATION"
+      if [ "$bootType" == "$bootMigration" ]; then
+          rm -f $RDKV_SUPP_CONF
+          exit 0
       fi
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+  fi
+  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
+  PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
+
+  # Case 1: Quoted passphrase
+  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
+    PSK="${BASH_REMATCH[1]}"
+
+  # Case 2: Unquoted 64-char raw PSK
+  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
+    PSK="${BASH_REMATCH[1]}"
+
+  # No match
+  else
+    PSK=""
+  fi
+
+  if [ -z $SSID ]; then
+      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
+  else
+      rm -rf /opt/NetworkManager/system-connections/*
+      if [ -z $PSK ]; then
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
+          nmcli conn reload
+      else
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn reload
+      fi
+  fi
+  rm -f $RDKV_SUPP_CONF
 fi
