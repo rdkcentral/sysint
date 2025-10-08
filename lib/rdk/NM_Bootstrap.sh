@@ -19,11 +19,18 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
+RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+if [ -f $RDKV_SUPP_CONF ]; then
+  if [ -f "/opt/secure/migration/migration_data_store.json" ]; then
+      bootType=$(cat /tmp/boottype)
+      bootMigration="BOOT_MIGRATION"
+      if [ "$bootType" == "$bootMigration" ]; then
+          rm -f $RDKV_SUPP_CONF
+          exit 0
+      fi
+  fi
+  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
+  PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
   # Case 1: Quoted passphrase
   if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
@@ -37,6 +44,20 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   else
     PSK=""
   fi
-  echo "`/bin/timestamp` :$0: Removed nmcli SSID connect" >>  /opt/logs/NMMonitor.log
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+
+  if [ -z $SSID ]; then
+      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
+  else
+      rm -rf /opt/NetworkManager/system-connections/*
+      if [ -z $PSK ]; then
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
+          nmcli conn reload
+      else
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn reload
+      fi
+  fi
+  rm -f $RDKV_SUPP_CONF
 fi
