@@ -20,7 +20,19 @@
 ##############################################################################
 
 WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+RDKV_SUPP_CONF=""
+if [ -f $RDKV_SUPP_CONF ]; then
+    if [ -f "/opt/secure/migration/migration_data_store.json" ]; then
+        bootType=$(cat /tmp/boottype)
+        bootMigration="BOOT_MIGRATION"
+        if [ "$bootType" == "$bootMigration" ]; then
+            rm -f $RDKV_SUPP_CONF
+            exit 0
+        fi
+    fi
+fi
 
+# DO : Change below $WIFI_WPA_SUPPLICANT_CONF to $RDKV_SUPP_CONF
 if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
   SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
   PSK=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w psk= | cut -d '"' -f 2)
@@ -49,5 +61,7 @@ if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
               nmcli conn reload
           fi
       fi
+  # TODO : Check if we still need to edit network block from RDKE conf.
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+  rm -f $RDKV_SUPP_CONF
 fi
