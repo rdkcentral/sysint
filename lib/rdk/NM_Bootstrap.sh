@@ -21,14 +21,7 @@
 
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 if [ -f $RDKV_SUPP_CONF ]; then
-  if [ -f "/opt/secure/migration/migration_data_store.json" ]; then
-      bootType=$(cat /tmp/boottype)
-      bootMigration="BOOT_MIGRATION"
-      if [ "$bootType" == "$bootMigration" ]; then
-          rm -f $RDKV_SUPP_CONF
-          exit 0
-      fi
-  fi
+  
   SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
