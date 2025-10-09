@@ -26,6 +26,7 @@ if [ "$RDK_PROFILE" == "TV" ]; then
     if [ -f $RDKV_SUPP_CONF ]; then
         sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
     fi
+    rm -rf /opt/NetworkManager/system-connections/*
     exit 0
 fi
 
