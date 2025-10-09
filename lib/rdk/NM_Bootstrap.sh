@@ -19,9 +19,18 @@
 # limitations under the License.
 ##############################################################################
 
+RDK_PROFILE=$(grep "RDK_PROFILE" /etc/device.properties | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-if [ -f $RDKV_SUPP_CONF ]; then
+if [ "$RDK_PROFILE" == "TV" ]; then
+    echo "`/bin/timestamp` :$0: Not migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
+    if [ -f $RDKV_SUPP_CONF ]; then
+        sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+    fi
+    exit 0
+fi
 
+
+if [ -f $RDKV_SUPP_CONF ]; then
   SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
@@ -52,5 +61,5 @@ if [ -f $RDKV_SUPP_CONF ]; then
           nmcli conn reload
       fi
   fi
-  rm -f $RDKV_SUPP_CONF
+  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
