@@ -70,7 +70,6 @@ TLS=""
 CLOUD_URL=""
 CURL_TLS_TIMEOUT=30
 CURL_TIMEOUT=10
-useXpkiMtlsLogupload=false
 encryptionEnable=false
 CB_NUM_UPLOAD_ATTEMPTS=1
 DIRECT_BLOCK_FILENAME="/tmp/.lastdirectfail_upl"
@@ -155,15 +154,6 @@ flock -n 200 || {
     fi
     exit 1
 }
-
-
-#MTLS Upload Check
-checkXpkiMtlsBasedLogUpload()
-{
-   useXpkiMtlsLogupload=$(check_MtlsBasedLogUpload)
-   uploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
-}
-
 
 #Direct and Codebig Communication Functions
 IsDirectBlocked()
@@ -359,24 +349,16 @@ sendTLSSSRRequest()
     if [ "$S3_MD5SUM" != "" ]; then
         URLENCODE_STRING="--data-urlencode \"md5=$S3_MD5SUM\""
     fi
-
-    uploadLog "Attempting $TLS connection to SSR server"
-    checkXpkiMtlsBasedLogUpload
-
-    uploadLog "Log Upload requires Mutual Authentication"
-    if [ "$useXpkiMtlsLogupload" == "true" ]; then
-          msg_tls_source="mTLS certificate from xPKI"
-          uploadLog "Connect with $msg_tls_source"
-          t2CountNotify "SYST_INFO_mtls_xpki"
-          CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
-    fi
+    uploadLog "MTLS defaulted"
+    msg_tls_source="mTLS certificate from xPKI"
+    uploadLog "Connect with $msg_tls_source"
+    t2CountNotify "SYST_INFO_mtls_xpki"
+    CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
         CURL_CMD="$CURL_CMD --cert-status"
     fi
-    if [ "$useXpkiMtlsLogupload" == "true" ]; then
-          TLSRet=` exec_curl_mtls "$CURL_CMD" "uploadLog"`
-          cat $HTTP_CODE > $CURL_INFO
-    fi
+    TLSRet=` exec_curl_mtls "$CURL_CMD" "uploadLog"`
+    cat $HTTP_CODE > $CURL_INFO
     FQDN=`echo "$CLOUD_URL" |awk -F/ '{print $3}'`
     http_code=$(awk '{print $1}' $CURL_INFO)
     server_ip=$(awk '{print $2}' $CURL_INFO)
