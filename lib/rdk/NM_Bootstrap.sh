@@ -25,8 +25,9 @@ if [ "$RDK_PROFILE" == "TV" ]; then
     echo "`/bin/timestamp` :$0: Not migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
     if [ -f $RDKV_SUPP_CONF ]; then
         sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+        rm -rf /opt/NetworkManager/system-connections/*
+        rm -rf /opt/secure/NetworkManager/system-connections/*
     fi
-    rm -rf /opt/NetworkManager/system-connections/*
     exit 0
 fi
 
@@ -47,10 +48,20 @@ if [ -f $RDKV_SUPP_CONF ]; then
   else
     PSK=""
   fi
+  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+else
+  file=`ls /opt/NetworkManager/system-connections/`
+  file_name="/opt/NetworkManager/system-connections/$file"
+  if [ -f $file_name ]; then
+     SSID=`grep "ssid=" $file_name | cut -d "=" -f 2`
+     PSK=`grep "psk=" $file_name | cut -d "=" -f 2`
+     rm -f $file_name
+  fi
+fi
 
-  if [ -z $SSID ]; then
+if [ -z $SSID ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
-  else
+else
       rm -rf /opt/NetworkManager/system-connections/*
       if [ -z $PSK ]; then
           #connect to wifi
@@ -61,6 +72,4 @@ if [ -f $RDKV_SUPP_CONF ]; then
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
           nmcli conn reload
       fi
-  fi
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
