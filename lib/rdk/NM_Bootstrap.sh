@@ -50,20 +50,13 @@ if [ -f $RDKV_SUPP_CONF ]; then
   fi
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
-if [ -z $SSID ]; then
-  for file in  `ls /opt/NetworkManager/system-connections/`
-  do
-     file_name="/opt/NetworkManager/system-connections/$file"
-        if [ -f $file_name ]; then
-           SSID=`grep "ssid=" $file_name | cut -d "=" -f 2`
-           PSK=`grep "psk=" $file_name | cut -d "=" -f 2`
-           rm -f $file_name
-        fi
-  done
-fi
 
 if [ -z $SSID ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
+      echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
+      cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
+      rm -rf /opt/NetworkManager/system-connections/*
+      nmcli conn reload
 else
       rm -rf /opt/NetworkManager/system-connections/*
       if [ -z $PSK ]; then
