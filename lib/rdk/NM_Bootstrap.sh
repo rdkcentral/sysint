@@ -49,7 +49,8 @@ if [ -f $RDKV_SUPP_CONF ]; then
     PSK=""
   fi
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
-else
+fi
+if [ -z $SSID ]; then
   file=`ls /opt/NetworkManager/system-connections/`
   file_name="/opt/NetworkManager/system-connections/$file"
   if [ -f $file_name ]; then
