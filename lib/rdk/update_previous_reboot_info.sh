@@ -1,30 +1,14 @@
 #!/bin/sh
 ##############################################################################
-# If not stated otherwise in this file or this component's LICENSE file the
-# following copyright and licenses apply:
-#
 # Copyright 2020 RDK Management
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 ##############################################################################
 
-# Source Variable
 . /etc/device.properties
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
-# Define logfiles and flags
 REBOOT_INFO_LOG_FILE="/opt/logs/rebootInfo.log"
 KERNEL_LOG_FILE="/opt/logs/messages.txt"
 UIMGR_LOG_FILE="/opt/logs/PreviousLogs/uimgr_log.txt"
@@ -55,7 +39,6 @@ UPDATE_REBOOT_INFO_INVOKED_FLAG="/tmp/Update_rebootInfo_invoked"
 LOCK_DIR="/tmp/rebootInfo.lock"
 PARODUS_LOG="/opt/logs/parodus.log"
 
-#Use log framework to pring timestamp and source script name
 rebootLog()
 {
     echo "$0: $*"
@@ -63,21 +46,17 @@ rebootLog()
 
 rebootLog "Start of Reboot Reason Script"
 
-# Define Reasons for APP_TRIGGERED, OPS_TRIGGERED and MAINTENANCE_TRIGGERED cases
-APP_TRIGGERED_REASONS=(Servicemanager systemservice_legacy WarehouseReset WarehouseService HrvInitWHReset HrvColdInitReset HtmlDiagnostics InstallTDK StartTDK TR69Agent SystemServices Bsu_GUI SNMP CVT_CDL Nxserver DRM_Netflix_Initialize hrvinit )
-OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDVRSet Receiver_VidiPath_Enabled Receiver_Toggle_Optimus S04init_ticket Network-Service monitorMfrMgr.sh vlAPI_Caller_Upgrade ImageUpgrade_rmf_osal ImageUpgrade_mfr_api ImageUpgrade_userInitiatedFWDnld.sh ClearSICache tr69hostIfReset hostIf_utils hostifDeviceInfo HAL_SYS_Reboot UpgradeReboot_deviceInitiatedFWDnld.sh UpgradeReboot_rdkvfwupgrader UpgradeReboot_ipdnl.sh PowerMgr_Powerreset PowerMgr_coldFactoryReset DeepSleepMgr PowerMgr_CustomerReset PowerMgr_PersonalityReset Power_Thermmgr PowerMgr_Plat HAL_CDL_notify_mgr_event vldsg_estb_poll_ecm_operational_state  SASWatchDog BP3_Provisioning eMMC_FW_UPGRADE BOOTLOADER_UPGRADE cdl_service  docsis_mode_check.sh  Receiver CANARY_Update)
+APP_TRIGGERED_REASONS=(Servicemanager systemservice_legacy WarehouseReset WarehouseService HrvInitWHReset HrvColdInitReset HtmlDiagnostics InstallTDK StartTDK TR69Agent SystemServices Bsu_GUI SNMP CVT[...]
+OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDV[...]
 MAINTENANCE_TRIGGERED_REASONS=(AutoReboot.sh PwrMgr)
 
-# Save the reboot info with all the fields
 setPreviousRebootInfo()
 {
-    # Set Previous reboot info file with received reboot reason.
     timestamp=$1
     source=$2
     reason=$3
     custom=$4
     other=$5
-    # Get Previous Hard Power reset information
     if [ ! -z $PREVIOUS_REBOOT_INFO_FILE ]; then
         rebootLog "Reboot reason present in $PREVIOUS_REBOOT_INFO_FILE file:"
         cat $PREVIOUS_REBOOT_INFO_FILE
@@ -102,7 +81,6 @@ setPreviousRebootInfo()
         rebootLog "${FUNCNAME[0]}: Reboot info already present in $PARODUS_LOG as $existing_reboot_info, skipping update"
     fi
 
-    # Set Hard Power reset time with timestamp
     if [ "$reason" == "HARD_POWER" ] || [ "$reason" == "POWER_ON_RESET" ] || [ "$reason" == "UNKNOWN_RESET" ] || [ ! -f "$PREVIOUS_HARD_REBOOT_INFO_FILE" ];then
         echo "{" > $PREVIOUS_HARD_REBOOT_INFO_FILE
         echo "\"lastHardPowerReset\":\"$timestamp\"" >> $PREVIOUS_HARD_REBOOT_INFO_FILE
@@ -113,7 +91,6 @@ setPreviousRebootInfo()
     rebootLog "Updated Previous Reboot Reason information"
 }
 
-# Check for Firmware Failure
 fwFailureCheck()
 {
     fw_failure=0
@@ -144,20 +121,17 @@ fwFailureCheck()
     return $fw_failure
 }
 
-# Check for OOPS DUMP string in Kernel panic scenarios
 oopsDumpCheck()
 {
     oops_dump=0
 
     if [ "$SOC" = "BRCM" ]; then
-        # Ensure OOPS DUMP string presence for Kernel Panic in messages.txt
         if [ -f "$KERNEL_LOG_FILE" ] && [[ $(grep $KERNEL_PANIC_SEARCH_STRING $KERNEL_LOG_FILE) ]];then
             if [[ $(grep -e "Kernel Oops" -e "Kernel Panic" $KERNEL_LOG_FILE) ]];then
                 oops_dump=1
             fi
         fi
     elif [ "$RDK_PROFILE" = "TV" ]; then
-        #Check KERNEL PANIC, OOPS DUMP string presence for Kernel Panic in /sys/fs/pstore/console-ramoops-0
         if [ -f "$PSTORE_CONSOLE_LOG_FILE" ]; then
             if [[ $(grep "$KERNEL_PANIC_SEARCH_STRING_01" $PSTORE_CONSOLE_LOG_FILE) ]];then
                 oops_dump=1
@@ -189,8 +163,6 @@ oopsDumpCheck()
     return $oops_dump
 }
 
-
-#Read the HW Register value of  PreviousRebootReason and set details.
 setRebootReason()
 {
     rebootReason=$1
@@ -309,7 +281,6 @@ setRebootReason()
         esac
 }
 
-#Perform locking of script execution to avoid parallel execution
 lock()
 {
     while ! mkdir "$LOCK_DIR" &> /dev/null;do
@@ -319,14 +290,12 @@ lock()
     rebootLog "Acquired rebootInfo lock"
 }
 
-#Unlock before exiting the script
 unlock()
 {
     rm -rf "$LOCK_DIR"
     rebootLog "Releasing rebootInfo lock"
 }
 
-#Check for STT and Reboot Checker flag before updating reboot reason
 CheckSTT()
 {
     rebootLog "Checking ${STT_FLAG} and ${REBOOT_INFO_FLAG} flag to update the reboot reason"
@@ -338,7 +307,6 @@ CheckSTT()
     fi
 }
 
-#Fucntion to update reboot reason when hardware register is empty
 exitforNullrebootreason()
 {
     rebootInitiatedBy="Hard Power Reset"
@@ -351,44 +319,42 @@ exitforNullrebootreason()
     exit 0
 }
 
-
-
 ##############################
 ########## Main APP ##########
 ##############################
 
 lock
 
-#check for first time invocation flag and proceed for script execution
+CheckSTT
 
-    CheckSTT
-
-#Creating reboot folder in /opt/secure/ path
 if [ ! -d $REBOOT_INFO_DIR ]; then
     rebootLog "Creating $REBOOT_INFO_DIR folder..."
     mkdir $REBOOT_INFO_DIR
 fi
 
-if [ "$RDK_PROFILE" = "TV" ]; then
-    # Check to see if we already have the entry in the log
-    prevReboot=`grep "PreviousRebootReason" $KERNEL_LOG_FILE`
-    if [  -z "$prevReboot" ]; then
-        oopsDumpCheck
-        kernel_crash=$?
-        if [ $kernel_crash -eq 1 ];then
-            echo "`/bin/timestamp` PreviousRebootReason: kernel_panic!" >> $KERNEL_LOG_FILE
-        else
-            if [ -f /lib/rdk/get-reboot-reason.sh ]; then
-                sh /lib/rdk/get-reboot-reason.sh >> $KERNEL_LOG_FILE
-            fi    
-        fi
+# --- Remove OEM check for the TV platforms ---
+# --- Remove sourcing/usage of OEM files/functions ---
+
+# --- Execute vendor provided script for hardware reboot reason ---
+# If vendor hardware reboot reason script exists, run it and capture the reason
+VENDOR_HW_REBOOT_REASON_SCRIPT="/lib/rdk/vendor/get-hw-reboot-reason.sh"
+if [ -f "$VENDOR_HW_REBOOT_REASON_SCRIPT" ]; then
+    rebootLog "Executing vendor script to get hardware reboot reason: $VENDOR_HW_REBOOT_REASON_SCRIPT"
+    hw_reboot_reason="$(sh "$VENDOR_HW_REBOOT_REASON_SCRIPT")"
+    if [ ! -z "$hw_reboot_reason" ]; then
+        rebootLog "Vendor provided hardware reboot reason: $hw_reboot_reason"
+        setRebootReason "$hw_reboot_reason"
+        rebootTime=`date -u`
+        customReason="Vendor HW Reboot"
+        setPreviousRebootInfo "$rebootTime" "$rebootInitiatedBy" "$rebootReason" "$customReason" "$otherReason"
+        unlock
+        rebootLog "End of Reboot Reason Script"
+        exit 0
     fi
 fi
 
-# Use current time to report the kernel crash and hard power reset
 rebootTimestamp=`date -u`
 
-# Read and Move /opt/secure/reboot/reboot.info as /opt/secure/reboot/previousreboot.info
 if [ -f "$REBOOT_INFO_FILE" ];then
     rebootLog "New $REBOOT_INFO_FILE file found, Creating previous reboot info file..."
     cat $REBOOT_INFO_FILE
@@ -401,16 +367,13 @@ if [ -f "$REBOOT_INFO_FILE" ];then
     fi   
 else
     rebootLog "$REBOOT_INFO_FILE file not found, Assigning default values..."
-    # Set following variables to NULL before using them
     rebootInitiatedBy=""
     rebootTime=""
     customReason=""
     otherReason=""
 
-    # Reading the previous reboot details from /opt/logs/rebootInfo.log
     if [ -f "$REBOOT_INFO_LOG_FILE" ];then
         rebootLog "$REBOOT_INFO_LOG_FILE logfile found, Fetching source, time and other reasons"
-        # Parse Previous reboot Info and remove leading space
         rebootInitiatedBy=`grep "PreviousRebootInitiatedBy:" $REBOOT_INFO_LOG_FILE | grep -v grep | awk -F "PreviousRebootInitiatedBy:" '{print $2}' | sed 's/^ *//'`
         rebootTime=`grep "PreviousRebootTime:" $REBOOT_INFO_LOG_FILE | grep -v grep | awk -F 'PreviousRebootTime:' '{print $2}' | sed 's/^ *//'`
         customReason=`grep "PreviousCustomReason:" $REBOOT_INFO_LOG_FILE | grep -v grep | awk -F "PreviousCustomReason:" '{print $2}' | sed 's/^ *//'`
@@ -421,7 +384,6 @@ else
     if [ "x$rebootInitiatedBy" == "x" ];then
         rebootLog "$REBOOT_INFO_LOG_FILE file not found and Value of rebootInitiatedBy=$rebootInitiatedBy is empty"
         rebootTime="$rebootTimestamp"
-        # Check for Kernel Panic Reboot
         rebootLog "Checking for OOPS DUMP for Kernel Panic..."
         oopsDumpCheck
         kernel_crash=$?
@@ -431,16 +393,13 @@ else
             customReason="Hardware Register - KERNEL_PANIC"
             otherReason="Reboot due to Kernel Panic captured by Oops Dump"
         else
-            # Reading hard reset values from sysfs
             rebootLog " Hard Power Reboot info is missing!!!"
             exitforNullrebootreason
         fi
     else
         rebootLog "$REBOOT_INFO_LOG_FILE logfile found and received source of rebootInitiatedBy=$rebootInitiatedBy"
-        # Assign reboot reason by comparing the rebootInitiatedBy with APP_TRIGGERED_REASONS/OPS_TRIGGERED_REASONS/MAINTENANCE_TRIGGERED_REASONS
         if [[ "${APP_TRIGGERED_REASONS[@]}" == *"$rebootInitiatedBy"* ]];then
             rebootReason="APP_TRIGGERED"
-            # Assign reboot reason as MAINTENANCE_REBOOT if customReason is passed as MAINTENANCE_REBOOT
             if [ $customReason == "MAINTENANCE_REBOOT" ];then
                  rebootReason="MAINTENANCE_REBOOT"
             fi
@@ -453,24 +412,9 @@ else
         fi
     fi
 
-    # FIRMWARE FAILURE is of high priority for all the STB platforms and not applicable for TV platforms
-    # We have to report it before updating any soft/hard reboot scenarios
-    # Check for FIRMWARE FAILURE cases (ECM Crash, Max reboot etc) for STB platforms
-    
-    #Update reboot information in /opt/secure/reboot/previousreboot.info file
     setPreviousRebootInfo "$rebootTime" "$rebootInitiatedBy" "$rebootReason" "$customReason" "$otherReason"
 fi
 
-    # if we didn't any reboot reason yet.
-    if [ -z "$prevrebootreason" ]; then
-        rebootLog "Get reboot reason from get-reboot-reason.sh..."
-        if [ -f /lib/rdk/get-reboot-reason.sh ]; then
-            sh /lib/rdk/get-reboot-reason.sh >> $KERNEL_LOG_FILE
-        fi
-    fi
-fi
-
-# Keypress information
 if [ -f "$KEYPRESS_INFO_FILE" ]; then
     cp -f $KEYPRESS_INFO_FILE $PREVIOUS_KEYPRESS_INFO_FILE
     rebootLog "Updated previous keypress info"
@@ -478,7 +422,6 @@ else
     rebootLog "Unable to find the $KEYPRESS_INFO_FILE file"
 fi
 
-# Create flag to ensure updatePreviousRebootInfo.sh script is invoked
 if [ ! -f "$UPDATE_REBOOT_INFO_INVOKED_FLAG" ];then
     touch $UPDATE_REBOOT_INFO_INVOKED_FLAG
 fi
