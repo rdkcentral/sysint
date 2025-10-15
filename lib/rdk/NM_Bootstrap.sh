@@ -51,13 +51,15 @@ if [ -f $RDKV_SUPP_CONF ]; then
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
 if [ -z $SSID ]; then
-  file=`ls /opt/NetworkManager/system-connections/`
-  file_name="/opt/NetworkManager/system-connections/$file"
-  if [ -f $file_name ]; then
-     SSID=`grep "ssid=" $file_name | cut -d "=" -f 2`
-     PSK=`grep "psk=" $file_name | cut -d "=" -f 2`
-     rm -f $file_name
-  fi
+  for file in  `ls /opt/NetworkManager/system-connections/`
+  do
+     file_name="/opt/NetworkManager/system-connections/$file"
+        if [ -f $file_name ]; then
+           SSID=`grep "ssid=" $file_name | cut -d "=" -f 2`
+           PSK=`grep "psk=" $file_name | cut -d "=" -f 2`
+           rm -f $file_name
+        fi
+  done
 fi
 
 if [ -z $SSID ]; then
