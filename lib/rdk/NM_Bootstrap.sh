@@ -45,6 +45,7 @@ fi
 if [ -z $SSID ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
+
       if [ ! -d /opt/secure/NetworkManager/system-connections ]; then
          mkdir -p /opt/secure/NetworkManager/system-connections
       fi
