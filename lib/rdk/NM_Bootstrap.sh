@@ -21,15 +21,6 @@
 
 RDK_PROFILE=$(grep "RDK_PROFILE" /etc/device.properties | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-if [ "$RDK_PROFILE" == "TV" ]; then
-    echo "`/bin/timestamp` :$0: Not migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
-    if [ -f $RDKV_SUPP_CONF ]; then
-        sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
-        rm -rf /opt/NetworkManager/system-connections/*
-        rm -rf /opt/secure/NetworkManager/system-connections/*
-    fi
-    exit 0
-fi
 
 
 if [ -f $RDKV_SUPP_CONF ]; then
@@ -54,11 +45,26 @@ fi
 if [ -z $SSID ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
-      cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
-      rm -rf /opt/NetworkManager/system-connections/*
+
+      if [ ! -d /opt/secure/NetworkManager/system-connections ]; then
+         mkdir -p /opt/secure/NetworkManager/system-connections
+      fi
+      if [ -d /opt/NetworkManager/system-connections ]; then
+         cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
+         rm -rf /opt/NetworkManager/system-connections/*
+      fi
       nmcli conn reload
 else
-      rm -rf /opt/NetworkManager/system-connections/*
+      if [ -d /opt/NetworkManager/system-connections ]; then
+         rm -rf /opt/NetworkManager/system-connections/*
+      fi
+      if [ "$RDK_PROFILE" == "TV" ]; then
+        echo "`/bin/timestamp` :$0: Not migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
+        if [ -d /opt/secure/NetworkManager/system-connections ]; then
+           rm -rf /opt/secure/NetworkManager/system-connections/*
+        fi
+        exit  0
+      fi
       if [ -z $PSK ]; then
           #connect to wifi
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
