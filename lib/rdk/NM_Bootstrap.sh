@@ -59,11 +59,7 @@ else
          rm -rf /opt/NetworkManager/system-connections/*
       fi
       if [ "$RDK_PROFILE" == "TV" ]; then
-        echo "`/bin/timestamp` :$0: Not migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
-        if [ -d /opt/secure/NetworkManager/system-connections ]; then
-           rm -rf /opt/secure/NetworkManager/system-connections/*
-        fi
-        exit  0
+        echo "`/bin/timestamp` :$0: Migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
       fi
       if [ -z $PSK ]; then
           #connect to wifi
