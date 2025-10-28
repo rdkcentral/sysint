@@ -119,6 +119,8 @@ if [ -d /opt/upnp ]; then rm -rf /opt/upnp/*;fi
 if [ -L /opt/www/htmldiag ]; then rm -f /opt/www/htmldiag;fi
 if [ -f /opt/user_preferences.conf ];then rm -rf /opt/user_preferences.conf; fi
 if [ -f /opt/continuewatching.json ];then rm -rf /opt/continuewatching.json ; fi
+if [ -d /opt/NetworkManager ];then rm -rf /opt/NetworkManager ; fi
+if [ -d /opt/secure/NetworkManager ];then rm -rf /opt/secure/NetworkManager ; fi
 
 if [ -f /opt/secure/Apparmor_blocklist ];then rm -rf /opt/secure/Apparmor_blocklist ; fi
 
