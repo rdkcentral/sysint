@@ -96,8 +96,8 @@ setPreviousRebootInfo()
 
     if [ -z "$existing_reboot_info" ]; then
         echo "$(/bin/timestamp): $0: Updating previous reboot info to Parodus" >> "$PARODUS_LOG"
-        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$custom,$source,$reason" >> "$PARODUS_LOG"
-        rebootLog "Reboot Information Updated to parodus log:$timestamp,$custom,$source,$reason"
+        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$reason,$custom,$source" >> "$PARODUS_LOG"
+        rebootLog "Reboot Information Updated to parodus log:$timestamp,$reason,$custom,$source"
     else
         rebootLog "${FUNCNAME[0]}: Reboot info already present in $PARODUS_LOG as $existing_reboot_info, skipping update"
     fi
