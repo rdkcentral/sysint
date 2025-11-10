@@ -19,13 +19,11 @@
 # limitations under the License.
 ##############################################################################
 
-RDK_PROFILE=$(grep "RDK_PROFILE" /etc/device.properties | cut -d '=' -f 2)
-RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+WIFI_WPA_SUPPLICANT_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 
-
-if [ -f $RDKV_SUPP_CONF ]; then
-  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
+if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
+  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
+  PSK_LINE=$(grep psk= "$WIFI_WPA_SUPPLICANT_CONF")
 
   # Case 1: Quoted passphrase
   if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
@@ -39,35 +37,6 @@ if [ -f $RDKV_SUPP_CONF ]; then
   else
     PSK=""
   fi
+  echo "`/bin/timestamp` :$0: Removed nmcli SSID connect" >>  /opt/logs/NMMonitor.log
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
-fi
-
-if [ -z $SSID ]; then
-      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
-      echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
-
-      if [ ! -d /opt/secure/NetworkManager/system-connections ]; then
-         mkdir -p /opt/secure/NetworkManager/system-connections
-      fi
-      if [ -d /opt/NetworkManager/system-connections ]; then
-         cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
-         rm -rf /opt/NetworkManager/system-connections/*
-      fi
-      nmcli conn reload
-else
-      if [ -d /opt/NetworkManager/system-connections ]; then
-         rm -rf /opt/NetworkManager/system-connections/*
-      fi
-      if [ "$RDK_PROFILE" == "TV" ]; then
-        echo "`/bin/timestamp` :$0: Migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
-      fi
-      if [ -z $PSK ]; then
-          #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
-          nmcli conn reload
-      else
-          #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
-          nmcli conn reload
-      fi
 fi
