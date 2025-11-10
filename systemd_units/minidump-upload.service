@@ -20,8 +20,8 @@
 [Unit]
 Description=MINIDUMP UPLOAD
 
-After=network-online.target
-Requires=network-online.target
+After=network-up.target
+Requires=network-up.target
 
 [Service]
 ExecStart=/lib/rdk/uploadDumps.sh  "" 0 
