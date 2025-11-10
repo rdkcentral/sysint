@@ -19,8 +19,8 @@
 [Unit]
 Description=COREDUMP UPLOAD
 
-After=network-up.target
-Requires=network-up.target
+After=network-online.target
+Requires=network-online.target
 
 [Service]
 ExecStart=/lib/rdk/uploadDumps.sh  "" 1 
