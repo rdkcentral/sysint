@@ -334,7 +334,7 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || 
     [ "$1" = "NWMgrPlugin" ] || [ "$1" = "nm_event_thrd" ] ||
     [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ] || [ "$1" = "HTTPREQUEST_MAN" ] ||
-    [ "$1" = "civetweb-worker" ] || [ "$1" = "nfrtool" ]; then
+    [ "$1" = "civetweb-worker" ] || [ "$1" = "shipd" ] || [ "$1" = "nfrtool" ]; then
         dumpFile
         exit 0
 fi
