@@ -19,8 +19,6 @@
 ##############################################################################
 
 
-export TERM=xterm
-export HOME=/home/root
 . /etc/include.properties
 . /etc/device.properties
 . /usr/bin/stunnelCertUtil.sh
@@ -29,6 +27,9 @@ export HOME=/home/root
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
         source /lib/rdk/t2Shared_api.sh
 fi
+
+export TERM=xterm
+export HOME=/home/root
 
 # log format
 DT_TIME=$(/bin/timestamp)
@@ -74,9 +75,12 @@ NONSHORTSARGS=$7
 echo_t "SHORTSARGS :$SHORTSARGS"
 echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 
+t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
+
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
+echo_t "isShortsenabled = $isShortsenabled "
 if [ $isShortsenabled == "false" ];then
-	/bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}	
+	    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
         exit 0 
 fi
 
@@ -96,7 +100,7 @@ echo "connect = $JUMP_SERVER:$JUMP_PORT" >> $STUNNEL_CONF_FILE
 
 extract_stunnel_client_cert
 
-if [ ! -f $CERT_FILE -o ! -f $CA_FILE ]; then
+if [ ! -f $CERT_PATH -o ! -f $CA_FILE ]; then
     echo_t "STUNNEL: Required cert/CA file not found. Exiting..."
     t2CountNotify "SHORTS_STUNNEL_CERT_FAILURE"
     exit 1
@@ -105,26 +109,66 @@ fi
 # Specify cert, CA file and verification method
 DEV_SAN=$DEFAULT_DEV_SAN
 PROD_SAN=$DEFAULT_PROD_SAN
-echo "cert        = $CERT_FILE"          >> $STUNNEL_CONF_FILE
+echo "cert        = $CERT_PATH"          >> $STUNNEL_CONF_FILE
 echo "CAfile      = $CA_FILE"            >> $STUNNEL_CONF_FILE
 echo "verifyChain = yes"                 >> $STUNNEL_CONF_FILE
-SERVERTYPE=`tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1`
-if [ ! -z "$SERVERTYPE" ]; then
-    if [ "$SERVERTYPE" == "TEST" ]; then
+echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
+
+DEVICETYPE=`tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1`
+echo_t "STUNNEL: Device type is $DEVICETYPE"
+if [ ! -z "$DEVICETYPE" ]; then
+    if [ "$DEVICETYPE" == "TEST" ] || [ "$DEVICETYPE" == "test" ]; then
         echo_t "STUNNEL: Device type is TEST"
         t2CountNotify "SHORTS_DEVICE_TYPE_TEST"
-        echo "checkHost   = $JUMP_FQDN"        >> $STUNNEL_CONF_FILE
         echo "checkHost   = $DEV_SAN"          >> $STUNNEL_CONF_FILE
     else
         echo_t "STUNNEL: Device type is PROD"
         t2CountNotify "SHORTS_DEVICE_TYPE_PROD"
-        echo "checkHost   = $JUMP_FQDN"        >> $STUNNEL_CONF_FILE
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
     echo_t "STUNNEL: Device type is Unknown"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
-    echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
+fi
+
+#Function to find available fd at the point of time
+get_next_fd() {
+    local fd=3  # Start checking from FD 3 (since 0, 1, 2 are standard in/out/err)
+    local max_fd=20  # Maximum FD to check
+
+    # Try to redirect to /dev/null and check if the FD is free
+    while [ $fd -le $max_fd ]; do
+        if ! { true >&$fd; } 2>/dev/null; then
+            echo "$fd" # Output the available FD (goes to standard output)
+            return 0 # Set exit status to success
+        fi
+        fd=$((fd + 1))
+    done
+
+    # Log failure if no free FD is found
+    echo "Error: No available file descriptor found up to FD $max_fd" >&2
+    return 1 # Set exit status to failure
+}
+
+# Get the next available file descriptor and export if its valid
+FD_NUMBER=$(get_next_fd)
+if [ $? -eq 0 ]; then
+    export FD_NUMBER
+
+    # Create a named pipe
+    PIPE=$(mktemp -u)
+    mkfifo "$PIPE"
+
+    # Open the pipe using the available FD
+    eval "exec $FD_NUMBER<>$PIPE"
+
+    #removing the pipe after opening
+    rm "$PIPE"
+
+    #Writing passcode to open file descriptor
+    echo "$(eval "$PASSCODE")" >&$FD_NUMBER &
+else
+    echo "Error: No available file descriptor to use." >&2
 fi
 
 # NetworkManager compatibility
@@ -145,6 +189,10 @@ if [ -f /usr/sbin/NetworkManager ]; then
 fi
 
 /usr/bin/stunnel $STUNNEL_CONF_FILE
+if [ $? -ne 0 ]; then
+    echo_t "STUNNEL: ERROR - Failed to start stunnel process."
+    exit 1
+fi
 
 # cleanup sensitive files early
 rm -f $STUNNEL_CONF_FILE
@@ -154,14 +202,24 @@ rm -f $D_FILE
 REVSSHPID1=$(cat $REVSSH_PID_FILE)
 STUNNELPID=$(cat $STUNNEL_PID_FILE)
 
-if [ -z "$STUNNELPID" ]; then
-    rm -f $STUNNEL_PID_FILE
-    rm -f $CA_FILE
-    rm -f $CERT_FILE
-    echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
-    t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
-    exit
-fi
+count=0
+while [ -z "$STUNNELPID" ]; do
+    if [ $count -lt 2 ]; then
+        sleep 1
+        echo_t "STUNNEL: stunnel PID file is not available, Retrying..."
+        STUNNELPID=`cat $STUNNEL_PID_FILE`
+        count=$((count + 1))
+    else
+        rm -f $STUNNEL_PID_FILE
+        rm -f $CA_FILE
+        if [ "x$CRED_INDEX" == "x0" ]; then
+            touch /tmp/.$SE_DEVICE_CERT
+        fi
+        echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
+        t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
+        exit
+    fi
+done
 
 #Starting startTunnel
 /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${SHORTSARGS}
@@ -172,6 +230,9 @@ REVSSHPID2=$(cat $REVSSH_PID_FILE)
 if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" == "$REVSSHPID2" ]; then
     kill -9 $STUNNELPID
     rm -f $STUNNEL_PID_FILE
+    if [ "x$CRED_INDEX" == "x0" ]; then
+        touch /tmp/.$SE_DEVICE_CERT
+    fi
     echo_t "STUNNEL: Reverse SSH failed to connect. Exiting..."
     t2CountNotify "SHORTS_SSH_CLIENT_FAILURE"
     exit
