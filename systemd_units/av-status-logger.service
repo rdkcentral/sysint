@@ -22,7 +22,6 @@
 
 [Unit]
 Description=Audio Video Status Logger Timer Service (R)
-After=xre-receiver.service
 
 [Service]
 ExecStart=/lib/rdk/decoderStatusLogger.sh
