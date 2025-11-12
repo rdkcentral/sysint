@@ -91,9 +91,6 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                rm -rf /tmp/timesyncd.conf
 
                # Restart the service to reflect the new conf
-               ntpLog "Restarting the service: systemd-timesyncd.service ..!"
-               /bin/systemctl reset-failed systemd-timesyncd.service
-               /bin/systemctl restart systemd-timesyncd.service
            else
                ntpLog "No new Hostnames found to update /etc/systemd/timesyncd.conf"
            fi
