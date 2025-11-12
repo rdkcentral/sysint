@@ -69,8 +69,8 @@ MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
 echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
 
-echo "Update VM and CPU stats to the messages.txt file"
-sh  $RDK_PATH/vm_cpu_temp-check.sh
+#echo "Update VM and CPU stats to the messages.txt file"
+#sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
