@@ -19,7 +19,7 @@
 ##############################################################################
 
 CDLFILE=`cat /opt/cdl_flashed_file_name`
-PREV_CDLFILE=`cat /opt/previous_flashed_file_name)`
+PREV_CDLFILE=`cat /opt/previous_flashed_file_name`
 
 
 if [[ ! -f /opt/previous_flashed_file_name || ! -f /opt/cdl_flashed_file_name ]]; then
@@ -35,5 +35,4 @@ elif [ ! -f /opt/.gstreamer/registry.bin ] || [[ ${CDLFILE} != *"${PREV_CDLFILE}
     GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
 else
     echo "gstreamer registry is not removed, previous reboot is not due to CDL"
-fi'
-
+fi
