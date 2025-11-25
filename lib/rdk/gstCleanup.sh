@@ -27,12 +27,16 @@ if [[ ! -f /opt/previous_flashed_file_name || ! -f /opt/cdl_flashed_file_name ]]
     if [ ! -f /opt/.gstreamer/registry.bin ]; then
         echo "Gstreamer registry empty after FSR, clear /opt/.gstreamer"
         rm -rf /opt/.gstreamer
-        GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
+        GST_REGISTRY_UPDATE=yes
+        sleep 15
+        gst-inspect-1.0 >/dev/null 2>&1
     fi
 elif [ ! -f /opt/.gstreamer/registry.bin ] || [[ ${CDLFILE} != *"${PREV_CDLFILE}"* ]]; then
     echo "Removing gstreamer registry on bootup after CDL"
     rm -rf /opt/.gstreamer
-    GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
+    GST_REGISTRY_UPDATE=yes
+    sleep 15
+    gst-inspect-1.0 >/dev/null 2>&1
 else
     echo "gstreamer registry is not removed, previous reboot is not due to CDL"
 fi

@@ -21,7 +21,7 @@
 Description=Cleans up Gstreamer Registry
 
 After=local-fs.target nvram.service
-Before=nxserver.service wpeframework.service
+Before=wpeframework.service
 
 [Service]
 Type=oneshot
