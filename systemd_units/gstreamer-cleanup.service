@@ -20,8 +20,9 @@
 [Unit]
 Description=Cleans up Gstreamer Registry
 
-After=local-fs.target nvram.service
+After=local-fs.target nvram.service network-online.target
 Before=wpeframework.service
+Requires=network-online.target
 
 [Service]
 Type=oneshot
