@@ -64,10 +64,26 @@ echo "Clock Frequency Info:"
 grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' 
 
 # Adding the Memory Available Info
-echo "Available Memory Info:"
+echo "Available Memory Info:" >> $LOG_PATH/messages.txt
 MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
 echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
+
+# Swap Memory Info
+echo "Available Swap Memory Info:" >> $LOG_PATH/messages.txt
+
+# Logging all the swap info to messages.txt 
+SWAP_DATA=`cat /proc/meminfo | grep Swap`
+echo "$SWAP_DATA" >> $LOG_PATH/messages.txt
+
+SWAP_MEM_CACHED=`echo "$SWAP_DATA" | grep SwapCached | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapCached_split" "$SWAP_MEM_CACHED"
+
+SWAP_MEM_TOTAL=`echo "$SWAP_DATA" | grep SwapTotal | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapTotal_split" "$SWAP_MEM_TOTAL"
+
+SWAP_MEM_FREE=`echo "$SWAP_DATA" | grep SwapFree | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapFree_split" "$SWAP_MEM_FREE"
 
 echo "Update VM and CPU stats to the messages.txt file"
 sh  $RDK_PATH/vm_cpu_temp-check.sh
