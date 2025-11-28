@@ -21,10 +21,12 @@
 # Scope : RDK Devices
 # Usage : Invoke by systemd service
 
-sleep_time=5
+
 output=""
 count=0
 LOG_FILE="/opt/logs/ntp.log"
+attempts=0
+max_attempts=2
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
@@ -48,11 +50,13 @@ fi
 }
 
 ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
-while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ]
+while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ] && [ $attempts -lt $max_attempts ]
 do
     # NTP URL from the property file
     get_ntp_hosts
     sleep 5
+	echo "Attempt $attempts - Failed to retrieve NTP server URL, attempting again..."
+   attempts=$((attempts + 1))
 done
 
 partnerHostnames="$hostName $hostName2 $hostName3 $hostName4 $hostName5"
@@ -92,8 +96,6 @@ if [ -f /etc/systemd/timesyncd.conf ];then
 
                # Restart the service to reflect the new conf
                ntpLog "Restarting the service: systemd-timesyncd.service ..!"
-               /bin/systemctl reset-failed systemd-timesyncd.service
-               /bin/systemctl restart systemd-timesyncd.service
            else
                ntpLog "No new Hostnames found to update /etc/systemd/timesyncd.conf"
            fi
