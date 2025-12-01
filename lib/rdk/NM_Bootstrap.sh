@@ -19,9 +19,9 @@
 # limitations under the License.
 ##############################################################################
 
-RDK_PROFILE=$(grep "RDK_PROFILE" /etc/device.properties | cut -d '=' -f 2)
+BOOT_TYPE=$(grep "BOOT_TYPE" /tmp/bootType | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
+MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f $RDKV_SUPP_CONF ]; then
   SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
@@ -42,6 +42,21 @@ if [ -f $RDKV_SUPP_CONF ]; then
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
 
+if [ -f $MIGRATION_JSON ]; then
+    if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
+        nmcli dev set eth0 managed no
+
+        if [ -d /opt/NetworkManager ]; then
+         rm -rf /opt/NetworkManager/
+        fi
+        if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         rm -rf /opt/secure/NetworkManager/system-connections/*
+        fi
+        exit 0
+    fi
+fi
+
 if [ -z $SSID ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
@@ -57,9 +72,6 @@ if [ -z $SSID ]; then
 else
       if [ -d /opt/NetworkManager/system-connections ]; then
          rm -rf /opt/NetworkManager/system-connections/*
-      fi
-      if [ "$RDK_PROFILE" == "TV" ]; then
-        echo "`/bin/timestamp` :$0: Migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
       fi
       if [ -z $PSK ]; then
           #connect to wifi
