@@ -45,12 +45,9 @@ fi
 if [ -f $MIGRATION_JSON ]; then
     if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
-        ETH_UP=$(cat /sys/class/net/eth0/carrier)
-        if [ "$ETH_UP" -eq 1 ]; then
-            echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
-            nmcli dev down eth0
-        fi
-
+        echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
+        nmcli dev down eth0
+        
         if [ -d /opt/NetworkManager ]; then
          rm -rf /opt/NetworkManager/
         fi
