@@ -42,8 +42,9 @@ if [ -f $RDKV_SUPP_CONF ]; then
   sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
 fi
 
-if [ -f $MIGRATION_JSON ]; then
-    if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
+
+if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
+    if [ -f $MIGRATION_JSON ]; then
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
         echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
         nmcli dev set eth0 managed no
@@ -55,6 +56,8 @@ if [ -f $MIGRATION_JSON ]; then
          rm -rf /opt/secure/NetworkManager/system-connections/*
         fi
         exit 0
+    else
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
     fi
 fi
 
