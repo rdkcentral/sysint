@@ -46,7 +46,7 @@ if [ -f $MIGRATION_JSON ]; then
     if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
         echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
-        curl -d '{"jsonrpc": "2.0","id": 42,"method": "org.rdk.NetworkManager.SetInterfaceState","params": {"interface": "eth0", "enabled": false}' http://127.0.0.1:9998/jsonrpc; echo;
+        nmcli dev set eth0 managed no
         
         if [ -d /opt/NetworkManager ]; then
          rm -rf /opt/NetworkManager/
