@@ -47,6 +47,42 @@ netInfoLog() {
     echo "`/bin/timestamp` :$0: $*" >> "$NM_LOG_FILE"
 }
 
+# Start avahi-autoipd when link is up and no global IPv4
+start_zero_conf() {
+    local ifname="$1"
+    # Check if interface already has a global IPv4
+    has_global_ipv4=$(/sbin/ip -4 addr show dev "$ifname" scope global | wc -l)
+    if [ "$has_global_ipv4" -ne 0 ]; then
+        NMdispatcherLog "Interface $ifname already has global IPv4, skipping avahi-autoipd start"
+        return 0
+    fi
+    if command -v avahi-autoipd >/dev/null 2>&1; then
+        NMdispatcherLog "Starting avahi-autoipd on $ifname"
+        avahi-autoipd -D "$ifname" >/dev/null 2>&1 || NMdispatcherLog "avahi-autoipd failed to start on $ifname"
+    else
+        NMdispatcherLog "No avahi-autoipd found for $ifname"
+    fi
+}
+
+stop_zero_conf() {
+    local ifname="$1"
+    NMdispatcherLog "Stopping avahi-autoipd on $ifname"
+    # Try to stop avahi-autoipd gracefully
+    if pgrep -f "avahi-autoipd .* $ifname" >/dev/null 2>&1; then
+        pkill -f "avahi-autoipd .* $ifname" || NMdispatcherLog "Failed pkill avahi-autoipd $ifname"
+    else
+        # generic kill if avahi-autoipd was started without args
+        if pgrep avahi-autoipd >/dev/null 2>&1; then
+            pkill avahi-autoipd || NMdispatcherLog "Failed pkill avahi-autoipd"
+        fi
+    fi
+    # Remove IPv4LL (169.254.x.x) addresses on the interface
+    for addr in $(/sbin/ip -4 addr show dev "$ifname" | awk '/169\.254\./ {print $2}'); do
+        NMdispatcherLog "Removing IPv4LL $addr from $ifname"
+        /sbin/ip addr del "$addr" dev "$ifname" >/dev/null 2>&1 || NMdispatcherLog "Failed to remove $addr from $ifname"
+    done
+}
+
 networkInfoLogger() {
     # Arguments: $1 event, $2 ipaddress type, $3 interface name, $4 ipaddress, $5 ipaddress scope
     local cmd="$1"
@@ -110,10 +146,16 @@ if [ "$interfaceStatus" = "up" ]; then
    
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
     NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
+    # On link up, start avahi-autoipd if no global IPv4 exists (helps IPv4LL assignment)
+    if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
+        start_zero_conf "$interfaceName"
+    fi
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        # Stop any avahi-autoipd daemons and remove IPv4LL before applying DHCP IPv4
+        stop_zero_conf "$interfaceName"
         mode="ipv4"
         gwip=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
         imode=2
