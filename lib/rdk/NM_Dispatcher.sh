@@ -47,6 +47,36 @@ netInfoLog() {
     echo "`/bin/timestamp` :$0: $*" >> "$NM_LOG_FILE"
 }
 
+# Start avahi-autoipd when link is up and no global IPv4
+start_zero_conf() {
+    local ifname="$1"
+    # Check if interface already has a global IPv4
+    has_global_ipv4=$(/sbin/ip -4 addr show dev "$ifname" scope global | wc -l)
+    if [ "$has_global_ipv4" -ne 0 ]; then
+        NMdispatcherLog "Interface $ifname already has global IPv4, skipping avahi-autoipd start"
+        return 0
+    fi
+    # Start the systemd service for this interface
+    if systemctl is-active --quiet "network@${ifname}.service"; then
+        NMdispatcherLog "network@${ifname}.service already active"
+    else
+        NMdispatcherLog "Starting network@${ifname}.service"
+        systemctl start "network@${ifname}.service" || NMdispatcherLog "Failed to start network@${ifname}.service"
+    fi
+}
+
+stop_zero_conf() {
+    local ifname="$1"
+    NMdispatcherLog "Stopping avahi-autoipd on $ifname"
+    # Stop the systemd service for this interface
+    if systemctl is-active --quiet "network@${ifname}.service"; then
+        NMdispatcherLog "Stopping network@${ifname}.service"
+        systemctl stop "network@${ifname}.service" || NMdispatcherLog "Failed to stop network@${ifname}.service"
+    else
+        NMdispatcherLog "network@${ifname}.service not active"
+    fi
+}
+
 networkInfoLogger() {
     # Arguments: $1 event, $2 ipaddress type, $3 interface name, $4 ipaddress, $5 ipaddress scope
     local cmd="$1"
@@ -110,10 +140,16 @@ if [ "$interfaceStatus" = "up" ]; then
    
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
     NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
+    # On link up, start avahi-autoipd if no global IPv4 exists (helps IPv4LL assignment)
+    if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
+        start_zero_conf "$interfaceName"
+    fi
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        # Stop any avahi-autoipd daemons and remove IPv4LL before applying DHCP IPv4
+        stop_zero_conf "$interfaceName"
         mode="ipv4"
         gwip=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
         imode=2
