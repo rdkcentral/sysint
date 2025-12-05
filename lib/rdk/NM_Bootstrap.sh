@@ -55,6 +55,7 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         if [ -d /opt/secure/NetworkManager/system-connections ]; then
          rm -rf /opt/secure/NetworkManager/system-connections/*
         fi
+        nmcli conn reload
         exit 0
     else
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
@@ -76,6 +77,9 @@ if [ -z $SSID ]; then
 else
       if [ -d /opt/NetworkManager/system-connections ]; then
          rm -rf /opt/NetworkManager/system-connections/*
+      fi
+      if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         rm -rf /opt/secure/NetworkManager/system-connections/*
       fi
       if [ -z $PSK ]; then
           #connect to wifi
