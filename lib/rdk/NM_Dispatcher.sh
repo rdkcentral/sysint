@@ -62,7 +62,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
     if [[ "$interfaceName" == "wlan0" || "$interfaceName" == "eth0" ]]; then
        if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then 
-           sh /lib/rdk/getRouterInfo.sh $interfaceName
+           sh /lib/rdk/getRouterInfo.sh $interfaceName $interfaceStatus
            echo "$DT_TIME getRouterInfo.sh" >> /opt/logs/NMMonitor.log 
        fi
     fi
