@@ -57,11 +57,11 @@ start_zero_conf() {
         return 0
     fi
     # Start the systemd service for this interface
-    if systemctl is-active --quiet "network@${ifname}.service"; then
-        NMdispatcherLog "network@${ifname}.service already active"
+    if systemctl is-active --quiet "avahi@${ifname}.service"; then
+        NMdispatcherLog "avahi@${ifname}.service already active"
     else
-        NMdispatcherLog "Starting network@${ifname}.service"
-        systemctl start "network@${ifname}.service" || NMdispatcherLog "Failed to start network@${ifname}.service"
+        NMdispatcherLog "Starting avahi@${ifname}.service"
+        systemctl start "avahi@${ifname}.service" || NMdispatcherLog "Failed to start avahi@${ifname}.service"
     fi
 }
 
@@ -69,11 +69,11 @@ stop_zero_conf() {
     local ifname="$1"
     NMdispatcherLog "Stopping avahi-autoipd on $ifname"
     # Stop the systemd service for this interface
-    if systemctl is-active --quiet "network@${ifname}.service"; then
-        NMdispatcherLog "Stopping network@${ifname}.service"
-        systemctl stop "network@${ifname}.service" || NMdispatcherLog "Failed to stop network@${ifname}.service"
+    if systemctl is-active --quiet "avahi@${ifname}.service"; then
+        NMdispatcherLog "Stopping avahi@${ifname}.service"
+        systemctl stop "avahi@${ifname}.service" || NMdispatcherLog "Failed to stop avahi@${ifname}.service"
     else
-        NMdispatcherLog "network@${ifname}.service not active"
+        NMdispatcherLog "avahi@${ifname}.service not active"
     fi
 }
 
