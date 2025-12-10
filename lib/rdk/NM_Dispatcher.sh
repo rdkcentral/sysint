@@ -136,14 +136,17 @@ checkDefaultRoute_Add() {
 interfaceName=$1
 interfaceStatus=$2
 
-if [ "$interfaceStatus" = "up" ]; then
-   
-    CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
-    NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
+if [ "$interfaceStatus" = "pre-up" ]; then
     # On link up, start avahi-autoipd if no global IPv4 exists (helps IPv4LL assignment)
     if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
         start_zero_conf "$interfaceName"
     fi
+fi
+
+if [ "$interfaceStatus" = "up" ]; then
+
+    CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
+    NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
