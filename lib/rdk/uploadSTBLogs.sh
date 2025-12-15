@@ -70,7 +70,6 @@ TLS=""
 CLOUD_URL=""
 CURL_TLS_TIMEOUT=30
 CURL_TIMEOUT=10
-useXpkiMtlsLogupload=false
 encryptionEnable=false
 CB_NUM_UPLOAD_ATTEMPTS=1
 DIRECT_BLOCK_FILENAME="/tmp/.lastdirectfail_upl"
@@ -141,68 +140,20 @@ eventSender()
     fi
 }
 
-#PID Cleanup function
-pidCleanup()
-{
-    # PID file cleanup
-    exit_code=$?
-    if [ $exit_code != 1 ]; then
-        if [ -f /tmp/.log-upload.pid ]; then
-            rm -rf /tmp/.log-upload.pid
-        fi
+# Use flock to avoid race condition when creating/checking PID file
+# PID-based locking is deprecated in favor of flock-based locking.
+
+LOCKFILE="/tmp/.log-upload.lock"
+exec 200>"$LOCKFILE"
+flock -n 200 || {
+    uploadLog "Another instance of this app $0 is already running (flock lock held)..!"
+    uploadLog "Exiting without starting the $0..!"
+    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+        MAINT_LOGUPLOAD_INPROGRESS=16
+        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
     fi
+    exit 1
 }
-
-trap pidCleanup EXIT
-
-# exit if an instance is already running
-if [ ! -f /tmp/.log-upload.pid ]; then
-    # store the PID
-    echo $$ > /tmp/.log-upload.pid
-else
-    pid=`cat /tmp/.log-upload.pid`
-    if [ -d /proc/$pid -a -f /proc/$pid/cmdline ];then
-	processName=`cat /proc/$pid/cmdline`
-        uploadLog "proc entry process name: $processName and running process name `basename $0`"
-        if echo "$processName" | grep -q `basename $0`; then
-            uploadLog "Another instance of this app $0 is already running..!"
-	    uploadLog "Exiting without starting the $0..!"
-            if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-                MAINT_LOGUPLOAD_INPROGRESS=16
-                eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_INPROGRESS
-            fi
-            exit 1
-        fi
-    fi
-    echo $$ > /tmp/.log-upload.pid
-fi
-
-#get telemetry opt out status
-getOptOutStatus()
-{
-    optoutStatus=0
-    currentVal="false"
-    #check if feature is enabled through rfc
-    rfcStatus=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.TelemetryOptOut.Enable 2>&1 > /dev/null)
-    #check the current option
-    if [ -f /opt/tmtryoptout ]; then
-        currentVal=$(cat /opt/tmtryoptout)
-    fi
-    if [ "x$rfcStatus" == "xtrue" ]; then
-        if [ "x$currentVal" == "xtrue" ]; then
-            optoutStatus=1
-        fi
-    fi
-    return $optoutStatus
-}
-
-#MTLS Upload Check
-checkXpkiMtlsBasedLogUpload()
-{
-   useXpkiMtlsLogupload=$(check_MtlsBasedLogUpload)
-   uploadLog "xpki based mtls support = $useXpkiMtlsLogupload"
-}
-
 
 #Direct and Codebig Communication Functions
 IsDirectBlocked()
@@ -383,6 +334,9 @@ sendTLSSSRCodebigRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Curl return code: $TLSRet, http code: $http_code"
 
+    if [ "$TLSRet" != 0 ]; then
+        t2ValNotify "LUCurlErr_split" "$TLSRet"
+    fi
     logTLSError $TLSRet "Codebig SSR" $FQDN
 }
 
@@ -395,23 +349,16 @@ sendTLSSSRRequest()
     if [ "$S3_MD5SUM" != "" ]; then
         URLENCODE_STRING="--data-urlencode \"md5=$S3_MD5SUM\""
     fi
-
-    uploadLog "Attempting $TLS connection to SSR server"
-    checkXpkiMtlsBasedLogUpload
-
-    uploadLog "Log Upload requires Mutual Authentication"
-    if [ "$useXpkiMtlsLogupload" == "true" ]; then
-          msg_tls_source="mTLS certificate from xPKI"
-          uploadLog "Connect with $msg_tls_source"
-          CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
-    fi
+    uploadLog "MTLS defaulted"
+    msg_tls_source="mTLS certificate from xPKI"
+    uploadLog "Connect with $msg_tls_source"
+    t2CountNotify "SYST_INFO_mtls_xpki"
+    CURL_CMD="-w '%{http_code} %{remote_ip} %{remote_port}\n' -d \"filename=$1\" $URLENCODE_STRING -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout $CURL_TLS_TIMEOUT -m 10"
     if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
         CURL_CMD="$CURL_CMD --cert-status"
     fi
-    if [ "$useXpkiMtlsLogupload" == "true" ]; then
-          TLSRet=` exec_curl_mtls "$CURL_CMD" "uploadLog"`
-          cat $HTTP_CODE > $CURL_INFO
-    fi
+    TLSRet=` exec_curl_mtls "$CURL_CMD" "uploadLog"`
+    cat $HTTP_CODE > $CURL_INFO
     FQDN=`echo "$CLOUD_URL" |awk -F/ '{print $3}'`
     http_code=$(awk '{print $1}' $CURL_INFO)
     server_ip=$(awk '{print $2}' $CURL_INFO)
@@ -419,6 +366,9 @@ sendTLSSSRRequest()
     uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
     uploadLog "Connect with $msg_tls_source Curl return code: $TLSRet, http code: $http_code"
 
+    if [ "$TLSRet" == 28 ]; then
+        t2CountNotify "SYST_ERR_Curl28"
+    fi
     logTLSError $TLSRet "SSR" $FQDN
 }
 
@@ -558,11 +508,13 @@ HttpLogUpload()
             while [ "$retries" -lt $NUM_UPLOAD_ATTEMPTS ]
             do
                 uploadLog "HttpLogUpload: Attempting direct log upload"
+		t2CountNotify "SYST_INFO_LUattempt"
                 sendTLSSSRRequest $1
                 ret=$TLSRet
                 http_code=$(awk '{print $1}' $CURL_INFO)
                 if [ "$http_code" = "200" ];then       # anything other than success causes retries
                     uploadLog "HttpLogUpload: Direct log upload Success: httpcode=$http_code"
+                    t2CountNotify "SYST_INFO_lu_success"
                     break
                 elif [ "$http_code" = "404" ]; then
                     uploadLog "HttpLogUpload: Received 404 response for Direct log upload, Retry logic not needed"
@@ -657,6 +609,10 @@ HttpLogUpload()
         port_num=$(awk '{print $3}' $CURL_INFO)
         uploadLog "Curl Connected to $FQDN ($server_ip) port $port_num"
         uploadLog "Curl return code: $ret, http code: $http_code"
+
+        if [ "$ret" != 0 ]; then
+            t2ValNotify "LUCurlErr_split" "$ret"
+        fi
         rm $FILENAME
 
 	if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
@@ -685,6 +641,9 @@ HttpLogUpload()
                 uploadLog "Curl return code: $ret, http code: $http_code"
                 rm $FILENAME
 
+                if [ "$ret" != 0 ]; then
+                    t2ValNotify "LUCurlErr_split" "$ret"
+                fi
                 if [ "$ret" = "0" ] && [ "$http_code" = 200 ]; then
                       t2CountNotify "TEST_lu_success"
                 fi
@@ -695,6 +654,7 @@ HttpLogUpload()
                 result=0
             else
                 uploadLog "Failed Uploading Logs through - HTTP"
+		t2CountNotify "SYST_ERR_LogUpload_Failed"
             fi
         fi
     else
@@ -817,6 +777,7 @@ uploadLogOnDemand()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 echo "Upload failed"
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
                 maintenance_error_flag=1
             else
                 maintenance_error_flag=0
@@ -853,18 +814,27 @@ uploadLogOnReboot()
             exit 0
         fi
     fi
-    uploadLog "Sleeping for seven minutes"
-    if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
-        #run sleep in a background job
-        sleep 330 &
-        # store and remember the sleep's PID
-        sleep_pid="$!"
-        # wait here for the sleep to complete
-        wait
+    # Get system uptime in seconds
+    uptime_seconds=$(cut -d' ' -f1 /proc/uptime)
+    uptime_seconds=${uptime_seconds%.*}
+
+    if [ "$uptime_seconds" -lt 900 ]; then
+        uploadLog "Sleeping for seven minutes"
+        if [ "x$ENABLE_MAINTENANCE" == "xtrue" ]; then
+            #run sleep in a background job
+            sleep 330 &
+            # store and remember the sleep's PID
+            sleep_pid="$!"
+            # wait here for the sleep to complete
+            wait
+        else
+            sleep 330
+        fi
+        uploadLog "Done sleeping"
     else
-        sleep 330
+        uploadLog "Device uptime is more than 15min. Skip Sleep"
     fi
-    uploadLog "Done sleeping"
+
     # Special processing - Permanently backup logs on box delete the logs older than
     # 3 days to take care of old filename
     stat=`find /opt/logs -name "*-*-*-*-*M-" -mtime +3 -exec rm -rf {} \;`
@@ -878,7 +848,7 @@ uploadLogOnReboot()
     rm $LOG_FILE
     modifyFileWithTimestamp $PREV_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
 
-    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot"`
+    reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot\|MAINTENANCE_REBOOT"`
     DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT=`/usr/bin/tr181 -g $UNSCHEDULEDREBOOT_TR181_NAME 2>&1 > /dev/null`
     uploadLog "reboot_reason: $reboot_reason , uploadLog:$uploadLog and UploadLogsOnUnscheduledReboot.Disable RFC: $DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT"
     if [ "$uploadLog" == "true" ] || [ -z "$reboot_reason" -a "$DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT" == "false" ]; then
@@ -898,6 +868,7 @@ uploadLogOnReboot()
             if [ $retval -ne 0 ];then
                 uploadLog "HTTP log upload failed"
                 maintenance_error_flag=1
+                t2CountNotify "SYST_ERR_LogUpload_Failed"
             else
                 maintenance_error_flag=0
             fi
@@ -909,8 +880,10 @@ uploadLogOnReboot()
             driretval=$(HttpLogUpload $DRI_LOG_FILE)
             if [ $driretval -ne 0 ];then
                 uploadLog "Uploading DRI Logs through HTTP Failed!!"
+                t2CountNotify "SYST_INFO_PDRILogUpload"
             else
                 uploadLog "Uploading DRI Logs through HTTP Success..."
+                t2CountNotify "SYST_INFO_PDRILogUpload"
                 rm -rf $DRI_LOG_PATH
             fi
         fi
@@ -1020,14 +993,7 @@ else
             exit 0
         fi
     fi
-    getOptOutStatus
-    opt_out=$?
-    if [ $opt_out -eq 1 ]; then
-        uploadLog "Logupload is disabled as TelemetryOptOut is set"
-        MAINT_LOGUPLOAD_COMPLETE=4
-        eventSender "MaintenanceMGR" $MAINT_LOGUPLOAD_COMPLETE
-        exit 0
-    fi
+    
     if [ $DCM_FLAG -eq 0 ] ; then
         uploadLog "Uploading Without DCM"
         uploadLogOnReboot true

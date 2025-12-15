@@ -20,7 +20,7 @@
 [Unit]
 Description=MINIDUMP UPLOAD
 
-After=network-online.target dnsmasq.service
+After=network-online.target
 Requires=network-online.target
 
 [Service]

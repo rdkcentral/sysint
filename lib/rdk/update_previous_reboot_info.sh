@@ -65,7 +65,7 @@ rebootLog "Start of Reboot Reason Script"
 
 # Define Reasons for APP_TRIGGERED, OPS_TRIGGERED and MAINTENANCE_TRIGGERED cases
 APP_TRIGGERED_REASONS=(Servicemanager systemservice_legacy WarehouseReset WarehouseService HrvInitWHReset HrvColdInitReset HtmlDiagnostics InstallTDK StartTDK TR69Agent SystemServices Bsu_GUI SNMP CVT_CDL Nxserver DRM_Netflix_Initialize hrvinit )
-OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDVRSet Receiver_VidiPath_Enabled Receiver_Toggle_Optimus S04init_ticket Network-Service monitorMfrMgr.sh vlAPI_Caller_Upgrade ImageUpgrade_rmf_osal ImageUpgrade_mfr_api ImageUpgrade_userInitiatedFWDnld.sh ClearSICache tr69hostIfReset hostIf_utils hostifDeviceInfo HAL_SYS_Reboot UpgradeReboot_deviceInitiatedFWDnld.sh UpgradeReboot_rdkvfwupgrader UpgradeReboot_ipdnl.sh PowerMgr_Powerreset PowerMgr_coldFactoryReset DeepSleepMgr PowerMgr_CustomerReset PowerMgr_PersonalityReset Power_Thermmgr PowerMgr_Plat HAL_CDL_notify_mgr_event vldsg_estb_poll_ecm_operational_state  SASWatchDog BP3_Provisioning eMMC_FW_UPGRADE BOOTLOADER_UPGRADE cdl_service  docsis_mode_check.sh  Receiver)
+OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDVRSet Receiver_VidiPath_Enabled Receiver_Toggle_Optimus S04init_ticket Network-Service monitorMfrMgr.sh vlAPI_Caller_Upgrade ImageUpgrade_rmf_osal ImageUpgrade_mfr_api ImageUpgrade_userInitiatedFWDnld.sh ClearSICache tr69hostIfReset hostIf_utils hostifDeviceInfo HAL_SYS_Reboot UpgradeReboot_deviceInitiatedFWDnld.sh UpgradeReboot_rdkvfwupgrader UpgradeReboot_ipdnl.sh PowerMgr_Powerreset PowerMgr_coldFactoryReset DeepSleepMgr PowerMgr_CustomerReset PowerMgr_PersonalityReset Power_Thermmgr PowerMgr_Plat HAL_CDL_notify_mgr_event vldsg_estb_poll_ecm_operational_state  SASWatchDog BP3_Provisioning eMMC_FW_UPGRADE BOOTLOADER_UPGRADE cdl_service  docsis_mode_check.sh  Receiver CANARY_Update)
 MAINTENANCE_TRIGGERED_REASONS=(AutoReboot.sh PwrMgr)
 
 # Save the reboot info with all the fields
@@ -92,8 +92,15 @@ setPreviousRebootInfo()
     echo "}" >> $PREVIOUS_REBOOT_INFO_FILE
 
     rebootLog "Updating previous reboot reason in $PARODUS_LOG"
-    echo "`/bin/timestamp` Updating previous reboot info to Parodus" >> $PARODUS_LOG
-    echo "`/bin/timestamp` : $0: PreviousRebootInfo:$timestamp,$reason,$customReason,$source" >> $PARODUS_LOG
+    existing_reboot_info=$(grep "PreviousRebootInfo" "$PARODUS_LOG" 2>/dev/null | tail -1)
+
+    if [ -z "$existing_reboot_info" ]; then
+        echo "$(/bin/timestamp): $0: Updating previous reboot info to Parodus" >> "$PARODUS_LOG"
+        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$reason,$custom,$source" >> "$PARODUS_LOG"
+        rebootLog "Reboot Information Updated to parodus log:$timestamp,$reason,$custom,$source"
+    else
+        rebootLog "${FUNCNAME[0]}: Reboot info already present in $PARODUS_LOG as $existing_reboot_info, skipping update"
+    fi
 
     # Set Hard Power reset time with timestamp
     if [ "$reason" == "HARD_POWER" ] || [ "$reason" == "POWER_ON_RESET" ] || [ "$reason" == "UNKNOWN_RESET" ] || [ ! -f "$PREVIOUS_HARD_REBOOT_INFO_FILE" ];then

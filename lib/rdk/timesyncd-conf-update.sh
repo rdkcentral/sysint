@@ -17,18 +17,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
 # Purpose : To update the timesyncd configuration file
 # Scope : RDK Devices
 # Usage : Invoke by systemd service
 
-sleep_time=5
+
 output=""
 count=0
+LOG_FILE="/opt/logs/ntp.log"
+attempts=0
+max_attempts=2
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
 fi
+
+#Log framework to print timestamp and source script name
+ntpLog()
+{
+    echo "`/bin/timestamp` : $0: $*" >> $LOG_FILE
+}
 
 # NTP URL from the property file
 get_ntp_hosts() {
@@ -41,12 +49,18 @@ if [ -f /lib/rdk/getPartnerProperty.sh ]; then
 fi
 }
 
-while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ]
+ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
+while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ] && [ $attempts -lt $max_attempts ]
 do
-   get_ntp_hosts
-   sleep 5
+    # NTP URL from the property file
+    get_ntp_hosts
+    sleep 5
+	echo "Attempt $attempts - Failed to retrieve NTP server URL, attempting again..."
+   attempts=$((attempts + 1))
 done
-echo "NTP Server URL for this env is $hostName ..!"
+
+partnerHostnames="$hostName $hostName2 $hostName3 $hostName4 $hostName5"
+ntpLog "NTP Server URL for the partner:$partnerHostnames"
 
 # Update the timesyncd configuration with URL
 if [ -f /etc/systemd/timesyncd.conf ];then
@@ -56,22 +70,37 @@ if [ -f /etc/systemd/timesyncd.conf ];then
            if  [ "$hostName" == "$defaultHostName" ] || [ "$hostName2" == "$defaultHostName" ] || [ "$hostName3" == "$defaultHostName" ] || [ "$hostName4" == "$defaultHostName" ] || [ "$hostName5" == "$defaultHostName" ];then
                  defaultHostName2=''
            fi
+           for host in $partnerHostnames; do
+               if grep -q "$host" /etc/systemd/timesyncd.conf; then
+                    updateHostnames+=" "
+               else
+                    updateHostnames+="$host "
+               fi
+           done
+           updateHostname=$(echo "$updateHostnames" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
 
-           # Update the timesyncd configuration with URL
-           cp /etc/systemd/timesyncd.conf /tmp/timesyncd.conf
-           sed -i "s/^NTP=$defaultHostName/NTP=$hostName $hostName2 $hostName3 $hostName4 $hostName5 $defaultHostName2/" /tmp/timesyncd.conf
-           echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
-           cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
-           rm -rf /tmp/timesyncd.conf
-           # Restart the service to reflect the new conf
-           echo "`date`: Restarting the service: systemd-timesyncd.service ..!"
-           /bin/systemctl reset-failed systemd-timesyncd.service
-           /bin/systemctl restart systemd-timesyncd.service
+           if [ ! -z "$updateHostname" ]; then
+               # Update the timesyncd configuration with URL
+               ntpLog "Update the timesyncd configuration with URL updateHostname=$updateHostname defaultHostName=$defaultHostName2"
+
+               cp /etc/systemd/timesyncd.conf /tmp/timesyncd.conf
+               sed -i "s/^NTP=.*/NTP=/g" /tmp/timesyncd.conf
+               sed -i "s/^NTP=/NTP=$updateHostname $defaultHostName2/" /tmp/timesyncd.conf
+               systemd_ver=`systemctl --version | grep systemd | awk '{print $2}'`
+	       if [ "$systemd_ver" -ge 248 ]; then
+		   # For systemd version >= 248, add the ConnectionRetrySec parameter
+		   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
+	       fi
+	       cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
+               rm -rf /tmp/timesyncd.conf
+           else
+               ntpLog "No new Hostnames found to update /etc/systemd/timesyncd.conf"
+           fi
       else
-           echo "Hostnames are same ($hostName, $defaultHostName)"
+           ntpLog "Hostnames are same ($hostName, $defaultHostName)"
       fi
 else
-      echo "Missing configuration file: /etc/systemd/timesyncd.conf"
+      ntpLog "Missing configuration file: /etc/systemd/timesyncd.conf"
 fi
 
 exit 0

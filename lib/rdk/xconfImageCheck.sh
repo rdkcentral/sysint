@@ -155,6 +155,7 @@ if [ -f $PERSISTENT_PATH/swupdate.conf ] && [ $BUILD_TYPE != "prod" ] ; then
     echo "$urlString" | grep -q -i "^http.*://"
     if [ $? -ne 0 ]; then
         echo "`Timestamp` Device configured with an invalid overriden URL : $urlString !!! Exiting from Image Upgrade process..!"
+	t2ValNotify "SYST_WARN_UPGD_SKIP" "$urlString"
         exit 0
     fi
 fi
@@ -391,6 +392,7 @@ sendTLSCodebigRequest()
             echo CURL_CMD: $CURL_CMD
         else
             echo ADDITIONAL_FW_VER_INFO: $pdriFwVerInfo$remoteInfo
+            t2ValNotify "RCU_FWver_split" "$pdriFwVerInfo$remoteInfo"
         fi
         result= eval $CURL_CMD > $HTTP_CODE
 
@@ -410,6 +412,11 @@ sendTLSCodebigRequest()
     ;;
     esac
     echo "Curl return code : $TLSRet"
+    if [ "$TLSRet" == 28 ]; then
+        t2CountNotify "SYST_WARN_dcm_curl28"
+    else
+        t2ValNotify "CurlRet_split" "$TLSRet"
+    fi
 }
 
 sendTLSRequest()
@@ -443,10 +450,12 @@ getPDRIVersion () {
         echo "$pdriVersion" | grep -i 'failed' >  /dev/null
         if [ $? -eq 0 ] ; then
             echo "`Timestamp` PDRI version Retrieving Failed ..."
+            t2CountNotify "SYST_ERR_PDRI_VFail"
         else
             #copy to global variable
             pdriFwVerInfo=$pdriVersion
             echo "`Timestamp` PDRI Version = $pdriFwVerInfo"
+            t2ValNotify "PDRI_Version_split" "$pdriFwVerInfo"
         fi
     else
         echo "`Timestamp` mfr_utility Not found. No P-DRI Upgrade !!"
@@ -479,12 +488,12 @@ createJsonString () {
     else
         ACTIVATE_FLAG='&activationInProgress=true'
     fi
-
+    MFR_NAME=`sh $RDK_PATH/getDeviceDetails.sh read manufacturer`
     #Included additionalFwVerInfo and partnerId
     if [ "$(getModel)" = "RPI" ]; then
       JSONSTR='eStbMac='$(getEstbMacAddress)'&firmwareVersion='$(getFWVersion)'&env='$(getBuildType)'&model='$BOX_MODEL'&localtime='$(getLocalTime)'&timezone='EST05EDT''$CAPABILITIES''
     else
-      JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
+      JSONSTR='eStbMac='$estbMac'&firmwareVersion='$(getFWVersion)'&additionalFwVerInfo='$pdriFwVerInfo''$remoteInfo'&env='$(getBuildType)'&model='$model'&manufacturer='$MFR_NAME'&partnerId='$(getPartnerId)'&osClass='$osClass'&accountId='$(getAccountId)'&experience='$(getExperience)'&serial='$(getSerialNumber)'&localtime='$(getLocalTime)'&timezone='$zoneValue''$ACTIVATE_FLAG''$CAPABILITIES''
     fi
 }
 
@@ -493,11 +502,17 @@ sendXCONFTLSRequest () {
     ret=1
     http_code="000"
     echo "`Timestamp` Trying to communicate with XCONF server"
+    t2CountNotify "SYST_INFO_XCONFConnect"
     sendTLSRequest "XCONF"
     curl_result=$TLSRet
     http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
     ret=$?
     echo "`Timestamp` curl_ret = $curl_result, ret=$ret, http_code: $http_code for XCONF communication"
+    if [ "$http_code" = "000" ]; then
+        t2CountNotify "SYST_ERR_Xconf28"
+    elif [ "$http_code" = "200" ]; then
+        t2CountNotify "SYST_INFO_Xconf200"
+    fi
     if [ $curl_result -eq 0 ] && [ "$http_code" = "404" ]; then
         exitForXconf404response
     fi    
@@ -523,6 +538,7 @@ sendXCONFCodebigRequest () {
             echo "`Timestamp` JSONSTR: $JSONSTR"
         else
             echo ADDITIONAL_FW_VER_INFO: $pdriFwVerInfo$remoteInfo
+            t2ValNotify "RCU_FWver_split" "$pdriFwVerInfo$remoteInfo"
         fi
         SIGN_CMD="GetServiceUrl $request_type \"$JSONSTR\""
         eval $SIGN_CMD > /tmp/.signedRequest
@@ -541,6 +557,11 @@ sendXCONFCodebigRequest () {
         http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
         ret=$?
         echo "`Timestamp` curl_ret = $curl_result, ret=$ret, http_code: $http_code for XCONF communication from Open internet"
+        if [ "$http_code" = "000" ]; then
+            t2CountNotify "SYST_ERR_Xconf28"
+        elif [ "$http_code" = "200" ]; then
+            t2CountNotify "SYST_INFO_Xconf200"
+        fi
         if [ $curl_result -eq 0 ] && [ "$http_code" = "404" ] ; then
             exitForXconf404response
         fi
@@ -567,6 +588,7 @@ sendXCONFRequest()
                 while [ $xconfcbretry -le $CB_RETRY_COUNT ]
                 do
                     echo "`Timestamp` sendXCONFRequest Using Codebig Image upgrade connection"
+                    t2CountNotify "SYST_INFO_cb_xconf"
                     sendXCONFCodebigRequest
                     ret=$?
                     if [ "$http_code" = "200" ]; then
@@ -642,6 +664,7 @@ sendXCONFRequest()
                     while [ $xconfcbretry -le $CB_RETRY_COUNT ] 
                     do 
                         echo "`Timestamp` sendXCONFRequest Using Codebig Image upgrade connection" 
+                        t2CountNotify "SYST_INFO_cb_xconf"
                         sendXCONFCodebigRequest
                         ret=$?
                         if [ "$http_code" = "200" ]; then

@@ -130,6 +130,14 @@ if [ -x $IPV4_BIN_PATH ]; then
     fi
     $IPV4_BIN -A INPUT -s 192.168.100.0/24 -i $WAN_INTERFACE -j ACCEPT
 
+    # MiracastService plugin need to communicate with client through below ports
+    # 7236 - RTSP session communication
+    # 1990 - UDP streaming for Mirroring
+    # 67 - DHCP server to provide ip to clients through P2P group interface
+    $IPV4_BIN -A INPUT -p tcp -s 192.168.0.0/16 --dport 7236 -j ACCEPT
+    $IPV4_BIN -A INPUT -p udp -s 192.168.0.0/16 --dport 1990 -j ACCEPT
+    $IPV4_BIN -A INPUT -i p2p+ -p udp --dport 67 -j ACCEPT
+
     $IPV4_BIN -N SSHDROPLOG
     $IPV4_BIN -A SSHDROPLOG -j LOG --log-level 7 --log-prefix "SSH CONNECTION DROPPED: "
     $IPV4_BIN -A SSHDROPLOG -j DROP
@@ -284,23 +292,6 @@ waitForIpAcquisition() {
             fi
         fi
     done
-}
-#####################################################################
-
-#####################################################################
-preventNeighOverflow() {
-    ## Start of changes for avoiding neighbourtable overflow
-    solmcast=$(awk '/'$WAN_INTERFACE'/ {print "ff02::1:ff" substr($0,27,2) ":" substr($0,29,4);}' /proc/net/if_inet6)
-
-    for line in ${solmcast}; do
-        $IPV6_BIN -A PREROUTING -t mangle -d $line -j ACCEPT
-    done
-    $IPV6_BIN -A PREROUTING -t mangle -p icmpv6 --icmpv6-type neighbor-solicitation -i $WAN_INTERFACE -d ff02::1:ff00:0/104 -j DROP 
-    if [ -x $IPV6_BIN_PATH ] && [ -f /tmp/estb_ipv4 ]; then
-        $IPV6_BIN -I INPUT -p ipv6-icmp --icmpv6-type router-advertisement -j DROP
-        ip -6 route del default
-    fi
-    ## End of changes for avoiding neighbour table overflow
 }
 #####################################################################
 
@@ -550,7 +541,6 @@ else
 
     addStaticRules
     waitForIpAcquisition
-    preventNeighOverflow
     addDynamicRules
 
     ipTableLogging "Done with Static and Dynamic Rules"

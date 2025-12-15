@@ -24,9 +24,7 @@ After=securemount.service nvram.service tr69hostif.service local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/etc/dump-backup-service start
-ExecReload=/etc/dump-backup-service restart
-ExecStop=/etc/dump-backup-service stop
+ExecStart=/bin/sh -c '/lib/rdk/dumpbackup.sh'
 
 [Install]
 WantedBy=multi-user.target

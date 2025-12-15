@@ -1,0 +1,9 @@
+[Unit]
+Description= NetworkManager Path for bootType check
+
+[Path]
+PathExists=/tmp/bootType
+Unit=NetworkManager.service
+
+[Install]
+WantedBy=multi-user.target

@@ -26,7 +26,14 @@
 . /etc/device.properties
 . /etc/env_setup.sh
 
+
+if [ -f /lib/rdk/t2Shared_api.sh ]; then
+    . /lib/rdk/t2Shared_api.sh
+fi
+
 count=0
+SYSTEM_METRIC_CRON_INTERVAL="*/15 * * * *"
+
 
 log_disk_usage() {
     echo "********** Disk Space Usage **********" 
@@ -52,27 +59,47 @@ cpu_statistics() {
 	t2ValNotify "FREE_MEM_split" "$mem"
 }
 
-
 # Adding the Clock Frequency Info
 echo "Clock Frequency Info:"
 grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' 
 
-if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    . /lib/rdk/t2Shared_api.sh
-fi
+# Adding the Memory Available Info
+echo "Available Memory Info:" >> $LOG_PATH/messages.txt
+MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
+echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
+t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
+
+# Swap Memory Info
+echo "Available Swap Memory Info:" >> $LOG_PATH/messages.txt
+
+# Logging all the swap info to messages.txt 
+SWAP_DATA=`cat /proc/meminfo | grep Swap`
+echo "$SWAP_DATA" >> $LOG_PATH/messages.txt
+
+SWAP_MEM_CACHED=`echo "$SWAP_DATA" | grep SwapCached | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapCached_split" "$SWAP_MEM_CACHED"
+
+SWAP_MEM_TOTAL=`echo "$SWAP_DATA" | grep SwapTotal | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapTotal_split" "$SWAP_MEM_TOTAL"
+
+SWAP_MEM_FREE=`echo "$SWAP_DATA" | grep SwapFree | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+t2ValNotify "SYST_INFO_SwapFree_split" "$SWAP_MEM_FREE"
+
+echo "Update VM and CPU stats to the messages.txt file"
+sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
-    echo "Logging for Yocto platforms..."
-    /bin/timestamp 
-    uptime 
-    run_top_command
-    log_disk_usage
-    cpu_statistics
+echo "Logging for Yocto platforms..."
+/bin/timestamp 
+uptime 
+run_top_command
+log_disk_usage
+cpu_statistics
 
-    if [ -f /tmp/.top_count ]; then
+if [ -f /tmp/.top_count ]; then
 	curr_count=`cat /tmp/.top_count`
-        count=$(( curr_count + 1 ))
+    count=$(( curr_count + 1 ))
 	if [ $count -eq 6 ]; then
 		top -b -n1 | grep -vE 'grep|run.sh'
 		cat /proc/meminfo

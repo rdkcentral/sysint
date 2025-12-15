@@ -64,11 +64,25 @@ ipAddress=""
 checkForInterface()
 {
    interface=$1
-   if [ -f /tmp/estb_ipv6 ]; then
+   if [ -f /tmp/.ipv6$interface ]; then
+       echo "Reading IPv6 address for $interface"
        ipv6address=`cat /tmp/.ipv6$interface`
    fi
-   ipv4address=`cat /tmp/.ipv4$interface`
+   if [ -f /tmp/.ipv4$interface ]; then
+       echo "Reading IPv4 address for $interface"
+       ipv4address=`cat /tmp/.ipv4$interface`
+   fi
 }
+
+DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1 > /dev/null)
+if [ "$DEVICETYPE" = "TEST" ] && [ "$USE_DYNAMICKEYING" = "TRUE" ]; then
+    USE_DEVKEYS="-f authorized_keys_dev"
+    echo " dropbear using dev authorization keys"
+else
+    USE_DEVKEYS=""
+    echo " dropbear using prod authorization keys"
+fi
+/bin/systemctl set-environment USE_DEVKEYS="$USE_DEVKEYS"
 
 #RFC check for MOCA SSH enable/not.
 isMOCASSHEnable=$(/usr/bin/tr181Set -d  Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MOCASSH.Enable 2>&1 > /dev/null)
@@ -129,7 +143,7 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                 /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
                 /bin/systemctl set-environment IP_ADDRESS_PARAM="$IP_ADDRESS_PARAM"
           else
-              dropbear -s -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 $IP_ADDRESS_PARAM &
+              dropbear -s -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 $IP_ADDRESS_PARAM $USE_DEVKEYS &
           fi
      fi
      exit 0
@@ -148,7 +162,7 @@ startDropbear()
           fi
           /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
      else
-          dropbear -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 -p $ipAddress:22 &
+          dropbear -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 -p $ipAddress:22 $USE_DEVKEYS &
      fi
      echo "$ipAddress" > /tmp/.dropbearBoundIp
 }

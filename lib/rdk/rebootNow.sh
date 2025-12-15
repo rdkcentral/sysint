@@ -76,7 +76,7 @@ CDLFILE=$(cat /opt/cdl_flashed_file_name)
 PREV_CDLFILE=$(cat /tmp/currently_running_image_name)
 # Define Reasons for APP_TRIGGERED, OPS_TRIGGERED and MAINTENANCE_TRIGGERED cases
 APP_TRIGGERED_REASONS=(Servicemanager systemservice_legacy WarehouseReset WarehouseService HrvInitWHReset HrvColdInitReset HtmlDiagnostics InstallTDK StartTDK TR69Agent SystemServices Bsu_GUI SNMP CVT_CDL Nxserver DRM_Netflix_Initialize hrvinit PaceMFRLibrary)
-OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_firmwareDwnld.sh UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDVRSet Receiver_VidiPath_Enabled Receiver_Toggle_Optimus S04init_ticket Network-Service monitor.sh ecmIpMonitor.sh monitorMfrMgr.sh vlAPI_Caller_Upgrade ImageUpgrade_rmf_osal ImageUpgrade_mfr_api ImageUpgrade_updateNewImage.sh ImageUpgrade_userInitiatedFWDnld.sh ClearSICache tr69hostIfReset hostIf_utils hostifDeviceInfo HAL_SYS_Reboot UpgradeReboot_deviceInitiatedFWDnld.sh UpgradeReboot_rdkvfwupgrader UpgradeReboot_ipdnl.sh PowerMgr_Powerreset PowerMgr_coldFactoryReset DeepSleepMgr PowerMgr_CustomerReset PowerMgr_PersonalityReset Power_Thermmgr PowerMgr_Plat HAL_CDL_notify_mgr_event vldsg_estb_poll_ecm_operational_state BcmIndicateEcmReset SASWatchDog BP3_Provisioning eMMC_FW_UPGRADE BOOTLOADER_UPGRADE cdl_service BCMCommandHandler BRCM_Image_Validate docsis_mode_check.sh tch_nvram.sh Receiver)
+OPS_TRIGGERED_REASONS=(ScheduledReboot RebootSTB.sh FactoryReset UpgradeReboot_firmwareDwnld.sh UpgradeReboot_restore XFS wait_for_pci0_ready websocketproxyinit NSC_IR_EventReboot host_interface_dma_bus_wait usbhotplug Receiver_MDVRSet Receiver_VidiPath_Enabled Receiver_Toggle_Optimus S04init_ticket Network-Service monitor.sh ecmIpMonitor.sh monitorMfrMgr.sh vlAPI_Caller_Upgrade ImageUpgrade_rmf_osal ImageUpgrade_mfr_api ImageUpgrade_updateNewImage.sh ImageUpgrade_userInitiatedFWDnld.sh ClearSICache tr69hostIfReset hostIf_utils hostifDeviceInfo HAL_SYS_Reboot UpgradeReboot_deviceInitiatedFWDnld.sh UpgradeReboot_rdkvfwupgrader UpgradeReboot_ipdnl.sh PowerMgr_Powerreset PowerMgr_coldFactoryReset DeepSleepMgr PowerMgr_CustomerReset PowerMgr_PersonalityReset Power_Thermmgr PowerMgr_Plat HAL_CDL_notify_mgr_event vldsg_estb_poll_ecm_operational_state BcmIndicateEcmReset SASWatchDog BP3_Provisioning eMMC_FW_UPGRADE BOOTLOADER_UPGRADE cdl_service BCMCommandHandler BRCM_Image_Validate docsis_mode_check.sh tch_nvram.sh Receiver CANARY_Update boot_FSR)
 MAINTENANCE_TRIGGERED_REASONS=(AutoReboot.sh PwrMgr)
 pid_file="/tmp/.rebootNow.pid"
 customReason="Unknown"
@@ -344,7 +344,7 @@ setPreviousRebootInfo()
     echo "\"otherReason\":\"$other\"" >> $REBOOT_INFO_FILE
     echo "}" >> $REBOOT_INFO_FILE
 
-    echo "PreviousRebootInfo:$timestamp,$customReason,$source,$reason" >> $PARODUS_REBOOT_INFO_FILE
+    echo "PreviousRebootInfo:$timestamp,$custom,$source,$reason" >> $PARODUS_REBOOT_INFO_FILE
     rebootLog "${FUNCNAME[0]}: Updated Reboot Reason information in $REBOOT_INFO_FILE and $PARODUS_REBOOT_INFO_FILE"
 }
 
@@ -472,16 +472,18 @@ rebootLog "End of the sync"
 
 rebootLog "Creating $REBOOTNOW_FLAG as the reboot was triggred by RDK software"
 touch $REBOOTNOW_FLAG
-rebootLog "Rebooting the Device Now"
 rm -rf $pid_file
-reboot
-if [ $? -eq 1 ]; then #Force reboot when reboot fails
-    rebootLog "Reboot Failed, trying force reboot..."
-    if [ -f /tmp/systemd_freeze_reboot_on ];then
-        rebootLog "Force Reboot After First Reboot Attempt Failure"
-        reboot -f
-    else
-        rebootLog "Force Reboot with systemctl After First Reboot Attempt Failure"
-        systemctl --force --force reboot
-    fi
-fi
+
+rebootLog "Rebooting the Device Now"
+reboot &
+REBOOT_PID=$!
+
+sleep 90
+rebootLog "System still running after reboot command, Reboot Failed for $REBOOT_PID..."
+systemctl reboot
+if [ $? -eq 1 ]; then
+    rebootLog "Reboot failed due to systemctl hang or connection timeout"
+fi    
+kill $REBOOT_PID 2>/dev/null
+rebootLog "Triggering force Reboot after standard soft reboot failure"
+reboot -f

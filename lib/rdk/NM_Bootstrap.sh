@@ -19,37 +19,75 @@
 # limitations under the License.
 ##############################################################################
 
-WIFI_WPA_SUPPLICANT_CONF="/nvram/secure/wifi/wpa_supplicant.conf"
+BOOT_TYPE=$(grep "BOOT_TYPE" /tmp/bootType | cut -d '=' -f 2)
+RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
+MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
-if [ -f $WIFI_WPA_SUPPLICANT_CONF ]; then
-  SSID=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK=$(cat $WIFI_WPA_SUPPLICANT_CONF | grep -w psk= | cut -d '"' -f 2)
+if [ -f $RDKV_SUPP_CONF ]; then
+  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
+  PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
-  ETH_STATUS=$(nmcli dev status | grep -w eth0)
-  IS_ETH_CONN=$(echo $ETH_STATUS | grep -w connected)
+  # Case 1: Quoted passphrase
+  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
+    PSK="${BASH_REMATCH[1]}"
 
-  if [ -z "${IS_ETH_CONN}" ]; then
-         if [ -z "$( ls -A '/opt/NetworkManager/system-connections' )" ]; then
-            if [ -z $PSK ]; then
-                #connect to wifi
-                nmcli conn add type wifi con-name $SSID autoconnect yes ifname wlan0 ssid $SSID
-                nmcli conn reload
-            else
-                #connect to wifi
-                nmcli conn add type wifi con-name $SSID autoconnect yes ifname wlan0 ssid $SSID wifi-sec.key-mgmt wpa-psk wifi-sec.psk $PSK
-                nmcli conn reload
-            fi
-         elif [ -z $(grep "interface-name" /opt/NetworkManager/system-connections/*.nmconnection) ]; then
-            rm -rf /opt/NetworkManager/system-connections/*.nmconnection
-            if [ -z $PSK ]; then
-                #connect to wifi
-                nmcli conn add type wifi con-name $SSID autoconnect yes ifname wlan0 ssid $SSID
-                nmcli conn reload
-            else
-                #connect to wifi
-                nmcli conn add type wifi con-name $SSID autoconnect yes ifname wlan0 ssid $SSID wifi-sec.key-mgmt wpa-psk wifi-sec.psk $PSK
-                nmcli conn reload
-            fi
-         fi
+  # Case 2: Unquoted 64-char raw PSK
+  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
+    PSK="${BASH_REMATCH[1]}"
+
+  # No match
+  else
+    PSK=""
   fi
+  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+fi
+
+
+if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
+    if [ -f $MIGRATION_JSON ]; then
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
+        echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
+        nmcli dev set eth0 managed no
+        
+        if [ -d /opt/NetworkManager ]; then
+         rm -rf /opt/NetworkManager/
+        fi
+        if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         rm -rf /opt/secure/NetworkManager/system-connections/*
+        fi
+        nmcli conn reload
+        exit 0
+    else
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
+    fi
+fi
+
+if [ -z $SSID ]; then
+      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
+      echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
+
+      if [ ! -d /opt/secure/NetworkManager/system-connections ]; then
+         mkdir -p /opt/secure/NetworkManager/system-connections
+      fi
+      if [ -d /opt/NetworkManager/system-connections ]; then
+         cp /opt/NetworkManager/system-connections/* /opt/secure/NetworkManager/system-connections/
+         rm -rf /opt/NetworkManager/system-connections/*
+      fi
+      nmcli conn reload
+else
+      if [ -d /opt/NetworkManager/system-connections ]; then
+         rm -rf /opt/NetworkManager/system-connections/*
+      fi
+      if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         rm -rf /opt/secure/NetworkManager/system-connections/*
+      fi
+      if [ -z $PSK ]; then
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
+          nmcli conn reload
+      else
+          #connect to wifi
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn reload
+      fi
 fi

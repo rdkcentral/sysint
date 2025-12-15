@@ -26,9 +26,13 @@ touch /tmp/Dropbear_restart_disabled
 # clear pairing data
 if [ -f /usr/bin/controlFactory ]; then
     controlFactory -f ;                  # unpair controllers
-    /bin/systemctl stop ctrlm-main.service ;  # shut down controlMgr
-    rm -rf /opt/ctrlm.sql /opt/ctrlm.back
 fi
+# shut down controlMgr
+/bin/systemctl stop ctrlm-main ;
+if [ -f /opt/ctrlm.back ]; then rm -f /opt/ctrlm.back; fi # remove symlink
+if [ -f /opt/ctrlm.sql ]; then rm -f /opt/ctrlm.sql; fi # remove symlink
+if [ -f /opt/secure/ctrlm.back ]; then rm -f /opt/secure/ctrlm.back; fi # remove original file
+if [ -f /opt/secure/ctrlm.sql ]; then rm -f /opt/secure/ctrlm.sql; fi # remove original file
 
 if [ -f /etc/os-release ];then
     echo "Factory Reset:Stopping the services"
@@ -37,17 +41,12 @@ if [ -f /etc/os-release ];then
         /bin/systemctl stop whitebox.service
     fi
     /bin/systemctl stop sysmgr.service
-    /bin/systemctl stop swupdate.service
     /bin/systemctl stop storagemgrmain.service
     /bin/systemctl stop socprovisioning.service
     /bin/systemctl stop rf4ce.service
     /bin/systemctl stop lighttpd.service
     /bin/systemctl stop dump-backup.service
     /bin/systemctl stop dnsmasq.service
-    /bin/systemctl stop authservice.service
-    /bin/systemctl stop dibbler.path
-    /bin/systemctl stop udhcp.path
-    /bin/systemctl stop dcm-log.service
     /bin/systemctl stop syslog.socket
     /bin/systemctl stop wpeframework.service
     if [ "$DOBBY_ENABLED" == "true" ]; then
@@ -79,6 +78,7 @@ if [ -d /tmp/mnt/diska3/persistent ]; then
     find /tmp/mnt/diska3/persistent -mindepth 1 -maxdepth 1 ! -name 'store-mode-video' -exec rm -rf {} \;
 fi
 rm -rf /opt/secure/persistent/rdkservicestore
+rm -rf /opt/secure/persistent/rdkservicestore-journal
 rm -rf /opt/secure/persistent/System
 
 # authservice data cleanup
@@ -119,6 +119,8 @@ if [ -d /opt/upnp ]; then rm -rf /opt/upnp/*;fi
 if [ -L /opt/www/htmldiag ]; then rm -f /opt/www/htmldiag;fi
 if [ -f /opt/user_preferences.conf ];then rm -rf /opt/user_preferences.conf; fi
 if [ -f /opt/continuewatching.json ];then rm -rf /opt/continuewatching.json ; fi
+if [ -d /opt/NetworkManager ];then rm -rf /opt/NetworkManager ; fi
+if [ -d /opt/secure/NetworkManager ];then rm -rf /opt/secure/NetworkManager ; fi
 
 if [ -f /opt/secure/Apparmor_blocklist ];then rm -rf /opt/secure/Apparmor_blocklist ; fi
 

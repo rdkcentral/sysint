@@ -147,8 +147,6 @@ decoderStatusLog="procStatus.log"
 decoderStatusLogsBackup="procStatus.log.*"
 recorderLog="/opt/rec_debug.log"
 psLogsBackup="ps_out.txt*"
-netsrvLog="netsrvmgr.log"
-netsrvLogsBackup="netsrvmgr.log.*"
 fogLog="fog.log"
 fogLogsBackup="fog.log.*"
 hddStatusLog="diskinfo.log"
@@ -192,8 +190,6 @@ dropbearLog="dropbear.log"
 dropbearLogsBackup="dropbear.log.*"
 xdialLog="xdial.log"
 xdialLogsBackup="xdial.log.*"
-dibblerclientLog="dibbler-client.log"
-dibblerclientLogsBackup="dibbler-client.log.*"
 ecfsLog="ecfs.txt"
 ecfsLogsBackup="ecfs.txt.*"
 iptablesLog="iptables.log"
@@ -247,6 +243,8 @@ rippleLog="ripple.log"
 rippleLogsBackup="ripple.log*"
 rippleVersion="rippleversion.txt"
 rippleVersionBackup="rippleversion.txt*"
+zramLog="zram.log"
+zramLogsBackup="zram.log.*"
 
 if [ "$CONTAINER_SUPPORT" == "true" ];then
     xreLxcLog="xre.log"
@@ -282,8 +280,6 @@ if [ "$DEVICE_TYPE" != "mediaclient" ]; then
      snmpdLogsBackup="snmpd.log.*"
      upstreamStatsLog="upstream_stats.log"
      upstreamStatsLogsBackup="upstream_stats.log.*"
-     dibblerLog="dibbler.log"
-     dibblerLogsBackup="dibbler.log.*"
      parodusLog="parodus.log"
      parodusLogsBackup="parodus.log.*"
      cpuprocanalyzerLog="cpuprocanalyzer.log"
@@ -408,6 +404,7 @@ backup()
     if [ -f $source/$logrotateLog ] ; then $operation $source/$logrotateLog $destn; fi
     if [ -f $source/$systimemgrLog ] ; then $operation $source/$systimemgrLog $destn; fi
     if [ -f $source/$remoteDebuggerLog ] ; then $operation $source/$remoteDebuggerLog $destn; fi
+    if [ -f $source/$zramLog ] ; then $operation $source/$zramLog $destn; fi
     
     if [ "$CONTAINER_SUPPORT" == "true" ];then
         if [ -f $source$xreLxcLog ] ; then $operation $source$xreLxcLog $destn; fi
@@ -448,7 +445,6 @@ backupAppBackupLogFiles()
          moveFiles $opern $source $pumaLogsBackup $destn
          moveFiles $opern $source $snmpdLogsBackup $destn
          moveFiles $opern $source $upstreamStatsLogsBackup $destn
-         moveFiles $opern $source $dibblerLogsBackup $destn
          moveFiles $opern $source $cpuprocanalyzerLogsBackup $destn
          moveFiles $opern $source $namedLogsBackup $destn
          moveFiles $opern $source $dnsqueryLogsBackup $destn
@@ -512,7 +508,6 @@ backupAppBackupLogFiles()
      	moveFiles $opern $source $gpLogsBackup $destn
      	moveFiles $opern $source $psLogsBackup $destn
      	moveFiles $opern $source $topLogsBackup $destn
-     	moveFiles $opern $source $netsrvLogsBackup $destn
      	moveFiles $opern $source $diskCleanupLogsBackup $destn
         moveFiles $opern $source $fogLogsBackup $destn 
      	moveFiles $opern $source $hddStatusLogsBackup $destn
@@ -537,7 +532,6 @@ backupAppBackupLogFiles()
      	moveFiles $opern $source $dropbearLogsBackup $destn
         moveFiles $opern $source $appmanagerLogsBackup $destn
         moveFiles $opern $source $xdialLogsBackup $destn
-        moveFiles $opern $source $dibblerclientLogsBackup $destn
         moveFiles $opern $source $ecfsLogsBackup $destn
         moveFiles $opern $source $iptablesLogsBackup $destn
         moveFiles $opern $source $perfmonstatusLogsBackup $destn
@@ -565,6 +559,7 @@ backupAppBackupLogFiles()
         moveFiles $opern $source $systimemgrLogsBackup $destn
 	moveFiles $opern $source $factoryCommsLogsBackup $destn
 	moveFiles $opern $source $remoteDebuggerLogsBackup $destn
+        moveFiles $opern $source $zramLogsBackup $destn
 	moveFiles $opern $source $rippleLogsBackup $destn
 	moveFiles $opern $source $rippleVersionBackup $destn
 
@@ -660,7 +655,6 @@ backupSystemLogFiles()
      if [ -f $source/$servicenumberLog ] ; then $operation $source/$servicenumberLog $destn; fi
      if [ -f $source/$appmanagerLog ] ; then $operation $source/$appmanagerLog $destn; fi
      if [ -f $source/$xdialLog ] ; then $operation $source/$xdialLog $destn; fi
-     if [ -f $source/$dibblerclientLog ] ; then $operation $source/$dibblerclientLog $destn; fi
      if [ -f $source/$ecfsLog ] ; then $operation $source/$ecfsLog $destn; fi
      if [ -f $source/$iptablesLog ] ; then $operation $source/$iptablesLog $destn; fi
      if [ -f $source/$perfmonstatusLog ] ; then $operation $source/$perfmonstatusLog $destn; fi
@@ -687,6 +681,7 @@ backupSystemLogFiles()
      if [ -f $source/$systimemgrLog ] ; then $operation $source/$systimemgrLog $destn; fi
      if [ -f $source/$factoryCommsLog ] ; then $operation $source/$factoryCommsLog $destn; fi
      if [ -f $source/$remoteDebuggerLog ] ; then $operation $source/$remoteDebuggerLog $destn; fi
+     if [ -f $source/$zramLog ] ; then $operation $source/$zramLog $destn; fi
      if [ -f $source/$rippleLog ] ; then $operation $source/$rippleLog $destn; fi
      if [ -f $source/$rippleVersion ] ; then $operation $source/$rippleVersion $destn; fi
  
@@ -749,7 +744,6 @@ backupSystemLogFiles()
           fi
           if [ -f $source/$snmpdLog ] ; then $operation $source/$snmpdLog $destn; fi
           if [ -f $source/$upstreamStatsLog ] ; then $operation $source/$upstreamStatsLog $destn; fi
-          if [ -f $source/$dibblerLog ] ; then $operation $source/$dibblerLog $destn; fi
      else
 	  if [ -f $source/$wifiTelemetryLog ] ; then $operation $source/$wifiTelemetryLog $destn; fi
 	  if [ -f $source/$tr69Log ] ; then $operation $source/$tr69Log $destn; fi
@@ -798,7 +792,6 @@ backupSystemLogFiles()
 	if [ -f $source$MediaRiteLog ] ; then $operation $source$MediaRiteLog $destn; fi
      fi
 
-     if [ -f $source/$netsrvLog ] ; then $operation $source/$netsrvLog $destn; fi
   
 	  
     

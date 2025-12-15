@@ -32,6 +32,7 @@ fi
 
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
+    IS_T2_ENABLED="true"
 fi
 
 MEMORY_LOG="/opt/logs/core_log.txt"
@@ -77,6 +78,7 @@ upload() {
 
 notifyCrashedMarker()
 {
+   t2CountNotify "SYST_ERR_ProcessCrash"
    crashedProcess=$1 
    case $crashedProcess in
            *mfr_sv*)
@@ -144,8 +146,16 @@ dumpInfo()
 {
    echo $(/bin/timestamp) "process crashed = $1" >> $LOG_PATH/core_log.txt
    notifyCrashedMarker "$1"
+   t2ValNotify "CrashedProc_split" "$1"
+   t2ValNotify "SYST_INFO_CrashedProc_accum" "$1"
    echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/core_log.txt
+   t2ValNotify "SYST_INFO_SigDump_split" "$2"
+   t2CountNotify "SYST_ERR_CrashSig$2"
    echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/core_log.txt
+   t2ValNotify "SYST_INFO_CoreFull_accum" "$1,$2,$3,$4,$5"
+   t2ValNotify "SYST_INFO_CoreIMP_accum" "$1,$2"
 }
 
 dumpCoreInfo()
@@ -153,6 +163,7 @@ dumpCoreInfo()
    echo $(/bin/timestamp) "$process crash and uploading the cores" >> $LOG_PATH/core_log.txt
    echo $(/bin/timestamp) "corename = $corename" >> $LOG_PATH/core_log.txt
    t2ValNotify "core_split" "$corename"
+   t2ValNotify "SYST_INFO_Core_accum" "$corename"
    echo $(/bin/timestamp) "processing_corename = $processing_corename" >> $LOG_PATH/core_log.txt
 }
 
@@ -163,11 +174,15 @@ dumpFile()
     echo $(/bin/timestamp) "core-shell core started pid : $$"  >> /opt/logs/core_log.txt
     nice -n 19 gzip -f > $CORE_PATH/$processing_corename
     if [[ $? -ne 0 ]]; then
+         t2CountNotify "SYST_ERR_COREGZIP"
+         echo $(/bin/timestamp) "core-shell error in creating the gzip file exiting"  >> /opt/logs/core_log.txt
          rm $CORE_PATH/$processing_corename
          exit 1
     fi
     mv $CORE_PATH/$processing_corename $CORE_PATH/$corename
     echo $(/bin/timestamp) "core-shell core created pid : $$"  >> /opt/logs/core_log.txt
+    t2CountNotify "SYST_INFO_CoreProcessed"
+    t2ValNotify "SYST_INFO_CoreProcessed_accum" "$process"
     # fix file permissions
     chmod a+r $CORE_PATH/$corename
     touch /tmp/.$corename.core_dump
@@ -196,7 +211,9 @@ fi
 process=$1
 signal=$2
 timestamp=$3
-dumpInfo $process $signal $timestamp
+pid=$4
+tid=$5
+dumpInfo $process $signal $timestamp $pid $tid
 corename="$3_core.prog_$1.signal_$2.gz"
 # we have to have processing_corename that is not touched by uploadDumps.sh
 processing_corename="$3_core_prog_$1.signal_$2.gz.tmp"
@@ -238,12 +255,6 @@ if [ "$DEVICE_TYPE" = "hybrid" ]; then
           dumpFile
           exit 0
      fi
-     if [ "$1" = "dibbler-client" ]; then
-          echo 0 > /tmp/.uploadDibblerCores
-          echo $corename >> /tmp/.dibbler_crashed
-          dumpFile
-          exit 0
-     fi
 # Regular build specific
 elif [ "$DEVICE_TYPE" != "mediaclient" ]; then
      if [ "$1" = "mpeos-main" ]; then
@@ -259,9 +270,9 @@ else
           echo $corename >> /tmp/.rmf_crashed
           dumpFile
      elif [ "$1" = "tr69agent" ] || [ "$1" =  "tr69hostif" ] || [ "$1" = "runTR69HostIf" ] ||
-                [ "$1" = "tr69BusMain" ] || [ "$1" = "dimclient" ]; then
+                [ "$1" = "tr69BusMain" ] || [ "$1" = "dimclient" ] || [ "$1" = "rfcMgr" ]; then
           dumpFile
-     elif [ "$1" = "netsrvmgr" ] || [ "$1" = "udhcpc" ] || [ "$1" = "nxserver" ]; then
+     elif [ "$1" = "nxserver" ]; then
          dumpFile
      elif [ "$1" = "fogcli" ] || [ "$1" = "BaseDlFragDl" ]; then
          dumpFile
@@ -321,7 +332,9 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "qamsrc_bin-queu" ] || [ "$1" = "authservice" ] || [ "$1" = "named" ] ||
     [ "$1" = "slave_callback" ]  || [ "$1" = "telemetry2_0" ] || [ "$1" = "WorkerPool::Thr" ] ||
     [ "$1" = "subttxrend-app" ] || [ "$1" = "logrotate" ] || [ "$1" = "NetworkManager" ] || 
-    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ]; then
+    [ "$1" = "NWMgrPlugin" ] || [ "$1" = "nm_event_thrd" ] ||
+    [ "$1" = "Monitor::IResou" ] || [ "$1" = "DRMSYSTEM" ] || [ "$1" = "HTTPREQUEST_MAN" ] ||
+    [ "$1" = "civetweb-worker" ] || [ "$1" = "nfrtool" ]; then
         dumpFile
         exit 0
 fi
@@ -337,7 +350,8 @@ fi
         "VoiceSearchDaemon" "VoiceSearchDaem"
         "ASNetworkService" "ASNetworkServic"
         "ASConviva" "SkyBrowserLaunc"
-        "AS_CHERRY_STATU" "QNetworkAccessM" )
+        "AS_CHERRY_STATU" "QNetworkAccessM" 
+	"civetweb-worker" )
 
     for anAppName in "${APP_NAMES[@]}"; do
         if [ "$1" = "${anAppName}" ]; then
@@ -347,6 +361,10 @@ fi
     done
     
 echo $(/bin/timestamp) "$1 process is not listed to upload, we are not processing the core file" >> $LOG_PATH/core_log.txt
+if [ "$IS_T2_ENABLED" == "true" ]; then
+    t2CountNotify "SYST_INFO_CoreNotProcessed"
+    t2ValNotify "SYST_WARN_CoreNP_accum" "$1"
+fi
 
 exit 0
 

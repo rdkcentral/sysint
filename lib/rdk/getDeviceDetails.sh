@@ -212,6 +212,23 @@ getModelNum()
    echo $MODEL_NUM
 }
 
+getManufacturer(){
+           output=$(mfr_util --Manufacturer 2>&1)
+           if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+               output=$(echo $output | sed 's/ /_/g')
+               echo "$output" | tee /tmp/.manufacturer
+	   else
+               echo "UNKNOWN"
+           fi
+}
+
+getBrandName(){
+            output=$(mfr_util --Manufacturer 2>&1)
+            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
+                echo "$output" > /tmp/.brandname
+            fi
+}
+
 getDeviceType()
 {
    echo $DEVICE_TYPE
@@ -301,6 +318,8 @@ executeServiceRequest()
 		executeServiceRequest "wifi_mac"
 		executeServiceRequest "eth_mac"
 		executeServiceRequest "model_number"
+		executeServiceRequest "manufacturer"
+		executeServiceRequest "brandname"
 		executeServiceRequest "device_type"
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
@@ -418,6 +437,12 @@ executeServiceRequest()
       "model_number")
 		modelNum=`getModelNum`
 		echo "$modelNum" > /tmp/.model_number
+                ;;
+      "manufacturer")
+		getManufacturer
+                ;;
+      "brandname")
+		getBrandName
                 ;;
       "device_type")
                 deviceType=`getDeviceType`
