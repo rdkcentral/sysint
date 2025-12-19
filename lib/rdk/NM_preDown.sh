@@ -54,13 +54,15 @@ check_valid_IPaddress()
     local mode=$1
     local addr=$2
     # Neglect IPV6 ULA address and autoconfigured IPV4 address
-    if [ "x$mode" == "xipv6" ]; then
-        if [[ $addr == fc* || $addr == fd* ]]; then
-            return 1
-        fi
-    elif [ "x$mode" == "xipv4" ]; then
+    if [ "x$mode" = "xipv6" ]; then
+        case "$addr" in
+            fc*|fd*)
+                return 1
+                ;;
+        esac
+    elif [ "x$mode" = "xipv4" ]; then
         autoIPTrunc=$(echo $addr | cut -d "." -f1-2)
-        if [ "$autoIPTrunc" == "169.254" ]; then
+        if [ "$autoIPTrunc" = "169.254" ]; then
             return 1
         fi
     fi
