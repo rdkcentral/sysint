@@ -175,11 +175,11 @@ runMaintenanceLogUploadTask()
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
-            sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+            /usr/local/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
             result=$?
         else
             logUploadLog "Log upload triggered from regular execution"
-            nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+            nice -n 19 sh /usr/local/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
             bg_pid=$!
             wait $bg_pid
             result=$?
