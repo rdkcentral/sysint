@@ -41,6 +41,9 @@ install:
 	install -m 0644 $(WRKDIR)/etc/*.properties $(STAGING_DIR)$(SYS_CONF_DIR)
 	install -m 0644 $(WRKDIR)/etc/*.conf $(STAGING_DIR)$(SYS_CONF_DIR)
 
+        install -d $(STAGING_DIR)$(SYS_CONF_DIR)/NetworkManager/dispatcher.d/pre-up.d
+	install -m 0755 $(WRKDIR)/lib/rdk/NM_preUp.sh $(STAGING_DIR)$(SYS_CONF_DIR)/NetworkManager/dispatcher.d/pre-up.d/NM_preUp.sh
+
 	install -d $(STAGING_DIR)$(SYS_USR_DIR)/bin
 	install -m 0755 $(WRKDIR)/systemd_units/update_hosts.sh $(STAGING_DIR)$(SYS_USR_DIR)/bin/
 
