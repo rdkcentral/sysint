@@ -196,7 +196,7 @@ runMaintenanceLogUploadTask()
         else
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
-                logUploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
+                logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
                 nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
                 bg_pid=$!
                 wait $bg_pid
