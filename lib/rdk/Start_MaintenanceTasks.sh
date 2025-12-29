@@ -179,8 +179,8 @@ runMaintenanceLogUploadTask()
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
                 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
-                rc=$?
-                if [ "$rc" -eq 0 ]; then
+                result=$?
+                if [ "$result" -eq 0 ]; then
                     logUploadLog "Binary execution succeeded"
                     exit 0
                 else
@@ -198,7 +198,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 uploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
-                nice -n 19 /usr/local/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+                nice -n 19 /usr/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
                 bg_pid=$!
                 wait $bg_pid
                 result=$?
