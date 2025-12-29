@@ -203,7 +203,7 @@ runMaintenanceLogUploadTask()
                 result=$?
                 if [ "$result" -eq 0 ]; then
                     logUploadLog "Binary execution succeeded"
-                    exit 0
+                    return 0
                 else
                     logUploadLog "Binary execution failed with result=$result; falling back to script"
                     nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
