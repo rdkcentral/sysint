@@ -177,17 +177,17 @@ runMaintenanceLogUploadTask()
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
-                uploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
-                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
+                logUploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
+                /usr/local/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
                 rc=$?
                 if [ "$rc" -eq 0 ]; then
-                    uploadLog "Binary execution succeeded"
+                    logUploadLog "Binary execution succeeded"
                     exit 0
                 else
-                    uploadLog "Binary execution failed with rc=$rc; falling back to script"
+                    logUploadLog "Binary execution failed with rc=$rc; falling back to script"
                 fi
             else
-                uploadLog "logupload binary not found at $LOG_UPLOAD_BIN_PATH...  executing script"
+                logUploadLog "logupload binary not found at $LOG_UPLOAD_BIN_PATH...  executing script"
                 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
             fi
             
