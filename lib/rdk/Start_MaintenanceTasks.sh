@@ -177,7 +177,7 @@ runMaintenanceLogUploadTask()
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
-                logUploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
+                logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
                 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
                 result=$?
                 if [ "$result" -eq 0 ]; then
