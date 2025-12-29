@@ -189,7 +189,7 @@ runMaintenanceLogUploadTask()
                     result=$?
                 fi
             else
-                logUploadLog "logupload binary not found at $LOG_UPLOAD_BIN_PATH...  executing script"
+                logUploadLog "logupload binary not found at $LOG_UPLOAD_BIN_PATH...executing script"
                 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
                 result=$?
             fi
