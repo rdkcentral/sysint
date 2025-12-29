@@ -193,7 +193,6 @@ runMaintenanceLogUploadTask()
                 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
                 result=$?
             fi
-            
         else
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
