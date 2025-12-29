@@ -178,7 +178,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 uploadLog "Executing logupload binary:  $LOG_UPLOAD_BIN_PATH"
-                /usr/local/bin/logupload "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
+                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
                 rc=$?
                 if [ "$rc" -eq 0 ]; then
                     uploadLog "Binary execution succeeded"
