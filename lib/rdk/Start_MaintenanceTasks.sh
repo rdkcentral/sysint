@@ -178,26 +178,26 @@ runMaintenanceLogUploadTask()
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" 2>/dev/null
+                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log 2>/dev/null
                 result=$?
                 if [ "$result" -eq 0 ]; then
                     logUploadLog "Binary execution succeeded"
                     exit 0
                 else
                     logUploadLog "Binary execution failed with result=$result; falling back to script"
-                    sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+                    sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" >> /opt/logs/dcmscript.log 2>/dev/null
                     result=$?
                 fi
             else
                 logUploadLog "logupload binary not found at $LOG_UPLOAD_BIN_PATH...executing script"
-                sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+                sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" >> /opt/logs/dcmscript.log 2>/dev/null
                 result=$?
             fi
         else
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" & >> /opt/logs/dcmscript.log
                 bg_pid=$!
                 wait $bg_pid
                 result=$?
@@ -206,7 +206,7 @@ runMaintenanceLogUploadTask()
                     return 0
                 else
                     logUploadLog "Binary execution failed with result=$result; falling back to script"
-                    nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+                    nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" & 
                     bg_pid=$!
                     wait $bg_pid
                     result=$?
