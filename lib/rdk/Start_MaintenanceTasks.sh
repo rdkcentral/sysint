@@ -185,7 +185,7 @@ runMaintenanceLogUploadTask()
                     exit 0
                 else
                     logUploadLog "Binary execution failed with result=$result; falling back to script"
-                    sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" >> /opt/logs/dcmscript.log 2>/dev/null
+                    sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
                     result=$?
                 fi
             else
