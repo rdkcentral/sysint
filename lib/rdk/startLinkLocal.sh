@@ -19,17 +19,16 @@
 # limitations under the License.
 ####################################################################################
 
-NM_LOG_FILE="/opt/logs/NMMonitor.log"
+LOG_FILE="/opt/logs/NMMonitor.log"
 
-NMdispatcherLog()
+Log()
 {
-    echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
+    echo "$(/bin/timestamp) : $0: $*" >> $LOG_FILE
 }
 
 interfaceName=$1
-interfaceStatus=$2
 
-NMdispatcherLog "From NM_preUp.sh $interfaceName $interfaceStatus"
+Log "From NM_preUp.sh $interfaceName"
 
 # Start avahi-autoipd when link is up and no global IPv4
 start_zero_conf() {
@@ -37,24 +36,24 @@ start_zero_conf() {
     # Check if interface already has a global IPv4
     has_global_ipv4=$(/sbin/ip -4 addr show dev "$ifname" scope global | wc -l)
     if [ "$has_global_ipv4" -ne 0 ]; then
-        NMdispatcherLog "Interface $ifname already has global IPv4, skipping avahi-autoipd start"
+        Log "Interface $ifname already has global IPv4, skipping avahi-autoipd start"
         return 0
     fi
     # Start the systemd service for this interface
     if systemctl is-active --quiet "avahi@${ifname}.service"; then
-        NMdispatcherLog "avahi@${ifname}.service already active"
+        Log "avahi@${ifname}.service already active"
     else
-        NMdispatcherLog "Starting avahi@${ifname}.service"
-        systemctl start "avahi@${ifname}.service" || NMdispatcherLog "Failed to start avahi@${ifname}.service"
+        Log "Starting avahi@${ifname}.service"
+        systemctl start "avahi@${ifname}.service" || Log "Failed to start avahi@${ifname}.service"
     fi
 }
 
-# On link up, start avahi-autoipd if no global IPv4 exists (helps IPv4LL assignment)
-if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
-    NMdispatcherLog "Calling start_zero_conf for $interfaceName"
+# On link up, start avahi-autoipd if no global IPv4 exists
+if [[ -n "$interfaceName" && ("$interfaceName" == "wlan0" || "$interfaceName" == "eth0") ]];
+    Log "Calling start_zero_conf for $interfaceName"
     start_zero_conf "$interfaceName"
 else
-    NMdispatcherLog "Skipping: interfaceName='$interfaceName'"
+    Log "Skipping: interfaceName='$interfaceName'"
 fi
 
 exit 0
