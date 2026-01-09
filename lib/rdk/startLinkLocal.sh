@@ -49,7 +49,7 @@ start_zero_conf() {
 }
 
 # On link up, start avahi-autoipd if no global IPv4 exists
-if [[ -n "$interfaceName" && ("$interfaceName" == "wlan0" || "$interfaceName" == "eth0") ]];
+if [[ -n "$interfaceName" && ("$interfaceName" == "wlan0" || "$interfaceName" == "eth0") ]];then
     Log "Calling start_zero_conf for $interfaceName"
     start_zero_conf "$interfaceName"
 else
