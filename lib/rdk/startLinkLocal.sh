@@ -50,6 +50,13 @@ start_zero_conf() {
 
 # On link up, start avahi-autoipd if no global IPv4 exists
 if [[ -n "$interfaceName" && ("$interfaceName" == "wlan0" || "$interfaceName" == "eth0") ]];then
+    if [[ "$interfaceName" == "eth0" ]];then
+        WiredConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+        if [ -n "$WiredConnectionUUID" ]; then
+            nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout infinity
+            nmcli device reapply "$interfaceName"
+        fi
+    fi
     Log "Calling start_zero_conf for $interfaceName"
     start_zero_conf "$interfaceName"
 else

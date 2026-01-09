@@ -125,6 +125,13 @@ fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        if [[ "$interfaceName" == "eth0" ]]; then
+            WiredConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            if [ -n "$WiredConnectionUUID" ]; then
+                nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout 0
+                nmcli device reapply "$interfaceName"
+            fi
+        fi
         # Stop any avahi-autoipd daemons and remove IPv4LL before applying DHCP IPv4
         stop_zero_conf "$interfaceName"
         mode="ipv4"
