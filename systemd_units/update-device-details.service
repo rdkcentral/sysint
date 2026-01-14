@@ -19,7 +19,7 @@
 
 [Unit]
 Description=Update device details cache file
-After=network-online.target bluetooth-hciattach.service
+After=network-online.target bluetooth.service nvram.service
 
 [Service]
 Type=forking
