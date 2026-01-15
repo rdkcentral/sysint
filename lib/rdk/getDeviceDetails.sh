@@ -324,7 +324,7 @@ executeServiceRequest()
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
 		executeServiceRequest "imageVersion"
-		#Remove the execution to avoid mac population at bootup
+		# Disable bluetooth_mac population at bootup
         #executeServiceRequest "bluetooth_mac"
 
 		if [ "$DEVICE_TYPE" != "mediaclient" ]; then
