@@ -324,7 +324,7 @@ executeServiceRequest()
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
 		executeServiceRequest "imageVersion"
-		# Disable bluetooth_mac population at bootup
+		#Moved the Bluetooth Mac address update under bluetooth service post action
         #executeServiceRequest "bluetooth_mac"
 
 		if [ "$DEVICE_TYPE" != "mediaclient" ]; then
