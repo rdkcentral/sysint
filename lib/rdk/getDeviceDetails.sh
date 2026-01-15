@@ -324,7 +324,8 @@ executeServiceRequest()
 		executeServiceRequest "friendly_id"
 		executeServiceRequest "build_type"
 		executeServiceRequest "imageVersion"
-                executeServiceRequest "bluetooth_mac"
+		#Remove the execution to avoid mac population at bootup
+        #executeServiceRequest "bluetooth_mac"
 
 		if [ "$DEVICE_TYPE" != "mediaclient" ]; then
 			# snmp based / none mediaclient parameter acquisition
