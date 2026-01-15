@@ -132,6 +132,13 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
                 nmcli device reapply "$interfaceName"
             fi
         fi
+        if [[ "$interfaceName" == "wlan0" ]]; then
+            WifiConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            if [ -n "$WifiConnectionUUID" ]; then
+                nmcli connection modify "$WifiConnectionUUID" ipv4.dhcp-timeout 0
+                nmcli device reapply "$interfaceName"
+            fi
+        fi
         # Stop any avahi-autoipd daemons and remove IPv4LL before applying DHCP IPv4
         stop_zero_conf "$interfaceName"
         mode="ipv4"
