@@ -174,6 +174,38 @@ if [ "$interfaceStatus" = "up" ]; then
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
+    if [ "$interfaceStatus" == "down" ]; then
+        if [ "$interfaceName" == "eth0" ]; then
+            WiredConnectionUUID=$(nmcli -t -f UUID,TYPE connection show | grep ":802-3-ethernet$" | cut -d: -f1)
+            NMdispatcherLog " ------ WiredConnectionUUID (down) = $WiredConnectionUUID ------ "
+            if [ -n "$WiredConnectionUUID" ]; then
+                current_linklocal=$(nmcli -t -f ipv4.link-local connection show "$WiredConnectionUUID" | cut -d: -f2)
+                if [ "$current_linklocal" != "3" ]; then
+                    NMdispatcherLog " ------ Running nmcli eth0 cmds (down) ------ "
+                    nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout 2147483647
+                    nmcli connection modify "$WiredConnectionUUID" ipv4.link-local 3
+                else
+                    NMdispatcherLog " ------ Skipping eth0 (down) - already set to 3 ------ "
+                fi
+            fi
+        fi
+        if [ "$interfaceName" == "wlan0" ]; then
+            # Modify ALL WiFi connection profiles since there can be multiple SSIDs
+            NMdispatcherLog " ------ Updating all WiFi profiles (down) ------ "
+            nmcli -t -f UUID,TYPE connection show | grep ":802-11-wireless$" | cut -d: -f1 | while read -r WifiUUID; do
+            if [ -n "$WifiUUID" ]; then
+                current_linklocal=$(nmcli -t -f ipv4.link-local connection show "$WifiUUID" | cut -d: -f2)
+                if [ "$current_linklocal" != "3" ]; then
+                    NMdispatcherLog " ------ Modifying WiFi UUID = $WifiUUID ------ "
+                    nmcli connection modify "$WifiUUID" ipv4.dhcp-timeout 2147483647
+                    nmcli connection modify "$WifiUUID" ipv4.link-local 3
+                else
+                    NMdispatcherLog " ------ Skipping WiFi UUID = $WifiUUID (already 3) ------ "
+                fi
+            fi
+            done
+        fi
+    fi
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
         if [ "$interfaceName" == "eth0" ]; then
             WiredConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
