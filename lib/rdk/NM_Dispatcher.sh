@@ -175,17 +175,21 @@ fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
-        if [[ "$interfaceName" == "eth0" ]]; then
+        if [ "$interfaceName" == "eth0" ]; then
             WiredConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            NMdispatcherLog " ------ WiredConnectionUUID = $WiredConnectionUUID ------ "
             if [ -n "$WiredConnectionUUID" ]; then
+                NMdispatcherLog " ------ Running nmcli eth0 cmds  ------ "
                 nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout 0
                 nmcli connection modify "$WiredConnectionUUID" ipv4.link-local 0
                 nmcli device reapply "$interfaceName"
             fi
         fi
-        if [[ "$interfaceName" == "wlan0" ]]; then
+        if [ "$interfaceName" == "wlan0" ]; then
             WifiConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            NMdispatcherLog " ------ WifiConnectionUUID = $WifiConnectionUUID ------ "
             if [ -n "$WifiConnectionUUID" ]; then
+                NMdispatcherLog " ------ Running nmcli wifi cmds  ------ "
                 nmcli connection modify "$WifiConnectionUUID" ipv4.dhcp-timeout 0
                 nmcli connection modify "$WifiConnectionUUID" ipv4.link-local 0
                 nmcli device reapply "$interfaceName"
