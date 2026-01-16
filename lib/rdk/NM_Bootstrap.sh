@@ -91,3 +91,23 @@ else
           nmcli conn reload
       fi
 fi
+
+# To set link local IP to the existing ethernet connection if it is not set
+UUID=$(nmcli -t -f UUID,DEVICE connection show | grep ":eth0$" | cut -d: -f1)
+if [ -n "$UUID" ]; then
+    current=$(nmcli -t -f ipv4.link-local connection show "$UUID" | cut -d: -f2)
+    if [ "$current" != "3" ]; then
+        nmcli connection modify "$UUID" ipv4.link-local 3
+        nmcli device reapply eth0
+    fi
+fi
+
+# To set link local IP to the existing wifi connection if it is not set
+UUID=$(nmcli -t -f UUID,DEVICE connection show | grep ":wlan0$" | cut -d: -f1)
+if [ -n "$UUID" ]; then
+    current=$(nmcli -t -f ipv4.link-local connection show "$UUID" | cut -d: -f2)
+    if [ "$current" != "3" ]; then
+        nmcli connection modify "$UUID" ipv4.link-local 3
+        nmcli device reapply wlan0
+    fi
+fi
