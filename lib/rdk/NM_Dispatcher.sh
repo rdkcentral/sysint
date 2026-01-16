@@ -181,7 +181,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
             if [ -n "$WiredConnectionUUID" ]; then
                 NMdispatcherLog " ------ Running nmcli eth0 cmds  ------ "
                 nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout 0
-                nmcli connection modify "$WiredConnectionUUID" ipv4.link-local 0
+                nmcli connection modify "$WiredConnectionUUID" ipv4.link-local 2
                 nmcli device reapply "$interfaceName"
             fi
         fi
@@ -191,7 +191,7 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
             if [ -n "$WifiConnectionUUID" ]; then
                 NMdispatcherLog " ------ Running nmcli wifi cmds  ------ "
                 nmcli connection modify "$WifiConnectionUUID" ipv4.dhcp-timeout 0
-                nmcli connection modify "$WifiConnectionUUID" ipv4.link-local 0
+                nmcli connection modify "$WifiConnectionUUID" ipv4.link-local 2
                 nmcli device reapply "$interfaceName"
             fi
         fi
