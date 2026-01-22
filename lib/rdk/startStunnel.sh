@@ -79,7 +79,7 @@ t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
 echo_t "isShortsenabled = $isShortsenabled "
-if [ $isShortsenabled == "false" ];then
+if [ "$isShortsenabled" == "false" ];then
 	    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
         exit 0 
 fi
