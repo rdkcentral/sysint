@@ -80,8 +80,8 @@ t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
 echo_t "isShortsenabled = $isShortsenabled "
 if [ "$isShortsenabled" == "false" ];then
-	    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
-        exit 0 
+    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
+    exit 0
 fi
 
 STUNNEL_PID_FILE=/tmp/stunnel_$LOCAL_PORT.pid
@@ -131,7 +131,7 @@ else
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
 fi
 
-#Function to find available fd at the point of time
+#Function to find available fd at this point in time
 get_next_fd() {
     local fd=3  # Start checking from FD 3 (since 0, 1, 2 are standard in/out/err)
     local max_fd=20  # Maximum FD to check
@@ -150,22 +150,26 @@ get_next_fd() {
     return 1 # Set exit status to failure
 }
 
-# Get the next available file descriptor and export if its valid
+# Get the next available file descriptor and export if it's valid
 FD_NUMBER=$(get_next_fd)
 if [ $? -eq 0 ]; then
     export FD_NUMBER
 
     # Create a named pipe
     PIPE=$(mktemp -u)
-    mkfifo "$PIPE"
+    if ! mkfifo "$PIPE" 2>/dev/null; then
+        echo_t "STUNNEL: ERROR - Failed to create named pipe"
+    fi
 
-    # Open the pipe using the available FD
-    eval "exec $FD_NUMBER<>$PIPE"
+    # Open the pipe using the available FD, with error handling
+    if ! eval "exec $FD_NUMBER<>$PIPE" 2>/dev/null; then
+        echo_t "STUNNEL: ERROR - Failed to open pipe with file descriptor"
+    fi
 
-    #removing the pipe after opening
+    # Removing the pipe after opening
     rm "$PIPE"
 
-    #Writing passcode to open file descriptor
+    # Writing passcode to open file descriptor
     echo "$(eval "$PASSCODE")" >&$FD_NUMBER &
 else
     echo "Error: No available file descriptor to use." >&2
@@ -207,7 +211,7 @@ while [ -z "$STUNNELPID" ]; do
     if [ $count -lt 2 ]; then
         sleep 1
         echo_t "STUNNEL: stunnel PID file is not available, Retrying..."
-        STUNNELPID=`cat $STUNNEL_PID_FILE`
+        STUNNELPID=$(cat $STUNNEL_PID_FILE 2>/dev/null)
         count=$((count + 1))
     else
         rm -f $STUNNEL_PID_FILE
