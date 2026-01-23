@@ -281,7 +281,7 @@ getBluetoothMac()
     if [ -f /lib/rdk/readBTAddress-vendor.sh ]; then
         bluetooth_mac=`sh /lib/rdk/readBTAddress-vendor.sh`
     else
-        bluetooth_mac=`sh /opt/readBTAddress-generic.sh`
+        bluetooth_mac=`sh /lib/rdk/readBTAddress-generic.sh`
     fi
 
     echo "$bluetooth_mac"
