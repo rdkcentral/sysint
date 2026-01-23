@@ -277,6 +277,7 @@ getDeviceSerialNumber()
 
 getBluetoothMac()
 {
+    bluetooth_mac="00:00:00:00:00:00"
     if [ -f /lib/rdk/readBTAddress-vendor.sh ]; then
         . /lib/rdk/readBTAddress-vendor.sh
     else
