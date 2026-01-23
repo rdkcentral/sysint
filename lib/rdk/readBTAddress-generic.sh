@@ -28,3 +28,4 @@
 if [ "$BLUETOOTH_ENABLED" = "true" ]; then
     bluetooth_mac=$(getDeviceBluetoothMac)
 fi
+echo $bluetooth_mac
