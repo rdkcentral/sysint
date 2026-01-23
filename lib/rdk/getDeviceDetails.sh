@@ -277,7 +277,7 @@ getDeviceSerialNumber()
 
 getBluetoothMac()
 {
-    if [ -f readBTAddress-vendor.sh ]; then
+    if [ -f /lib/rdk/readBTAddress-vendor.sh ]; then
         . /lib/rdk/readBTAddress-vendor.sh
     else
         . /lib/rdk/readBTAddress-generic.sh
