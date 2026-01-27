@@ -176,9 +176,10 @@ if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; th
         fi
         # Check carrier state
         CARRIER=$(cat /sys/class/net/$iface/carrier 2>/dev/null || echo "0")
-        if [ "$CARRIER" = "1" ]; then
-                NMdispatcherLog "$iface - restarting avahi-autoipd"
+        if [ "$CARRIER" = "0" ]; then
+                NMdispatcherLog "$iface - stopping avahi-autoipd"
                 /usr/sbin/avahi-autoipd --kill "$iface" 2>/dev/null || true
+        else
                 /usr/sbin/avahi-autoipd --daemonize --syslog "$iface"
         fi
     done
