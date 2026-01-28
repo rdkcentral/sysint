@@ -152,6 +152,9 @@ if [ -f /tmp/mount_log.txt ];then
     mv /tmp/mount_log.txt "$LOG_PATH"
 fi
 
+if [ -f /tmp/mount-ta_log.txt ];then
+    mv /tmp/mount-ta_log.txt "$LOG_PATH"
+fi
 
 cp /version.txt "$LOG_PATH"
 cp /etc/skyversion.txt "${LOG_PATH}/skyversion.txt"
