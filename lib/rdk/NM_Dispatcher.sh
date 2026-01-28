@@ -169,7 +169,7 @@ interfaceStatus=$2
 
 if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; then
     NMdispatcherLog "Global connectivity-change - checking all interfaces"
-    for iface in eth0 wlan0; do
+    for iface in $ESTB_INTERFACE $WIFI_INTERFACE; do
         # Skip if interface doesn't exist
         if [ ! -e "/sys/class/net/$iface" ]; then
             continue
@@ -180,7 +180,12 @@ if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; th
                 NMdispatcherLog "$iface - stopping avahi-autoipd"
                 /usr/sbin/avahi-autoipd --kill "$iface" 2>/dev/null || true
         else
-                /usr/sbin/avahi-autoipd --daemonize --syslog "$iface"
+                if pgrep -f "avahi-autoipd.*$iface" > /dev/null 2>&1; then
+                    NMdispatcherLog "avahi-autoipd already running for $iface"
+                else
+                    NMdispatcherLog "Started avahi-autoipd for $iface"
+                    /usr/sbin/avahi-autoipd --daemonize --syslog "$iface"
+                fi
         fi
     done
     exit 0

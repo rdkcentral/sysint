@@ -23,18 +23,21 @@ LOG_FILE="/opt/logs/NMMonitor.log"
 
 Log()
 {
-    echo "$(/bin/timestamp) : $0: $*" >> $LOG_FILE
+    echo "$(/bin/timestamp) : $0: $*" >> "$LOG_FILE"
 }
 
 INTERFACE="$1"
 
-# Validate input
+# Validate input and restrict to eth0 or wlan0
 if [ -z "$INTERFACE" ]; then
     Log "ERROR: No interface specified"
     exit 1
 fi
 
-PIDFILE="/var/run/avahi-autoipd.$INTERFACE.pid"
+if [ "$INTERFACE" != "eth0" ] && [ "$INTERFACE" != "wlan0" ]; then
+    Log "INFO: Link-local not started for $INTERFACE (only eth0 and wlan0 allowed)"
+    exit 0
+fi
 
 # Interface just appeared - start if not running
 if pgrep -f "avahi-autoipd.*$INTERFACE" > /dev/null 2>&1; then
