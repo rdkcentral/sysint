@@ -84,6 +84,21 @@ otherReason="Unknown"
 
 touch $REBOOTINFO_LOGFILE
 
+BIN_REBOOTNOW="/usr/bin/rebootnow"
+if [ -x "$BIN_REBOOTNOW" ]; then
+    rebootLog "Attempting reboot via C binary: $BIN_REBOOTNOW"
+    "$BIN_REBOOTNOW" "$@"
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        rebootLog "C binary handled the reboot request; exiting script."
+        exit 0
+    else
+        rebootLog "C binary failed with rc=$rc; falling back to shell script logic."
+    fi
+else
+    rebootLog "C binary not found at $BIN_REBOOTNOW; continuing with shell script logic."
+fi
+
 rebootLog "Start of rebootNow script"
 
 pidCleanup()
