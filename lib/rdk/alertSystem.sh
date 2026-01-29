@@ -54,7 +54,7 @@ fi
 if [ -f $RDK_PATH/exec_curl_mtls.sh ]; then
     . $RDK_PATH/exec_curl_mtls.sh
 else 
-    echo "$SCRIPT_NAME: mtlsUtils.sh not found, exiting!"
+    echo "$SCRIPT_NAME: exec_curl_mtls.sh not found, exiting!"
     exit 1
 fi
 
