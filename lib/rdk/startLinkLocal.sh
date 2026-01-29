@@ -19,6 +19,11 @@
 # limitations under the License.
 ####################################################################################
 
+# Include File check
+if [ -f /etc/device.properties ];then
+    . /etc/device.properties
+fi
+
 LOG_FILE="/opt/logs/NMMonitor.log"
 
 Log()
@@ -34,7 +39,7 @@ if [ -z "$INTERFACE" ]; then
     exit 1
 fi
 
-if [ "$INTERFACE" != "eth0" ] && [ "$INTERFACE" != "wlan0" ]; then
+if [ "$INTERFACE" != "$ETHERNET_INTERFACE" ] && [ "$INTERFACE" != "$WIFI_INTERFACE" ]; then
     Log "INFO: Link-local not started for $INTERFACE (only eth0 and wlan0 allowed)"
     exit 0
 fi

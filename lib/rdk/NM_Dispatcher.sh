@@ -169,7 +169,7 @@ interfaceStatus=$2
 
 if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; then
     NMdispatcherLog "Global connectivity-change - checking all interfaces"
-    for iface in $ESTB_INTERFACE $WIFI_INTERFACE; do
+    for iface in $ETHERNET_INTERFACE $WIFI_INTERFACE; do
         # Skip if interface doesn't exist
         if [ ! -e "/sys/class/net/$iface" ]; then
             continue
