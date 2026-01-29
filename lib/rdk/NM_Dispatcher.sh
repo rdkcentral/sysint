@@ -108,6 +108,18 @@ netInfoLog() {
     echo "`/bin/timestamp` :$0: $*" >> "$NM_LOG_FILE"
 }
 
+stop_zero_conf() {
+    local ifname="$1"
+    NMdispatcherLog "Stopping avahi-autoipd on $ifname"
+    # Stop the systemd service for this interface
+    if systemctl is-active --quiet "avahi@${ifname}.service"; then
+        NMdispatcherLog "Stopping avahi@${ifname}.service"
+        systemctl stop "avahi@${ifname}.service" || NMdispatcherLog "Failed to stop avahi@${ifname}.service"
+    else
+        NMdispatcherLog "avahi@${ifname}.service not active"
+    fi
+}
+
 networkInfoLogger() {
     # Arguments: $1 event, $2 ipaddress type, $3 interface name, $4 ipaddress, $5 ipaddress scope
     local cmd="$1"
@@ -168,13 +180,28 @@ interfaceName=$1
 interfaceStatus=$2
 
 if [ "$interfaceStatus" = "up" ]; then
-   
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
     NMdispatcherLog "Connection state of interface $interfaceName=$CON_STATE"
 fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        if [[ "$interfaceName" == "eth0" ]]; then
+            WiredConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            if [ -n "$WiredConnectionUUID" ]; then
+                nmcli connection modify "$WiredConnectionUUID" ipv4.dhcp-timeout 0
+                nmcli device reapply "$interfaceName"
+            fi
+        fi
+        if [[ "$interfaceName" == "wlan0" ]]; then
+            WifiConnectionUUID=$(nmcli -t -f UUID,DEVICE connection show --active | grep ":$interfaceName$" | cut -d: -f1)
+            if [ -n "$WifiConnectionUUID" ]; then
+                nmcli connection modify "$WifiConnectionUUID" ipv4.dhcp-timeout 0
+                nmcli device reapply "$interfaceName"
+            fi
+        fi
+        # Stop any avahi-autoipd daemons and remove IPv4LL before applying DHCP IPv4
+        stop_zero_conf "$interfaceName"
         mode="ipv4"
         gwip=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
         imode=2
