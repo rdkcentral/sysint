@@ -23,7 +23,7 @@
 ##############################################################################
 
 
-SCRIPT_NAME=`basename $0`
+SCRIPT_NAME=`basename "$0"`
 
 # Arguments count check
 if [ "$#" -ne 2 ]; then
@@ -34,8 +34,8 @@ if [ "$#" -ne 2 ]; then
 fi
 
 # Argument Assigment
-MSG_DATA=$2
-PROCESS_NAME=$1
+MSG_DATA="$2"
+PROCESS_NAME="$1"
 
 # Setup the config File
 if [ -f /etc/device.properties ];then
@@ -107,18 +107,21 @@ else
 fi
 
 if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
-    CURL_CMD="curl -w '%{http_code}\n' -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$strjson' -o \"$HTTP_FILENAME\" \"$UPLOAD_END_POINT\" --cert-status --connect-timeout 30 -m 30 "
+    CURL_INPUT=" -w '%{http_code}\n' -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$strjson' -o \"$HTTP_FILENAME\" \"$UPLOAD_END_POINT\" --cert-status --connect-timeout 30 -m 30 "
 else
-    CURL_CMD="curl -w '%{http_code}\n' -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$strjson' -o \"$HTTP_FILENAME\" \"$UPLOAD_END_POINT\" --connect-timeout 30 -m 30 "
+    CURL_INPUT=" -w '%{http_code}\n' -H \"Accept: application/json\" -H \"Content-type: application/json\" -X POST -d '$strjson' -o \"$HTTP_FILENAME\" \"$UPLOAD_END_POINT\" --connect-timeout 30 -m 30 "
 fi
+alertLog "$SCRIPT_NAME: CURL_INPUT : $CURL_INPUT"
 
-TLSRet=`exec_curl_mtls "$CURL_CMD" "alertLog"`
-alertLog "$SCRIPT_NAME: CURL_CMD : $CURL_CMD"
-eval $CURL_CMD > $HTTP_CODE
-ret=$?
+## Execute curl command with mTLS
+response=`exec_curl_mtls "$CURL_INPUT" "alertLog"`
+TLSRet=$?
+## - Do not introduce any other logging in between collecting return status
+
+alertLog "Response from exec_curl_mtls: $response"
 http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
-alertLog "$SCRIPT_NAME: Return Status: $ret, HTTP CODE:$http_code"
-if [ "$ret" -eq "0" ] && [ "$http_code" -eq "200" ]; then
+alertLog "$SCRIPT_NAME: Return Status: $TLSRet, HTTP CODE:$http_code"
+if [ "$TLSRet" = "0" ] && [ "$http_code" = "200" ]; then
     #Upload success
     rm -f $HTTP_FILENAME $HTTP_CODE
     exit 0
