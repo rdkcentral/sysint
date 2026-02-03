@@ -175,6 +175,9 @@ copyAllFiles ()
 		done
 }
 
+# Calculate upload time
+start_time=$(date +%s)
+
 mkdir -p $DCM_LOG_PATH
 
 copyAllFiles
@@ -194,3 +197,7 @@ if [ -d $DCM_LOG_PATH ]; then
     rm -rf $DCM_LOG_PATH/
 fi
  
+end_time=$(date +%s)
+
+upload_duration=$((end_time - start_time))
+echo "`/bin/timestamp` Log upload required $upload_duration seconds" >> $LOG_PATH/dcmscript.log
