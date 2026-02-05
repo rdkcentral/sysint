@@ -157,6 +157,8 @@ if [ -x $IPV4_BIN_PATH ]; then
     # Finish with adding SSH IPs.  Drop all other requests
     $IPV4_BIN -A StaticSshWhiteList -j SSHDROPLOG
 
+    ## tcp MSS CLAMPING
+    $IPV4_BIN -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
     ## SNMP Static White List
     $IPV4_BIN -N SNMPDROPLOG
@@ -217,6 +219,9 @@ if [ -x $IPV6_BIN_PATH ]; then
           ipTableLogging "Appended the IPv6 $jump_ip in StaticSshWhiteList"
     done
     $IPV6_BIN -A StaticSshWhiteList -j SSHDROPLOG
+
+    ## tcp MSS CLAMPING
+    $IPV6_BIN -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
     ## SNMP Static White List
     $IPV6_BIN -N SNMPDROPLOGV6
