@@ -83,11 +83,10 @@ get_ntp_hosts_from_bootstrap() {
 
 
 ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
-#attempts=0
 while [ "$attempts" -le "$max_attempts" ]; do
 
     ntpLog "Attempt $attempts/$max_attempts to retrieve NTP server URL(s)..."
-        #get_ntp_hosts
+    get_ntp_hosts
 
     if [ "$hostName" ] || [ "$hostName2" ] || [ "$hostName3" ] || [ "$hostName4" ] || [ "$hostName5" ]; then
         break
