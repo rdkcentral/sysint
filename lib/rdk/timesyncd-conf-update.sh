@@ -1,6 +1,6 @@
 #!/bin/sh
 ##############################################################################
-# If not stated otherwise in this file or this component's LICENSE file the
+# if not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
 # Copyright 2020 RDK Management
@@ -26,7 +26,7 @@ output=""
 count=0
 LOG_FILE="/opt/logs/ntp.log"
 attempts=1
-max_attempts=2
+max_attempts=3
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
@@ -83,20 +83,10 @@ get_ntp_hosts_from_bootstrap() {
 
 
 ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
-while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ] && [ $attempts -lt $max_attempts ]
-do
-    # NTP URL from the property file
-    get_ntp_hosts
-    sleep 5
-	echo "Attempt $attempts - Failed to retrieve NTP server URL, attempting again..."
-   attempts=$((attempts + 1))
-done
-
-attempts=0
 while [ "$attempts" -le "$max_attempts" ]; do
-    
+
     ntpLog "Attempt $attempts/$max_attempts to retrieve NTP server URL(s)..."
-	get_ntp_hosts
+    get_ntp_hosts
 
     if [ "$hostName" ] || [ "$hostName2" ] || [ "$hostName3" ] || [ "$hostName4" ] || [ "$hostName5" ]; then
         break
@@ -111,7 +101,7 @@ while [ "$attempts" -le "$max_attempts" ]; do
 
     sleep 5
     attempts=$((attempts + 1))
-		
+
 done
 
 partnerHostnames="$hostName $hostName2 $hostName3 $hostName4 $hostName5"
@@ -142,16 +132,12 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                sed -i "s/^NTP=.*/NTP=/g" /tmp/timesyncd.conf
                sed -i "s/^NTP=/NTP=$updateHostname $defaultHostName2/" /tmp/timesyncd.conf
                systemd_ver=`systemctl --version | grep systemd | awk '{print $2}'`
-	       if [ "$systemd_ver" -ge 248 ]; then
-		   # For systemd version >= 248, add the ConnectionRetrySec parameter
-		   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
-	       fi
-	       cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
+               if [ "$systemd_ver" -ge 248 ]; then
+                   # For systemd version >= 248, add the ConnectionRetrySec parameter
+                   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
+               fi
+               cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
                rm -rf /tmp/timesyncd.conf
-			    # Restart the service to reflect the new conf
-               ntpLog "Restarting the service: systemd-timesyncd.service ..!"
-               /bin/systemctl reset-failed systemd-timesyncd.service
-               /bin/systemctl restart systemd-timesyncd.service
            else
                ntpLog "No new Hostnames found to update /etc/systemd/timesyncd.conf"
            fi
