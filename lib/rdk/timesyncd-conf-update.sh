@@ -26,7 +26,7 @@ output=""
 count=0
 LOG_FILE="/opt/logs/ntp.log"
 attempts=0
-max_attempts=2
+max_attempts=60
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
@@ -93,6 +93,10 @@ if [ -f /etc/systemd/timesyncd.conf ];then
 	       fi
 	       cat /tmp/timesyncd.conf > /etc/systemd/timesyncd.conf
                rm -rf /tmp/timesyncd.conf
+			    # Restart the service to reflect the new conf
+               ntpLog "Restarting the service: systemd-timesyncd.service ..!"
+               /bin/systemctl reset-failed systemd-timesyncd.service
+               /bin/systemctl restart systemd-timesyncd.service
            else
                ntpLog "No new Hostnames found to update /etc/systemd/timesyncd.conf"
            fi
