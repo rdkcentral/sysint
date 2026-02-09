@@ -26,7 +26,7 @@ output=""
 count=0
 LOG_FILE="/opt/logs/ntp.log"
 attempts=1
-max_attempts=3
+max_attempts=5
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
