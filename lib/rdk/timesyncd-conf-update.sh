@@ -132,7 +132,7 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                sed -i "s/^NTP=.*/NTP=/g" /tmp/timesyncd.conf
                sed -i "s/^NTP=/NTP=$updateHostname $defaultHostName2/" /tmp/timesyncd.conf
                systemd_ver=`systemctl --version | grep systemd | awk '{print $2}'`
-         if [ "$systemd_ver" -ge 248 ]; then
+           if [ "$systemd_ver" -ge 248 ]; then
 		   # For systemd version >= 248, add the ConnectionRetrySec parameter
 		   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
 	       fi
