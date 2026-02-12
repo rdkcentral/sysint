@@ -22,4 +22,5 @@ Description=Update Previous reboot info
 ConditionPathExists=/tmp/stt_received
 
 [Service]
+SyslogIdentifier=reboot-reason
 ExecStart=/lib/rdk/update_previous_reboot_info.sh
