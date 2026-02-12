@@ -278,8 +278,10 @@ getDeviceSerialNumber()
 getBluetoothMac()
 {
     bluetooth_mac="00:00:00:00:00:00"
-    if [ "$BLUETOOTH_ENABLED" = "true" ]; then
-        bluetooth_mac=$(getDeviceBluetoothMac)
+    if [ -f /lib/rdk/readBTAddress-vendor.sh ]; then
+        bluetooth_mac=`sh /lib/rdk/readBTAddress-vendor.sh`
+    else
+        bluetooth_mac=`sh /lib/rdk/readBTAddress-generic.sh`    
     fi
 
     echo "$bluetooth_mac"
