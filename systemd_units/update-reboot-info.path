@@ -22,7 +22,7 @@ Description=Update Previous reboot info path
 OnFailure=path-fail-notifier@%n.service
 
 [Path]
-PathExists=/tmp/stt_received
+PathChanged=/tmp/stt_received
 Unit=update-reboot-info.service
 
 [Install]
