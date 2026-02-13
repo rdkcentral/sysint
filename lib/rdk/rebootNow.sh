@@ -81,12 +81,21 @@ MAINTENANCE_TRIGGERED_REASONS=(AutoReboot.sh PwrMgr)
 pid_file="/tmp/.rebootNow.pid"
 customReason="Unknown"
 otherReason="Unknown"
+REBOOTSLEEP_FILE="/opt/sleepcheck.txt"
 
 touch $REBOOTINFO_LOGFILE
 
 BIN_REBOOTNOW="/usr/bin/rebootnow"
 if [ -x "$BIN_REBOOTNOW" ]; then
     rebootLog "Attempting reboot via C binary: $BIN_REBOOTNOW"
+    if [ -f "$REBOOTSLEEP_FILE" ]; then
+        sleepVal=$(cat "$REBOOTSLEEP_FILE")
+	echo "File exists. The value inside is: $sleepVal"
+    else
+        echo "Error: File does not exist."
+    fi
+    sleep "$sleepVal"
+    rebootLog "Attempting reboot after sleep $BIN_REBOOTNOW"
     "$BIN_REBOOTNOW" "$@"
     rc=$?
     if [ $rc -eq 0 ]; then

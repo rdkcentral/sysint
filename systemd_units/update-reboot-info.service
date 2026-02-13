@@ -16,15 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-
 [Unit]
 Description=Update Previous reboot info
-After=local-fs.target
-RequiresMountsFor=/opt
+ConditionPathExists=/tmp/stt_received
 
 [Service]
-SyslogIdentifier=reboot-reason
 ExecStart=/lib/rdk/update_previous_reboot_info.sh
 
-[Install]
-WantedBy=multi-user.target
