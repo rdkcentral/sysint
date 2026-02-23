@@ -81,31 +81,22 @@ MAINTENANCE_TRIGGERED_REASONS=(AutoReboot.sh PwrMgr)
 pid_file="/tmp/.rebootNow.pid"
 customReason="Unknown"
 otherReason="Unknown"
-REBOOTSLEEP_FILE="/opt/sleepcheck.txt"
 
 touch $REBOOTINFO_LOGFILE
 
 BIN_REBOOTNOW="/usr/bin/rebootnow"
 if [ -x "$BIN_REBOOTNOW" ]; then
-    rebootLog "Attempting reboot via C binary: $BIN_REBOOTNOW"
-    if [ -f "$REBOOTSLEEP_FILE" ]; then
-        sleepVal=$(cat "$REBOOTSLEEP_FILE")
-	echo "File exists. The value inside is: $sleepVal"
-    else
-        echo "Error: File does not exist."
-    fi
-    sleep "$sleepVal"
-    rebootLog "Attempting reboot after sleep $BIN_REBOOTNOW"
+    rebootLog "Start of rebootNow Binary : $BIN_REBOOTNOW"
     "$BIN_REBOOTNOW" "$@"
     rc=$?
     if [ $rc -eq 0 ]; then
-        rebootLog "C binary handled the reboot request; exiting script."
+        rebootLog "$BIN_REBOOTNOW Execution Successful."
         exit 0
     else
-        rebootLog "C binary failed with rc=$rc; falling back to shell script logic."
+        rebootLog "Binary $BIN_REBOOTNOW failed with rc=$rc; falling back to script"
     fi
 else
-    rebootLog "C binary not found at $BIN_REBOOTNOW; continuing with shell script logic."
+    rebootLog "Binary not found at $BIN_REBOOTNOW; continuing with script"
 fi
 
 rebootLog "Start of rebootNow script"
