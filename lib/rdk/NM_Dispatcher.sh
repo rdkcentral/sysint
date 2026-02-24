@@ -167,6 +167,30 @@ checkDefaultRoute_Add() {
 interfaceName=$1
 interfaceStatus=$2
 
+if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; then
+    NMdispatcherLog "Global connectivity-change - checking all interfaces"
+    for iface in $ETHERNET_INTERFACE $WIFI_INTERFACE; do
+        # Skip if interface doesn't exist
+        if [ ! -e "/sys/class/net/$iface" ]; then
+            continue
+        fi
+        # Check carrier state
+        CARRIER=$(cat /sys/class/net/$iface/carrier 2>/dev/null || echo "0")
+        if [ "$CARRIER" = "0" ]; then
+                NMdispatcherLog "$iface - stopping avahi-autoipd"
+                /usr/sbin/avahi-autoipd --kill "$iface" 2>/dev/null || true
+        else
+                if pgrep -f "avahi-autoipd.*$iface" > /dev/null 2>&1; then
+                    NMdispatcherLog "avahi-autoipd already running for $iface"
+                else
+                    NMdispatcherLog "Started avahi-autoipd for $iface"
+                    /usr/sbin/avahi-autoipd --daemonize --syslog "$iface"
+                fi
+        fi
+    done
+    exit 0
+fi
+
 if [ "$interfaceStatus" = "up" ]; then
    
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
@@ -175,6 +199,7 @@ fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        /usr/sbin/avahi-autoipd --kill "$interfaceName" 2>/dev/null
         mode="ipv4"
         gwip=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
         imode=2
