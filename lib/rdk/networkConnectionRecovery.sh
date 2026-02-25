@@ -55,6 +55,7 @@ PacketLossLoggingInterval=300
 WifiReassociateInterval=360
 WifiResetIntervalForPacketLoss=720
 WifiResetIntervalForDriverIssue=120
+WifiReassociateTolerance=100
 dnsFailures=0
 maxdnsFailures=3
 
@@ -272,9 +273,9 @@ checkPacketLoss()
     [ "$lossThreshold" -eq 10 ] && t2CountNotify "WIFIV_WARN_PL_10PERC"
   fi
 
-  if [ "$packetsLostipv4" = "100" ] && [ "$packetsLostipv6" = "100" ]; then
-    echo "$(/bin/timestamp) 100% Packet loss is observed for both ipv4 and ipv6." >> "$logsFile"
-    #Note down $FirstPacketLossTime when 100% packetloss is detected for the first time
+  if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] && [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ]; then
+    echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed for both ipv4 and ipv6." >> "$logsFile"
+    #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
     [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
     #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
     [ "$PacketLossLogTimeStamp" -eq 0 ] && PacketLossLogTimeStamp=$(($(date +%s)))
@@ -283,7 +284,7 @@ checkPacketLoss()
     return 1
   fi
 
-  #Reset tmp parameters to default values when there is no 100% packet loss
+  #Reset tmp parameters to default values when packet loss is below threshold
   FirstPacketLossTime=0
   PacketLossLogTimeStamp=0
   EthernetLogTimeStamp=0
@@ -390,6 +391,10 @@ checkRfc()
     rfcWifiResetIntervalForDriverIssue="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiResetIntervalForDriverIssue 2>&1 > /dev/null)"
     if [ ! -z "$rfcWifiResetIntervalForDriverIssue" ] && [ "$rfcWifiResetIntervalForDriverIssue" != 0 ] ; then
       WifiResetIntervalForDriverIssue="$rfcWifiResetIntervalForDriverIssue"
+    fi
+    rfcWifiReassociateTolerance="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.ReassociateTolerance 2>&1 > /dev/null)"
+    if [ ! -z "$rfcWifiReassociateTolerance" ] && [ "$rfcWifiReassociateTolerance" != 0 ] ; then
+      WifiReassociateTolerance="$rfcWifiReassociateTolerance"
     fi
   fi
 }
