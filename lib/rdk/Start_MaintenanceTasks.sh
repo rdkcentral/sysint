@@ -109,7 +109,7 @@ runMaintenanceSWUpdateTask()
 {
     if [ -f "$SWUPDATE_BIN" ]; then
         swupdateLog "Starting software update"
-        "$SWUPDATE_BIN" 0 1 >> "$SWUPDATE_LOG_FILE" 2>&1 &
+        ' "$SWUPDATE_BIN" 0 1 >> "$SWUPDATE_LOG_FILE" 2>&1 &
         sleep 1
         cdlpid=$(pidof rdkvfwupgrader)
         wait $cdlpid
@@ -124,9 +124,9 @@ runMaintenanceSWUpdateTask()
         result=-1
     fi
     # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
-    if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
+    if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then '
         eventSender "MaintenanceMGR" "$MAINT_FWDOWNLOAD_ERROR"
-    fi
+    #fi
 }
 
 runMaintenanceLogUploadTask()
