@@ -24,7 +24,7 @@ After=network-online.target tr69hostif.service
 Requires=network-online.target
 
 [Service]
-ExecStart=/lib/rdk/uploadDumps.sh  "" 0 secure
+ExecStart=/bin/bash -c 'if [ -f /tmp/rustEnable ]; then /usr/bin/crash-upload 2 "secure" ""; else /lib/rdk/uploadDumps.sh "" 0 secure; fi'
 KillSignal=SIGKILL
 
 [Install]
