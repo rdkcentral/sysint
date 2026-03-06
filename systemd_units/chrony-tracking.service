@@ -1,6 +1,0 @@
-[Unit]
-Description=Parse chrony tracking log and emit metrics
-
-[Service]
-Type=oneshot
-ExecStart=/lib/rdk/chrony_tracking.sh
