@@ -2,10 +2,10 @@
 Description=Run chrony telemetry collection every 15 minutes
 
 [Timer]
-OnBootSec=2min
+OnBootSec=120s
 OnUnitActiveSec=15min
 Unit=chrony-tracking.service
 
 [Install]
-WantedBy=timers.target
+WantedBy=multi-user.target
 
