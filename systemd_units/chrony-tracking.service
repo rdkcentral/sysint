@@ -3,4 +3,4 @@ Description=Parse chrony tracking log and emit metrics
 
 [Service]
 Type=oneshot
-ExecStart=/lib/rdk/chrony_telemetry.sh
+ExecStart=/lib/rdk/chrony_metrics_parse.sh
