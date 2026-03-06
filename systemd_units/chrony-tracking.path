@@ -1,9 +1,0 @@
-[Unit]
-Description=Watch chrony tracking log for updates
-
-[Path]
-PathModified=/opt/logs/chrony/tracking.log
-Unit=chrony-tracking.service
-
-[Install]
-WantedBy=multi-user.target
