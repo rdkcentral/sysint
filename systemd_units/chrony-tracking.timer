@@ -4,6 +4,8 @@ Description=Run chrony telemetry collection every 15 minutes
 [Timer]
 OnBootSec=2min
 OnUnitActiveSec=15min
+Unit=network-up.target
 
 [Install]
 WantedBy=timers.target
+
