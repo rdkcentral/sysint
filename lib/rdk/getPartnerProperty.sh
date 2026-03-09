@@ -75,7 +75,7 @@ elif [ "$1" = "NTPServer5Directive" ]; then
     result=`tr181 Device.Time.NTPServer5Directive 2>&1 > /dev/null`
     echo $result
 elif [ "$1" = "NTPMaxstep" ]; then
-    result=`tr181 Device.Time.NTPMaxpoll 2>&1 > /dev/null`
+    result=`tr181 Device.Time.NTPMaxstep 2>&1 > /dev/null`
     echo $result
 elif [ "$1" = "partnerName" ]; then
     result=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1 > /dev/null`
