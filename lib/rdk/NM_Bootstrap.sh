@@ -55,6 +55,17 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         if [ -d /opt/secure/NetworkManager/system-connections ]; then
          rm -rf /opt/secure/NetworkManager/system-connections/*
         fi
+
+        echo "`/bin/timestamp` :$0: Listing any left over ethernet/wifi connections" >>  /opt/logs/NMMonitor.log
+        EXISTING_CONNECTIONS=$(nmcli connection show | awk '/ethernet|wifi/ {print $1}' | tr '\n' ' ')
+        if [ -n "$EXISTING_CONNECTIONS" ]; then
+            echo "`/bin/timestamp` :$0: Found existing connections: $EXISTING_CONNECTIONS" >>  /opt/logs/NMMonitor.log
+            echo "`/bin/timestamp` :$0: Deleting existing ethernet/wifi connections" >>  /opt/logs/NMMonitor.log
+            nmcli connection show | awk '/ethernet|wifi/ {print $1}' | xargs -r nmcli connection delete
+        else
+            echo "`/bin/timestamp` :$0: No existing ethernet/wifi connections found" >>  /opt/logs/NMMonitor.log
+        fi
+        
         nmcli conn reload
         exit 0
     else
