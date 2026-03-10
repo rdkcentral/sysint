@@ -292,12 +292,20 @@ checkPacketLoss()
     return 1
   fi
 
-  #Reset tmp parameters to default values when packet loss is below threshold
-  FirstPacketLossTime=0
-  PacketLossLogTimeStamp=0
-  EthernetLogTimeStamp=0
-  IsWifiReassociated=0
-  [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
+  #Reset tmp parameters to default values only after both V4 and V6 are measured (on V6 call).
+  #Resetting on V4 check alone would be premature because packetsLostipv6 is still 0 (script init)
+  #at that point, causing FirstPacketLossTime to be incorrectly cleared before V6 is measured.
+  #Reset if either V4 or V6 is below the reassociate tolerance, indicating recovery on at least one path.
+  if [ "$version" = "V6" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
+    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+    FirstPacketLossTime=0
+    PacketLossLogTimeStamp=0
+    EthernetLogTimeStamp=0
+    IsWifiReassociated=0
+    [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
+  else
+    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - skipping reset (version=$version, waiting for V6 measurement). wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+  fi
   return 0
 }
 
