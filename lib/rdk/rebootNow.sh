@@ -84,6 +84,21 @@ otherReason="Unknown"
 
 touch $REBOOTINFO_LOGFILE
 
+BIN_REBOOTNOW="/usr/bin/rebootnow"
+if [ -x "$BIN_REBOOTNOW" ]; then
+    rebootLog "Start of rebootNow Binary : $BIN_REBOOTNOW"
+    "$BIN_REBOOTNOW" "$@"
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        rebootLog "$BIN_REBOOTNOW Execution Successful."
+        exit 0
+    else
+        rebootLog "Binary $BIN_REBOOTNOW failed with rc=$rc; falling back to script"
+    fi
+else
+    rebootLog "Binary not found at $BIN_REBOOTNOW; continuing with script"
+fi
+
 rebootLog "Start of rebootNow script"
 
 pidCleanup()
@@ -392,7 +407,7 @@ fi
 
 # Signal telemetry2_0 to send out any pending messages before reboot
 rebootLog "Signal telemetry2_0 to send out any pending messages before reboot"
-killall -s SIGUSR1 telemetry2_0
+killall -s SIGIO telemetry2_0
 
 # Kill the Parodus Process; So that it can close the WebSocket Connection with Server.
 rebootLog "Properly shutdown parodus by sending SIGUSR1 kill signal"
