@@ -69,7 +69,6 @@ SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
-LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
 LOG_UPLOAD_BIN_PATH="/usr/bin/logupload"
 
 # Log Functions
@@ -166,10 +165,10 @@ runMaintenanceLogUploadTask()
         uploadOnReboot=0
         uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
         if [ "$uploadCheck" = "true" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
+            logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
             uploadOnReboot=1
         elif [ "$uploadCheck" = "false" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"
+            logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
         else
             logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
         fi
