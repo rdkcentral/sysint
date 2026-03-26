@@ -449,7 +449,7 @@ fi
 
 #If bluetooth is enabled, gracefully shutdown the bluetooth related services
 if [ "$BLUETOOTH_ENABLED" = "true" ];then
-    services=("sky-bluetoothrcu" "btmgr" "bluetooth" "bt-hciuart" "btmac-preset" "bt" "syslog-ng")
+    services=("ctrlm-main" "btmgr" "bluetooth" "bt-hciuart" "btmac-preset" "bt" "syslog-ng")
     rebootLog "Shutting down the bluetooth and syslog-ng services gracefully"
     for service in "${services[@]}"; do
         rebootLog "Shutting down the $service service"
