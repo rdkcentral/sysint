@@ -22,6 +22,15 @@
 # Scope: RDK devices.
 # Usage: This script is triggered by a systemd service and shell scripts.
 
+logMsg "enter"
+
+. /etc/include.properties
+. /etc/device.properties
+. $RDK_PATH/utils.sh
+if [ -f /lib/rdk/utils-vendor.sh ]; then
+    . $RDK_PATH/utils-vendor.sh
+fi
+
 # input arguments
 command=$1
 parameter=$2
