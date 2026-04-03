@@ -45,6 +45,10 @@ logMsg "enter"
 . /etc/include.properties
 . /etc/device.properties
 . $RDK_PATH/utils.sh
+if [ -f /lib/rdk/utils-vendor.sh ]; then
+    . $RDK_PATH/utils-vendor.sh
+fi
+
 
 if [ "$DEVICE_TYPE" != "mediaclient" ]; then
     export SNMP_BIN_DIR=/mnt/nfs/bin/target-snmp/bin
