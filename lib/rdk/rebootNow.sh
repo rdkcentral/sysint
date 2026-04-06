@@ -392,7 +392,7 @@ fi
 
 # Signal telemetry2_0 to send out any pending messages before reboot
 rebootLog "Signal telemetry2_0 to send out any pending messages before reboot"
-killall -s SIGUSR1 telemetry2_0
+killall -s SIGIO telemetry2_0
 
 # Kill the Parodus Process; So that it can close the WebSocket Connection with Server.
 rebootLog "Properly shutdown parodus by sending SIGUSR1 kill signal"
