@@ -67,7 +67,7 @@ grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g'
 echo "Available Memory Info:" >> $LOG_PATH/messages.txt
 MEM_AVAILABLE=$(cat /proc/meminfo | grep MemAvailable)
 echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
-MEM_AVAILABLE_VAL=`echo "$MEM_AVAILABLE" | tr -s '[:space:]' ' ' | cut -d' ' -f2`
+MEM_AVAILABLE_VAL=$(echo "$MEM_AVAILABLE" | tr -s '[:space:]' ' ' | cut -d' ' -f2)
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE_VAL"
 
 # Swap Memory Info
