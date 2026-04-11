@@ -23,18 +23,22 @@ jobs:
             exit 1
           fi
           echo "Validation passed: version field found."
+
   release:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout feature/component-release
         uses: actions/checkout@v3
+        with:
+          ref: feature/component-release
+          fetch-depth: 0
 
       - name: Set up Git
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "187267378+rdkcm-rdke@users.noreply.github.com"
+          git config user.name "GitHub Actions"
+          git config user.email "187267378+rdkcm-rdke@users.noreply.github.com"
 
       - name: Install git-flow and auto-changelog
         run: |
@@ -42,17 +46,15 @@ jobs:
           sudo apt-get install -y git-flow
           npm install -g auto-changelog
 
-      - name: Clone the project and start release
+      - name: Start release, generate changelog and publish
+        env:
+          PR_DESC: ${{ github.event.pull_request.body }}
         run: |
           set -e
-          git clone https://x-access-token:${{ secrets.RDKCM_RDKE }}@github.com/${{ github.repository }} project
-          cd project
-          git fetch --all
-          git checkout main || git checkout -b main origin/main
-          git checkout develop || git checkout -b develop origin/develop
 
-          git config gitflow.branch.master main
-          git config gitflow.branch.develop develop
+          # Configure git-flow to use feature/component-release as both master and develop
+          git config gitflow.branch.master feature/component-release
+          git config gitflow.branch.develop feature/component-release
           git config gitflow.prefix.feature feature/
           git config gitflow.prefix.bugfix bugfix/
           git config gitflow.prefix.release release/
@@ -60,65 +62,65 @@ jobs:
           git config gitflow.prefix.support support/
           git config gitflow.prefix.versiontag ''
 
-          echo "git config completed"
-          # Extract version from PR description
-          PR_DESC="${{ github.event.pull_request.body }}"
-          # Get top tag from CHANGELOG.md
+          # Extract top tag from CHANGELOG.md
           TOP_TAG=$(grep -m 1 -oP '^#### \[\K[^\]]+' CHANGELOG.md)
           if [[ -z "$TOP_TAG" ]]; then
             echo "No version found in CHANGELOG.md!"
             exit 1
           fi
-          # Validate TOP_TAG format (semantic versioning: major.minor.patch)
           if [[ ! "$TOP_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format in CHANGELOG.md: $TOP_TAG. Expected format: major.minor.patch"
+            echo "Invalid version format in CHANGELOG.md: $TOP_TAG"
             exit 1
           fi
+
           IFS='.' read -r major minor patch <<< "$TOP_TAG"
           VERSION_TYPE=$(echo "$PR_DESC" | grep -oiP 'version\s*:\s*\K(major|minor|patch)' | tr '[:upper:]' '[:lower:]')
+
           if [[ -z "$VERSION_TYPE" ]]; then
             echo "No version type found in PR description, defaulting to PATCH increment."
             patch=$((patch + 1))
           elif [[ "$VERSION_TYPE" == "major" ]]; then
-            major=$((major + 1))
-            minor=0
-            patch=0
+            major=$((major + 1)); minor=0; patch=0
           elif [[ "$VERSION_TYPE" == "minor" ]]; then
-            minor=$((minor + 1))
-            patch=0
+            minor=$((minor + 1)); patch=0
           elif [[ "$VERSION_TYPE" == "patch" ]]; then
             patch=$((patch + 1))
           else
             echo "Invalid version type in PR description: $VERSION_TYPE"
             exit 1
           fi
+
           RELEASE_VERSION="$major.$minor.$patch"
           echo "Using calculated version: $RELEASE_VERSION"
-          echo "RELEASE_VERSION=$RELEASE_VERSION"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+
           # Check if tag already exists
           if git rev-parse "refs/tags/$RELEASE_VERSION" >/dev/null 2>&1; then
             echo "Tag $RELEASE_VERSION already exists. Skipping release."
             exit 0
           fi
-          git flow release start $RELEASE_VERSION
-          auto-changelog -v $RELEASE_VERSION
+
+          git flow release start "$RELEASE_VERSION"
+          auto-changelog -v "$RELEASE_VERSION"
           git add CHANGELOG.md
           git commit -m "$RELEASE_VERSION release changelog updates"
           git flow release publish
 
-      - name: Finish release and push (default git-flow messages)
+      - name: Finish release and push
         run: |
           set -e
-          cd project
-          git flow release finish -m "$RELEASE_VERSION release" $RELEASE_VERSION
-          git push origin main
+          git flow release finish -m "$RELEASE_VERSION release" "$RELEASE_VERSION"
+          git push origin feature/component-release
           git push origin --tags
-          git push origin develop
-          
+
       - name: Cleanup tag if workflow fails
         if: failure()
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
-          cd project
-          git tag -d $RELEASE_VERSION || true
-          git push origin :refs/tags/$RELEASE_VERSION || true
+          if [ -n "$RELEASE_VERSION" ]; then
+            git tag -d "$RELEASE_VERSION" || true
+            git push origin ":refs/tags/$RELEASE_VERSION" || true
+          else
+            echo "RELEASE_VERSION not set, skipping cleanup."
+          fi
