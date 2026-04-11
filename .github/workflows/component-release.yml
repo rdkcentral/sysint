@@ -95,6 +95,8 @@ jobs:
 
       - name: Cleanup tag if workflow fails
         if: failure()
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           if [ -n "$RELEASE_VERSION" ]; then
             git tag -d "$RELEASE_VERSION" || true
