@@ -62,6 +62,9 @@ jobs:
           git config gitflow.prefix.support support/
           git config gitflow.prefix.versiontag ''
 
+          # Initialize git-flow (required for git flow commands to work)
+          git flow init -d -f
+
           # Extract top tag from CHANGELOG.md
           TOP_TAG=$(grep -m 1 -oP '^#### \[\K[^\]]+' CHANGELOG.md)
           if [[ -z "$TOP_TAG" ]]; then
