@@ -34,6 +34,7 @@ jobs:
         with:
           ref: feature/component-release
           fetch-depth: 0
+          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Set up Git
         run: |
@@ -46,7 +47,7 @@ jobs:
           sudo apt-get install -y git-flow
           npm install -g auto-changelog
 
-      - name: Create release, generate changelog and push
+      - name: Start release, generate changelog and publish
         env:
           PR_DESC: ${{ github.event.pull_request.body }}
         run: |
@@ -111,10 +112,12 @@ jobs:
           git add CHANGELOG.md
           git commit -m "$RELEASE_VERSION release changelog updates"
 
-          # Finish release locally (no need to publish to remote)
-          git flow release finish -m "$RELEASE_VERSION release" "$RELEASE_VERSION"
+          git flow release publish
 
-          # Push results
+      - name: Finish release and push
+        run: |
+          set -e
+          git flow release finish -m "$RELEASE_VERSION release" "$RELEASE_VERSION"
           git push origin feature/component-release
           git push origin feature/main-dummy
           git push origin --tags
