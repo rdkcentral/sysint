@@ -46,7 +46,7 @@ jobs:
           sudo apt-get install -y git-flow
           npm install -g auto-changelog
 
-      - name: Start release, generate changelog and publish
+      - name: Create release, generate changelog and push
         env:
           PR_DESC: ${{ github.event.pull_request.body }}
         run: |
@@ -110,12 +110,11 @@ jobs:
           auto-changelog -v "$RELEASE_VERSION"
           git add CHANGELOG.md
           git commit -m "$RELEASE_VERSION release changelog updates"
-          git flow release publish
 
-      - name: Finish release and push
-        run: |
-          set -e
+          # Finish release locally (no need to publish to remote)
           git flow release finish -m "$RELEASE_VERSION release" "$RELEASE_VERSION"
+
+          # Push results
           git push origin feature/component-release
           git push origin feature/main-dummy
           git push origin --tags
