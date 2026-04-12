@@ -52,8 +52,8 @@ jobs:
         run: |
           set -e
 
-          # Configure git-flow to use feature/component-release as both master and develop
-          git config gitflow.branch.master feature/component-release
+          # Configure git-flow to use feature/main-dummy as master and feature/component-release as develop
+          git config gitflow.branch.master feature/main-dummy
           git config gitflow.branch.develop feature/component-release
           git config gitflow.prefix.feature feature/
           git config gitflow.prefix.bugfix bugfix/
@@ -61,6 +61,9 @@ jobs:
           git config gitflow.prefix.hotfix hotfix/
           git config gitflow.prefix.support support/
           git config gitflow.prefix.versiontag ''
+
+          # Ensure the production branch exists locally
+          git fetch origin feature/main-dummy:feature/main-dummy 2>/dev/null || git branch feature/main-dummy feature/component-release
 
           # Initialize git-flow (required for git flow commands to work)
           git flow init -d -f
@@ -114,6 +117,7 @@ jobs:
           set -e
           git flow release finish -m "$RELEASE_VERSION release" "$RELEASE_VERSION"
           git push origin feature/component-release
+          git push origin feature/main-dummy
           git push origin --tags
 
       - name: Cleanup tag if workflow fails
