@@ -30,13 +30,15 @@ if [[ ! -f /opt/previous_flashed_file_name || \
 
     echo "Removing gstreamer registry on bootup after CDL"
     rm -rf /opt/.gstreamer
-    GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
+    mkdir -p /opt/.gstreamer
+    GST_REGISTRY=/opt/.gstreamer/registry.bin GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
 
 elif [[ ! -f /opt/.gstreamer/registry.bin ]]; then
     # Fallback: Clean if registry file is missing anyway
     echo "Gstreamer registry empty"
     rm -rf /opt/.gstreamer
-    GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
+    mkdir -p /opt/.gstreamer
+    GST_REGISTRY=/opt/.gstreamer/registry.bin GST_REGISTRY_UPDATE=yes gst-inspect-1.0 >/dev/null 2>&1
 else
     echo "gstreamer registry is not removed, previous reboot is not due to CDL"
 fi
