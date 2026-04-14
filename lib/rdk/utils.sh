@@ -29,7 +29,7 @@ if [ -f /lib/rdk/getSecureDumpStatus.sh ]; then
 fi
 
 export PATH=$PATH:/sbin:/usr/sbin
-CORE_LOG="$LOG_PATH/core_log.txt"
+CORE_LOG="$LOG_PATH/unified-logging.txt"
 
 #This is need to set core path for yocto builds
 if [ -f /etc/os-release ]; then
@@ -223,7 +223,7 @@ getRFCValueForTR181Param()
 # Flush the logger daemon buffers to the file
 flushLogger()
 {
-    echo "$(/bin/timestamp) [PID:$$]: [utils.sh] flushLogger is called" >> /opt/logs/core_log.txt
+    echo "$(/bin/timestamp) [PID:$$]: [utils.sh] flushLogger is called" >> /opt/logs/unified-logging.txt
     # Flush journald buffers
     test -f '/etc/os-release' && which journalctl && journalctl --sync --flush
     if [ "$SYSLOG_NG_ENABLED" != "true" ] ; then

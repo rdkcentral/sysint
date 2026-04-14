@@ -25,7 +25,7 @@ if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
 fi
 
-log_file="$LOG_PATH/cronjobs_update.log"
+log_file="$LOG_PATH/unified-logging.txt"
 help_strings()
 {
     echo "`/bin/timestamp` ERROR: Argument mismatch" >> $log_file

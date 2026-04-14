@@ -93,7 +93,7 @@ disk_size_check()
        echo "$(/bin/timestamp) $WORK_PATH size $usep is OK to start" >> /tmp/disk_cleanup.log
        if [ "$FLAG" -eq 1 ];then
            if [ -f /tmp/disk_cleanup.log ] && [ ! -f /tmp/.standby ]; then
-                cat /tmp/disk_cleanup.log >> /opt/logs/disk_cleanup.log
+                cat /tmp/disk_cleanup.log >> /opt/logs/unified-logging.txt
                 cat /dev/null > /tmp/disk_cleanup.log
            fi
        fi

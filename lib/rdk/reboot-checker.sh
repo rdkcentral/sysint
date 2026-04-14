@@ -30,7 +30,7 @@
 if [ ! -f /tmp/set_crash_reboot_flag -a "$1" != "bootup" ];then
      touch /tmp/set_crash_reboot_flag
 fi
-LOG_FILE=/opt/logs/rebootInfo.log
+LOG_FILE=/opt/logs/unified-logging.txt
 PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
 
 verifyProcess ()

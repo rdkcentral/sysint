@@ -24,7 +24,7 @@ if [ -f /etc/device.properties ];then
     . /etc/device.properties
 fi
 
-LOG_FILE="/opt/logs/NMMonitor.log"
+LOG_FILE="/opt/logs/unified-logging.txt"
 
 Log()
 {

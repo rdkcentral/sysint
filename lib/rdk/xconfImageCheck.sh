@@ -57,7 +57,7 @@ if [ -z $LOG_PATH ]; then
     LOG_PATH="/opt/logs/"
 fi
 
-TLS_LOG_FILE="$LOG_PATH/tlsError.log"
+TLS_LOG_FILE="$LOG_PATH/unified-logging.txt"
 
 tlsLog()
 {
@@ -406,7 +406,7 @@ sendTLSCodebigRequest()
     35|51|53|54|58|59|60|64|66|77|80|82|83|90|91)
         tlsLog "CERTERR, ACDL, $TLSRet, $FQDN"
         t2ValNotify "certerr_split" "ACDL, $TLSRet, $FQDN"
-	echo "HTTPS $TLS failed to connect to Codebig $1 server with curl error code $TLSRet" >> $LOG_PATH/tlsError.log
+	echo "HTTPS $TLS failed to connect to Codebig $1 server with curl error code $TLSRet" >> $LOG_PATH/unified-logging.txt
         redflagset=1
 	checkAndPopulateStateRedDetails "XCONF" $TLSRet
     ;;

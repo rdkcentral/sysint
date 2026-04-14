@@ -31,4 +31,4 @@ swupdateLog()
 echo "STATE RED RECOVERY, Initiating recovery software download"
 XCONF_BIN="/usr/bin/rdkvfwupgrader"
 
-$XCONF_BIN "3" "6" >> /opt/logs/swupdate.log 2>&1
+$XCONF_BIN "3" "6" >> /opt/logs/unified-logging.txt 2>&1

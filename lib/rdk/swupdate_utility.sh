@@ -277,7 +277,7 @@ do
         cron=`cat $DCM_CONF | grep 'urn:settings:CheckSchedule:cron' | cut -d '=' -f2`
         if [ -n "$cron" ]; then
             if [ "x$SCRIPT_METHOD_DOWNLOAD" = "xfalse" ]; then
-                $XCONF_BIN $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+                $XCONF_BIN $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
                 sleep 1
 # wait requires the child PID for $XCONF_BIN return value to be valid
                 cdlpid=`pidof rdkvfwupgrader`
@@ -298,7 +298,7 @@ do
 		    sed -i '/FwUpdateState|.*/d' $MIB_STATUS_FILE
                     echo "FwUpdateState|Uninitialized" >> $MIB_STATUS_FILE
                     swupdateLog "Triggering failover to deviceInitiatedFWDnld.sh with no retries"
-                    $SCRIPTFUNC 0 1 >> /opt/logs/swupdate.log 2>&1 &
+                    $SCRIPTFUNC 0 1 >> /opt/logs/unified-logging.txt 2>&1 &
                     wait
                     exit 0
                 else
@@ -307,14 +307,14 @@ do
                 fi
             else
                 swupdateLog "Triggering deviceInitiatedFWDnld.sh with no retries"
-                $SCRIPTFUNC $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+                $SCRIPTFUNC $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
                 wait
                 exit 0
             fi
         else
             swupdateLog "Failed to read  'urn:settings:CheckSchedule:cron' from /tmp/DCMSettings.conf."
             if [ "x$SCRIPT_METHOD_DOWNLOAD" = "xfalse" ]; then
-                $XCONF_BIN $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+                $XCONF_BIN $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
                 sleep 1
 # wait requires the child PID for $XCONF_BIN return value to be valid
                 cdlpid=`pidof rdkvfwupgrader`
@@ -333,7 +333,7 @@ do
 		    sed -i '/FwUpdateState|.*/d' $MIB_STATUS_FILE
                     echo "FwUpdateState|Uninitialized" >> $MIB_STATUS_FILE
                     swupdateLog "Triggering failover to deviceInitiatedFWDnld.sh with no retries"
-                    $SCRIPTFUNC 0 1 >> /opt/logs/swupdate.log 2>&1 &
+                    $SCRIPTFUNC 0 1 >> /opt/logs/unified-logging.txt 2>&1 &
                     wait
                     exit 0
                 else
@@ -342,7 +342,7 @@ do
                 fi
             else
                 swupdateLog "Triggering deviceInitiatedFWDnld.sh with 3 retries"
-                $SCRIPTFUNC $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+                $SCRIPTFUNC $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
                 wait
                 exit 0
             fi
@@ -356,7 +356,7 @@ do
 done
 
 if [ "x$SCRIPT_METHOD_DOWNLOAD" = "xfalse" ]; then
-    $XCONF_BIN $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+    $XCONF_BIN $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
     sleep 1
 # wait requires the child PID for $XCONF_BIN return value to be valid
     cdlpid=`pidof rdkvfwupgrader`
@@ -375,13 +375,13 @@ if [ "x$SCRIPT_METHOD_DOWNLOAD" = "xfalse" ]; then
 	sed -i '/FwUpdateState|.*/d' $MIB_STATUS_FILE
         echo "FwUpdateState|Uninitialized" >> $MIB_STATUS_FILE
         swupdateLog "Triggering failover to deviceInitiatedFWDnld.sh with no retries"
-        $SCRIPTFUNC $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+        $SCRIPTFUNC $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
         wait
         exit 0
     fi
 else
     swupdateLog "Triggering deviceInitiatedFWDnld.sh with 3 retries"
-    $SCRIPTFUNC $retry $triggerType >> /opt/logs/swupdate.log 2>&1 &
+    $SCRIPTFUNC $retry $triggerType >> /opt/logs/unified-logging.txt 2>&1 &
     wait
     exit 0
 fi

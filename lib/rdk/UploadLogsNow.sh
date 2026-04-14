@@ -72,7 +72,7 @@ modifyFileWithTimestamp()
         test4=`expr match $f $ablReasonLog`
 
         if [ $test1 -gt 0 -o $test2 -gt 0 -o $test3 -gt 0 -o $test4 -gt 0 ];  then
-            echo "`/bin/timestamp` Processing file...$f"  >> $LOG_PATH/dcmscript.log
+            echo "`/bin/timestamp` Processing file...$f"  >> $LOG_PATH/unified-logging.txt
         else
             mv $f $dt$f
         fi
@@ -102,10 +102,10 @@ HttpLogUpload()
     else
         CURL_CMD=" -w '%{http_code}\n' -d \"filename=$1\" -o \"$FILENAME\" \"$CLOUD_URL\" --connect-timeout 10 -m 10"
     fi
-    echo "`/bin/timestamp` MTLS defaulted" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` MTLS defaulted" >> $LOG_PATH/unified-logging.txt
     msg_tls_source="mTLS certificate from xPKI"
-    echo "`/bin/timestamp` Connect with $msg_tls_source" >> $LOG_PATH/dcmscript.log
-    echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` Connect with $msg_tls_source" >> $LOG_PATH/unified-logging.txt
+    echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/unified-logging.txt
     
     retries=0
     while [ "$retries" -lt 3 ]
@@ -116,12 +116,12 @@ HttpLogUpload()
             break
         fi
         retries=`expr $retries + 1`
-        echo "`/bin/timestamp` Retrying SNMP based HTTP log upload - $retries" >> $LOG_PATH/dcmscript.log
+        echo "`/bin/timestamp` Retrying SNMP based HTTP log upload - $retries" >> $LOG_PATH/unified-logging.txt
         sleep 1
     done
     
     if [ $http_code -eq 200 ];then
-        echo "`/bin/timestamp` S3 upload query success. Got new S3 url to upload log" >> $LOG_PATH/dcmscript.log
+        echo "`/bin/timestamp` S3 upload query success. Got new S3 url to upload log" >> $LOG_PATH/unified-logging.txt
         #Get the url from FILENAME
         NewUrl=$(awk -F\" '{print $1}' $FILENAME)
         if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
@@ -129,22 +129,22 @@ HttpLogUpload()
         else
             CURL_CMD=" -w '%{http_code}\n' -T \"$1\" -o \"$FILENAME\" \"$NewUrl\" --connect-timeout 60 -m 120 -v"
         fi
-        echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/dcmscript.log
+        echo "`/bin/timestamp` URL_CMD: $CURL_CMD" >> $LOG_PATH/unified-logging.txt
 
 	ret=` exec_curl_mtls "$CURL_CMD" "echo"`
         http_code=$(awk -F\" '{print $1}' $HTTP_CODE)
         if [ $http_code -eq 200 ];then
             result=0
-			echo "`/bin/timestamp` Uploaded Logs through - SNMP/TR69" >> $LOG_PATH/dcmscript.log
+			echo "`/bin/timestamp` Uploaded Logs through - SNMP/TR69" >> $LOG_PATH/unified-logging.txt
             echo "Complete $(date)"   > /opt/loguploadstatus.txt
 
         else
-            echo "`/bin/timestamp` Failed Uploading Logs through - SNMP/TR69" >> $LOG_PATH/dcmscript.log
+            echo "`/bin/timestamp` Failed Uploading Logs through - SNMP/TR69" >> $LOG_PATH/unified-logging.txt
 			echo "Failed $(date)" > /opt/loguploadstatus.txt
 
         fi
     else
-        echo "`/bin/timestamp` S3 upload query Failed" >> $LOG_PATH/dcmscript.log
+        echo "`/bin/timestamp` S3 upload query Failed" >> $LOG_PATH/unified-logging.txt
         echo "Failed $(date)" > /opt/loguploadstatus.txt
 
     fi
@@ -182,9 +182,9 @@ copyAllFiles
 cd $DCM_LOG_PATH
 
  
-echo "`/bin/timestamp` Uploading Logs through SNMP/TR69 Upload" >> $LOG_PATH/dcmscript.log
-modifyFileWithTimestamp $DCM_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
-tar -zcvf $LOG_FILE * >> $LOG_PATH/dcmscript.log  2>&1
+echo "`/bin/timestamp` Uploading Logs through SNMP/TR69 Upload" >> $LOG_PATH/unified-logging.txt
+modifyFileWithTimestamp $DCM_LOG_PATH >> $LOG_PATH/unified-logging.txt  2>&1
+tar -zcvf $LOG_FILE * >> $LOG_PATH/unified-logging.txt  2>&1
 	   
  retval=1
 echo "In progress $(date)" > /opt/loguploadstatus.txt

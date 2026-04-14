@@ -30,7 +30,7 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
-logsFile=$LOG_PATH/ConnectionStats.txt
+logsFile=$LOG_PATH/unified-logging.txt
 dnsFile="/etc/resolv.dnsmasq"
 wifiStateFile="/tmp/wifi-on"
 packetsLostipv4=0

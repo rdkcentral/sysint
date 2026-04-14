@@ -36,7 +36,7 @@ if [ ! -f $eMMCFW_UPGRADE_VERS_FILE ]; then
 fi
 
 
-SWLOG_FILE=/opt/logs/swupdate.log
+SWLOG_FILE=/opt/logs/unified-logging.txt
 if [ ! -f $SWLOG_FILE ]; then
      touch $SWLOG_FILE
 fi

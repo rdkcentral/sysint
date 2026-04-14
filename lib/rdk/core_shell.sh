@@ -35,7 +35,7 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     IS_T2_ENABLED="true"
 fi
 
-MEMORY_LOG="/opt/logs/core_log.txt"
+MEMORY_LOG="/opt/logs/unified-logging.txt"
 
 if [ -f /etc/os-release ]; then
 	CORE_PATH=$CORE_PATH
@@ -56,7 +56,7 @@ upload() {
     # core+mini dumps to Crash Portal
     # Coredump Upload call
     if [ ! -f /etc/os-release ];then
-         echo $(/bin/timestamp) "Starting upload processes from core_shell.sh" >> $LOG_PATH/core_log.txt
+         echo $(/bin/timestamp) "Starting upload processes from core_shell.sh" >> $LOG_PATH/unified-logging.txt
          if [ ! -z "$(ls -A $CORE_PATH 2> /dev/null)" ]; then
               sh $RDK_PATH/uploadDumps.sh ${TS} 1 &
          fi
@@ -68,7 +68,7 @@ upload() {
     count=`ls $CORE_PATH | grep $process | wc -l`
     while [ $count -gt 5 ]; do
         oldcore=`ls -t $CORE_PATH | grep $process | tail -1`
-        echo $(/bin/timestamp) "Deleting $oldcore as the same process has more than 5 cores in $CORE_PATH" >> $LOG_PATH/core_log.txt
+        echo $(/bin/timestamp) "Deleting $oldcore as the same process has more than 5 cores in $CORE_PATH" >> $LOG_PATH/unified-logging.txt
         rm -rf $CORE_PATH/$oldcore
         count=`ls $CORE_PATH | grep $process | wc -l`
     done
@@ -144,43 +144,43 @@ dumpMemoryStats()
 
 dumpInfo()
 {
-   echo $(/bin/timestamp) "process crashed = $1" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "process crashed = $1" >> $LOG_PATH/unified-logging.txt
    notifyCrashedMarker "$1"
    t2ValNotify "CrashedProc_split" "$1"
    t2ValNotify "SYST_INFO_CrashedProc_accum" "$1"
-   echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "signal causing dump = $2" >> $LOG_PATH/unified-logging.txt
    t2ValNotify "SYST_INFO_SigDump_split" "$2"
    t2CountNotify "SYST_ERR_CrashSig$2"
-   echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/core_log.txt
-   echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/core_log.txt
-   echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "time of dump = $3" >> $LOG_PATH/unified-logging.txt
+   echo $(/bin/timestamp) "Process ID = $4" >> $LOG_PATH/unified-logging.txt
+   echo $(/bin/timestamp) "Thread ID within process = $5" >> $LOG_PATH/unified-logging.txt
    t2ValNotify "SYST_INFO_CoreFull_accum" "$1,$2,$3,$4,$5"
    t2ValNotify "SYST_INFO_CoreIMP_accum" "$1,$2"
 }
 
 dumpCoreInfo()
 {
-   echo $(/bin/timestamp) "$process crash and uploading the cores" >> $LOG_PATH/core_log.txt
-   echo $(/bin/timestamp) "corename = $corename" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "$process crash and uploading the cores" >> $LOG_PATH/unified-logging.txt
+   echo $(/bin/timestamp) "corename = $corename" >> $LOG_PATH/unified-logging.txt
    t2ValNotify "core_split" "$corename"
    t2ValNotify "SYST_INFO_Core_accum" "$corename"
-   echo $(/bin/timestamp) "processing_corename = $processing_corename" >> $LOG_PATH/core_log.txt
+   echo $(/bin/timestamp) "processing_corename = $processing_corename" >> $LOG_PATH/unified-logging.txt
 }
 
 dumpFile()
 {
     if [ -f /tmp/coredump_mutex_release ];then rm /tmp/coredump_mutex_release ; fi
     dumpCoreInfo
-    echo $(/bin/timestamp) "core-shell core started pid : $$"  >> /opt/logs/core_log.txt
+    echo $(/bin/timestamp) "core-shell core started pid : $$"  >> /opt/logs/unified-logging.txt
     nice -n 19 gzip -f > $CORE_PATH/$processing_corename
     if [[ $? -ne 0 ]]; then
          t2CountNotify "SYST_ERR_COREGZIP"
-         echo $(/bin/timestamp) "core-shell error in creating the gzip file exiting"  >> /opt/logs/core_log.txt
+         echo $(/bin/timestamp) "core-shell error in creating the gzip file exiting"  >> /opt/logs/unified-logging.txt
          rm $CORE_PATH/$processing_corename
          exit 1
     fi
     mv $CORE_PATH/$processing_corename $CORE_PATH/$corename
-    echo $(/bin/timestamp) "core-shell core created pid : $$"  >> /opt/logs/core_log.txt
+    echo $(/bin/timestamp) "core-shell core created pid : $$"  >> /opt/logs/unified-logging.txt
     t2CountNotify "SYST_INFO_CoreProcessed"
     t2ValNotify "SYST_INFO_CoreProcessed_accum" "$process"
     # fix file permissions
@@ -191,9 +191,9 @@ dumpFile()
 
 dumpSystemdLogs()
 {
-    echo $(/bin/timestamp) "****************SYSTEMD CRASHED DUMPING LOGS START*****************" >> $LOG_PATH/core_log.txt
-    journalctl -b  >> $LOG_PATH/core_log.txt
-    echo $(/bin/timestamp) "****************SYSTEMD CRASHED DUMPING LOGS END*****************" >> $LOG_PATH/core_log.txt
+    echo $(/bin/timestamp) "****************SYSTEMD CRASHED DUMPING LOGS START*****************" >> $LOG_PATH/unified-logging.txt
+    journalctl -b  >> $LOG_PATH/unified-logging.txt
+    echo $(/bin/timestamp) "****************SYSTEMD CRASHED DUMPING LOGS END*****************" >> $LOG_PATH/unified-logging.txt
     
     if [ "$SYSLOG_NG_ENABLED" != "true" ] ; then
         sh /lib/rdk/dumpLogs.sh
@@ -223,7 +223,7 @@ if [ "$HDD_ENABLED" = "true" ];then
      dumpFile
      # Call dumpLogs.sh script for systemd crash
      if [ "$1" = "systemd" ]; then
-        echo $(/bin/timestamp) "$1 crashed with SIGNAL $2, Dumping Journal logs from boot"  >> $LOG_PATH/core_log.txt
+        echo $(/bin/timestamp) "$1 crashed with SIGNAL $2, Dumping Journal logs from boot"  >> $LOG_PATH/unified-logging.txt
         dumpSystemdLogs
      fi
      exit 0
@@ -360,7 +360,7 @@ fi
         fi
     done
     
-echo $(/bin/timestamp) "$1 process is not listed to upload, we are not processing the core file" >> $LOG_PATH/core_log.txt
+echo $(/bin/timestamp) "$1 process is not listed to upload, we are not processing the core file" >> $LOG_PATH/unified-logging.txt
 if [ "$IS_T2_ENABLED" == "true" ]; then
     t2CountNotify "SYST_INFO_CoreNotProcessed"
     t2ValNotify "SYST_WARN_CoreNP_accum" "$1"

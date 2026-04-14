@@ -24,7 +24,7 @@
 
 output=""
 count=0
-LOG_FILE="/opt/logs/ntp.log"
+LOG_FILE="/opt/logs/unified-logging.txt"
 attempts=1
 max_attempts=5
 

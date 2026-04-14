@@ -32,8 +32,8 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
-NM_LOG_FILE="/opt/logs/NMMonitor.log"
-LOG_FILE="/opt/logs/ipSetupLogs.txt"
+NM_LOG_FILE="/opt/logs/unified-logging.txt"
+LOG_FILE="/opt/logs/unified-logging.txt"
 FILE=/tmp/.GatewayIP_dfltroute
 
 NMdispatcherLog()

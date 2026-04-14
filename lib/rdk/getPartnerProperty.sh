@@ -29,7 +29,7 @@
 ##################################################################
 
 if [ $# != 1 ] ; then
-    echo "`/bin/timestamp` [BP] Usage: $0 <property_name>" >> /opt/logs/ntp.log
+    echo "`/bin/timestamp` [BP] Usage: $0 <property_name>" >> /opt/logs/unified-logging.txt
     exit 1
 fi
 
@@ -91,8 +91,8 @@ if [ $cgPDf -ne 0 ]; then
     if [ -f /etc/getBootstrapProperty.sh ]; then
         result=`/etc/getBootstrapProperty.sh $1`
         echo $result
-        echo "`/bin/timestamp` [BP] Returning through getBootstrapProperty call for $1, result=$result" >> /opt/logs/ntp.log
+        echo "`/bin/timestamp` [BP] Returning through getBootstrapProperty call for $1, result=$result" >> /opt/logs/unified-logging.txt
     fi
 else
-        echo "`/bin/timestamp` [BP] Returning through tr181 call for $1, result=$result" >> /opt/logs/ntp.log
+        echo "`/bin/timestamp` [BP] Returning through tr181 call for $1, result=$result" >> /opt/logs/unified-logging.txt
 fi

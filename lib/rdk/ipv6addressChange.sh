@@ -24,7 +24,7 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
 
-IPV6_CHANGE_LOGFILE="/opt/logs/NMMonitor.log"
+IPV6_CHANGE_LOGFILE="/opt/logs/unified-logging.txt"
 ipv6ChangeLog() {
     echo "`/bin/timestamp` :$0: $*" >> $IPV6_CHANGE_LOGFILE
 }
@@ -146,11 +146,11 @@ if [ $ifc == "$WIFI_INTERFACE" ] || [ $ifc == "$MOCA_INTERFACE" ] || [ $ifc == "
 
   if [ "x$flags" == "xglobal" ]; then
        if [ ! -f /tmp/Dropbear_restart_disabled ]; then
-            echo "`/bin/timestamp` Restarting Dropbear due to global ip address changes" >> /opt/logs/dropbear.log
+            echo "`/bin/timestamp` Restarting Dropbear due to global ip address changes" >> /opt/logs/unified-logging.txt
             systemctl reset-failed dropbear.service
             systemctl restart dropbear.service &
        else
-            echo "`/bin/timestamp` Preventing Dropbear restarts" >> /opt/logs/dropbear.log
+            echo "`/bin/timestamp` Preventing Dropbear restarts" >> /opt/logs/unified-logging.txt
        fi
   fi
 fi

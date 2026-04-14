@@ -23,7 +23,7 @@
 
 
 
-LOG_FILE="/opt/logs/swupdate.log"
+LOG_FILE="/opt/logs/unified-logging.txt"
 #Use log framework to print timestamp and source script name
 swupdateLog()
 {

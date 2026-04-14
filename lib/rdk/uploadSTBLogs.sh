@@ -57,12 +57,12 @@ HOST_IP=`getIPAddress`
 DT=`date "+%m-%d-%y-%I-%M%p"`
 LOG_FILE=$MAC"_Logs_$DT.tgz"
 DRI_LOG_FILE=$MAC"_DRI_Logs_$DT.tgz"
-DRI_LOG_PATH="/opt/logs/drilogs"
+DRI_LOG_PATH="/opt/logs/unified-logging.txt"
 VERSION="version.txt"
 PREV_LOG_PATH="$LOG_PATH/PreviousLogs"
 PREV_LOG_BACKUP_PATH="$LOG_PATH/PreviousLogs_backup/"
-DCM_UPLOAD_LIST="$LOG_PATH/dcm_upload"
-DCM_LOG_FILE=$LOG_PATH/dcmscript.log
+DCM_UPLOAD_LIST="$LOG_PATH/unified-logging.txt"
+DCM_LOG_FILE="$LOG_PATH/unified-logging.txt"
 TELEMETRY_PATH="/opt/.telemetry"
 timeValuePrefix=""
 CURL_INFO=/tmp/logupload_curl_info
@@ -292,7 +292,7 @@ copyAllFiles ()
 copyOptLogsFiles ()
 {
     cd $LOG_PATH
-    cp  * $DCM_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
+    cp  * $DCM_LOG_PATH >> $LOG_PATH/unified-logging.txt  2>&1
 }
 
 #Log TLS Return value for curl requests
@@ -699,7 +699,7 @@ uploadDCMLogs()
 
     if [ "$upload_flag" == "true" ]; then
         uploadLog "Uploading Logs through DCM cron job"
-        modifyFileWithTimestamp $DCM_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
+        modifyFileWithTimestamp $DCM_LOG_PATH >> $LOG_PATH/unified-logging.txt  2>&1
         # Include latest moca-capture in uploaded logs for mediaclient device
         if [ "$DEVICE_TYPE" == "mediaclient" ]; then
             pcapCount=`ls $LOG_PATH/*-moca.pcap | wc -l`
@@ -709,7 +709,7 @@ uploadDCMLogs()
                 cp $lastPcapCapture .
             fi
         fi
-        tar -zcvf $LOG_FILE * >> $LOG_PATH/dcmscript.log  2>&1
+        tar -zcvf $LOG_FILE * >> $LOG_PATH/unified-logging.txt  2>&1
         sleep 60
         uploadLog "Uploading logs $LOG_FILE  onto $TFTP_SERVER"
 
@@ -756,7 +756,7 @@ uploadLogOnDemand()
     cp $LOG_PATH/*.txt* $TMP_PATH
     cp $LOG_PATH/*.log* $TMP_PATH
     sleep 1
-    ls $TMP_PATH >> /opt/logs/dcmscript.log
+    ls $TMP_PATH >> /opt/logs/unified-logging.txt
     TIMESTAMP=`date "+%m-%d-%y-%I-%M%p-logbackup"`
     PERM_LOG_PATH="$LOG_PATH/$TIMESTAMP"
     #RDKTV-9938: Moved the logbackup folder creation before move operation
@@ -769,7 +769,7 @@ uploadLogOnDemand()
     if [ "$uploadLog" == "true" ]; then
         uploadLog "Uploading Logs with ondemand log upload triggers from service manager"
         uploadLog "Logs will not be flushed or backed up to folder with timestamp"
-        tar -zcvf $LOG_FILE * >> $LOG_PATH/dcmscript.log  2>&1
+        tar -zcvf $LOG_FILE * >> $LOG_PATH/unified-logging.txt  2>&1
         sleep 2
         if [ "$UploadProtocol" == "HTTP" ];then
             # Call loguploader function and get return status
@@ -846,7 +846,7 @@ uploadLogOnReboot()
     echo $PERM_LOG_PATH >> $TELEMETRY_PATH/lastlog_path
     cd $PREV_LOG_PATH
     rm $LOG_FILE
-    modifyFileWithTimestamp $PREV_LOG_PATH >> $LOG_PATH/dcmscript.log  2>&1
+    modifyFileWithTimestamp $PREV_LOG_PATH >> $LOG_PATH/unified-logging.txt  2>&1
 
     reboot_reason=`cat $PREVIOUS_REBOOT_INFO | grep -i "Scheduled Reboot\|MAINTENANCE_REBOOT"`
     DISABLE_UPLOAD_LOGS_UNSHEDULED_REBOOT=`/usr/bin/tr181 -g $UNSCHEDULEDREBOOT_TR181_NAME 2>&1 > /dev/null`
@@ -861,7 +861,7 @@ uploadLogOnReboot()
                cp $lastPcapCapture .
            fi
         fi
-        tar -zcvf $LOG_FILE * >> $LOG_PATH/dcmscript.log  2>&1
+        tar -zcvf $LOG_FILE * >> $LOG_PATH/unified-logging.txt  2>&1
         sleep 60
         if [ "$UploadProtocol" == "HTTP" ];then
             retval=$(HttpLogUpload $LOG_FILE)
@@ -875,7 +875,7 @@ uploadLogOnReboot()
         fi
         if [ -d "$DRI_LOG_PATH" ]; then
             uploadLog "Uploading DRI logs through HTTP to S3 Server:$DRI_LOG_FILE"
-            tar -zcvf $DRI_LOG_FILE $DRI_LOG_PATH/* >> $LOG_PATH/dcmscript.log  2>&1
+            tar -zcvf $DRI_LOG_FILE $DRI_LOG_PATH/* >> $LOG_PATH/unified-logging.txt  2>&1
             sleep 60
             driretval=$(HttpLogUpload $DRI_LOG_FILE)
             if [ $driretval -ne 0 ];then

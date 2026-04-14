@@ -34,7 +34,7 @@ if [ -f $RDK_PATH/t2Shared_api.sh ]; then
     source $RDK_PATH/t2Shared_api.sh
 fi
 
-LOG_FILE=$LOG_PATH/"swupdate.log"
+LOG_FILE=$LOG_PATH/"unified-logging.txt"
 TLS_LOG_FILE="$LOG_PATH/tlsError.log"
 
 IARM_EVENT_BINARY_LOCATION=/usr/bin

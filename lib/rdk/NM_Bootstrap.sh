@@ -45,8 +45,8 @@ fi
 
 if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
     if [ -f $MIGRATION_JSON ]; then
-        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
-        echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/unified-logging.txt
+        echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/unified-logging.txt
         nmcli dev set eth0 managed no
         
         if [ -d /opt/NetworkManager ]; then
@@ -58,13 +58,13 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         nmcli conn reload
         exit 0
     else
-        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/unified-logging.txt
     fi
 fi
 
 if [ -z $SSID ]; then
-      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
-      echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
+      echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/unified-logging.txt
+      echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/unified-logging.txt
 
       if [ ! -d /opt/secure/NetworkManager/system-connections ]; then
          mkdir -p /opt/secure/NetworkManager/system-connections
@@ -79,9 +79,9 @@ else
          rm -rf /opt/NetworkManager/system-connections/*
       fi
       if [ -d /opt/secure/NetworkManager/system-connections ]; then
-         echo "`/bin/timestamp` :$0: Listing the connection profiles in device: " >>  /opt/logs/NMMonitor.log
-         ls -lh /opt/secure/NetworkManager/system-connections >> /opt/logs/NMMonitor.log
-         echo "`/bin/timestamp` :$0: Deleting existing wifi profiles if any..." >>  /opt/logs/NMMonitor.log
+         echo "`/bin/timestamp` :$0: Listing the connection profiles in device: " >>  /opt/logs/unified-logging.txt
+         ls -lh /opt/secure/NetworkManager/system-connections >> /opt/logs/unified-logging.txt
+         echo "`/bin/timestamp` :$0: Deleting existing wifi profiles if any..." >>  /opt/logs/unified-logging.txt
          for f in /opt/secure/NetworkManager/system-connections/*; do
              if grep -q "type=wifi" "$f"; then
                  rm -f "$f"

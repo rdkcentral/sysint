@@ -34,7 +34,7 @@ fi
 if [ "$SEC_DUMP" = "false" ]; then
 	if [ ! -f /tmp/.SecureDumpDisable ]; then
 		touch /tmp/.SecureDumpDisable
-        	echo "`/bin/timestamp` [$0]:[SECUREDUMP] Disabled" >> /opt/logs/core_log.txt
+           echo "`/bin/timestamp` [$0]:[SECUREDUMP] Disabled" >> /opt/logs/unified-logging.txt
 	fi
         if [ -f /tmp/.SecureDumpEnable ]; then
         	rm /tmp/.SecureDumpEnable
@@ -46,7 +46,7 @@ if [ "$SEC_DUMP" = "false" ]; then
 elif [ "$SEC_DUMP" = "true" ]; then
 	if [ ! -f /tmp/.SecureDumpEnable ]; then
         	touch /tmp/.SecureDumpEnable
-		echo "`/bin/timestamp` [$0]:[SECUREDUMP] Enabled. Dump location changed to /opt/secure." >> /opt/logs/core_log.txt
+		echo "`/bin/timestamp` [$0]:[SECUREDUMP] Enabled. Dump location changed to /opt/secure." >> /opt/logs/unified-logging.txt
 	fi
         if [ -f /tmp/.SecureDumpDisable ]; then
 		rm /tmp/.SecureDumpDisable

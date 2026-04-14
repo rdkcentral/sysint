@@ -25,11 +25,11 @@ if [ -f /lib/rdk/t2Shared_api.sh ]; then
 fi
 
 # Define logfiles and flags
-REBOOT_INFO_LOG_FILE="/opt/logs/rebootInfo.log"
-KERNEL_LOG_FILE="/opt/logs/messages.txt"
-UIMGR_LOG_FILE="/opt/logs/PreviousLogs/uimgr_log.txt"
-OCAPRI_LOG_FILE="/opt/logs/PreviousLogs/ocapri_log.txt"
-ECM_CRASH_LOG_FILE="/opt/logs/PreviousLogs/messages-ecm.txt"
+REBOOT_INFO_LOG_FILE="/opt/logs/unified-logging.txt"
+KERNEL_LOG_FILE="/opt/logs/unified-logging.txt"
+UIMGR_LOG_FILE="/opt/logs/PreviousLogs/unified-logging.txt"
+OCAPRI_LOG_FILE="/opt/logs/PreviousLogs/unified-logging.txt"
+ECM_CRASH_LOG_FILE="/opt/logs/PreviousLogs/unified-logging.txt"
 PSTORE_CONSOLE_LOG_FILE="/sys/fs/pstore/console-ramoops-0"
 KERNEL_PANIC_SEARCH_STRING="PREVIOUS_KERNEL_OOPS_DUMP"
 KERNEL_PANIC_SEARCH_STRING_01="Kernel panic - not syncing"
@@ -53,7 +53,7 @@ STT_FLAG="/tmp/stt_received"
 REBOOT_INFO_FLAG="/tmp/rebootInfo_Updated"
 UPDATE_REBOOT_INFO_INVOKED_FLAG="/tmp/Update_rebootInfo_invoked"
 LOCK_DIR="/tmp/rebootInfo.lock"
-PARODUS_LOG="/opt/logs/parodus.log"
+PARODUS_LOG="/opt/logs/unified-logging.txt"
 
 #Use log framework to pring timestamp and source script name
 rebootLog()

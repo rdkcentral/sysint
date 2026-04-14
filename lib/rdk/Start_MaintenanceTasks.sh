@@ -62,9 +62,9 @@ MAINT_LOGUPLOAD_ERROR=5
 MAINT_LOGUPLOAD_INPROGRESS=16
 
 # Log files
-RFC_LOG_FILE="$LOG_PATH/rfcscript.log"
-LOGUPLOAD_LOG_FILE="$LOG_PATH/dcmscript.log"
-SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
+RFC_LOG_FILE="$LOG_PATH/unified-logging.txt"
+LOGUPLOAD_LOG_FILE="$LOG_PATH/unified-logging.txt"
+SWUPDATE_LOG_FILE="$LOG_PATH/unified-logging.txt"
 
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
@@ -178,7 +178,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
+                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/unified-logging.txt
                 result=$?
                 if [ "$result" -eq 0 ]; then
                     logUploadLog "Binary execution succeeded"
@@ -197,7 +197,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
+                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/unified-logging.txt &
                 bg_pid=$!
                 wait $bg_pid
                 result=$?

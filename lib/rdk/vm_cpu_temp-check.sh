@@ -19,8 +19,8 @@
 ##############################################################################
 . /etc/include.properties
 . /etc/device.properties
-TEMP_LOG="/tmp/logs/messages.txt"
-RTL_LOG_FILE="$LOG_PATH/dcmscript.log"
+TEMP_LOG="/tmp/logs/unified-logging.txt"
+RTL_LOG_FILE="$LOG_PATH/unified-logging.txt"
 if [ "$LIGHTSLEEP_ENABLE" == "true" ] && [ -f /tmp/.standby ]; then
     if [ ! -d /tmp/logs ] ;then
         mkdir /tmp/logs
@@ -37,19 +37,19 @@ if [ "$LIGHTSLEEP_ENABLE" == "true" ] && [ -f /tmp/.standby ]; then
     exit 0
 else
     if [ -f $TEMP_LOG ] && [ -f /etc/os-release ]; then
-        cat $TEMP_LOG >> $LOG_PATH/messages.txt
+        cat $TEMP_LOG >> $LOG_PATH/unified-logging.txt
         rm $TEMP_LOG
     fi
     if [ -f /lib/rdk/cpu-statistics.sh ];then
         echo "Retrieving CPU instantaneous information for telemetry support" >> $RTL_LOG_FILE
-        sh /lib/rdk/cpu-statistics.sh >> $LOG_PATH/messages.txt
+        sh /lib/rdk/cpu-statistics.sh >> $LOG_PATH/unified-logging.txt
     fi
     if [ -f /lib/rdk/vm-statistics.sh ];then
         echo "Retrieving virtual memory information for telemetry support" >> $RTL_LOG_FILE
-        sh /lib/rdk/vm-statistics.sh >> $LOG_PATH/messages.txt
+        sh /lib/rdk/vm-statistics.sh >> $LOG_PATH/unified-logging.txt
     fi
     if [ -f /lib/rdk/temperature-telemetry.sh ];then
         echo "Retrieving CPU Temperature for telemetry support" >> $RTL_LOG_FILE
-        sh /lib/rdk/temperature-telemetry.sh >> $LOG_PATH/messages.txt
+        sh /lib/rdk/temperature-telemetry.sh >> $LOG_PATH/unified-logging.txt
     fi
 fi

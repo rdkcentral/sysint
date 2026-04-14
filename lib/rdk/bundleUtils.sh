@@ -41,7 +41,7 @@ PKG_METADATA_LIST="contents"
 PKG_METADATA_SIZE="size"
 PKG_METADATA_INSTALL="installScript"
 
-LOG_FILE="/opt/logs/swupdate.log"
+LOG_FILE="/opt/logs/unified-logging.txt"
 log()
 {
         echo "`/bin/timestamp` $1" >> $LOG_FILE

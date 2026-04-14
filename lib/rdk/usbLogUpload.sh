@@ -46,7 +46,7 @@ fi
 
 
 if [ ! -d $USB_MNTP ]; then
-    echo "`/bin/timestamp` ERROR! USB drive is not mounted at $USB_MNTP" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` ERROR! USB drive is not mounted at $USB_MNTP" >> $LOG_PATH/unified-logging.txt
         # Return error
         exit 2 # No USB
 fi
@@ -58,8 +58,8 @@ fi
 
 #create file name in form og Logs_<MAC>_<unix epoch time>.gtz
 
-echo "`/bin/timestamp` STARTING USB LOG UPLOAD" >> $LOG_PATH/dcmscript.log
-/bin/timestamp >> $LOG_PATH/dcmscript.log
+echo "`/bin/timestamp` STARTING USB LOG UPLOAD" >> $LOG_PATH/unified-logging.txt
+/bin/timestamp >> $LOG_PATH/unified-logging.txt
 
 # Construct File Name:
 
@@ -69,15 +69,15 @@ LOG_FILE=$MAC"_Logs_$dt.tgz"
 
 FILE_NAME=$MAC"_Logs_$dt"
 
-echo "`/bin/timestamp` Folder: $USB_LOG" >> $LOG_PATH/dcmscript.log
-echo "`/bin/timestamp` File: $FILE_NAME" >> $LOG_PATH/dcmscript.log
+echo "`/bin/timestamp` Folder: $USB_LOG" >> $LOG_PATH/unified-logging.txt
+echo "`/bin/timestamp` File: $FILE_NAME" >> $LOG_PATH/unified-logging.txt
 
 USB_DIR="/opt/tmpusb/$FILE_NAME"
 mkdir -p $USB_DIR
 
 sync
 if [ ! -d $USB_DIR ]; then
-    echo "`/bin/timestamp` ERROR! Failed to create $USB_DIR" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` ERROR! Failed to create $USB_DIR" >> $LOG_PATH/unified-logging.txt
         exit 3 # Writing error
 fi
 
@@ -88,10 +88,10 @@ mv $LOG_PATH/* $USB_DIR/.
 
 #Send SIGHUP to reload syslog-ng after uploading logs to usb
 if [ "$SYSLOG_NG_ENABLED" == "true" ] ; then
-    echo "`/bin/timestamp` Sending SIGHUP to reload syslog-ng" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` Sending SIGHUP to reload syslog-ng" >> $LOG_PATH/unified-logging.txt
     killall -HUP syslog-ng
     if [ $? -eq 0 ]; then
-        echo "`/bin/timestamp` syslog-ng reloaded successfully" >> $LOG_PATH/dcmscript.log
+        echo "`/bin/timestamp` syslog-ng reloaded successfully" >> $LOG_PATH/unified-logging.txt
     fi
 fi
 
@@ -99,14 +99,14 @@ cd $USB_DIR
 
 USB_LOG_FILE="$USB_LOG/$LOG_FILE"
 
-echo "`/bin/timestamp` ARCHIVE AND COMPRESS TO $USB_LOG_FILE " >> $LOG_PATH/dcmscript.log
-tar -zcvf $USB_LOG_FILE * >> $LOG_PATH/dcmscript.log 2>&1
+echo "`/bin/timestamp` ARCHIVE AND COMPRESS TO $USB_LOG_FILE " >> $LOG_PATH/unified-logging.txt
+tar -zcvf $USB_LOG_FILE * >> $LOG_PATH/unified-logging.txt 2>&1
 echo $USB_LOG_FILE
 
 retVal=$?
 
 if [ "$retVal" != "0" ]; then
-    echo "`/bin/timestamp` USB WRITING ERROR $retVal" >> $LOG_PATH/dcmscript.log
+    echo "`/bin/timestamp` USB WRITING ERROR $retVal" >> $LOG_PATH/unified-logging.txt
     sync
     exit 3 # Writing Error
 fi
@@ -117,8 +117,8 @@ rm -r $USB_DIR
 # Now sync USB drive, so that everything is flushed out to external USB drive
 sync
 
-echo "`/bin/timestamp` COMLETED USB LOG UPLOAD" >> $LOG_PATH/dcmscript.log
-/bin/timestamp >> $LOG_PATH/dcmscript.log
+echo "`/bin/timestamp` COMLETED USB LOG UPLOAD" >> $LOG_PATH/unified-logging.txt
+/bin/timestamp >> $LOG_PATH/unified-logging.txt
 
 
 exit 0
