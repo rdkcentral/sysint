@@ -79,7 +79,14 @@ else
          rm -rf /opt/NetworkManager/system-connections/*
       fi
       if [ -d /opt/secure/NetworkManager/system-connections ]; then
-         rm -rf /opt/secure/NetworkManager/system-connections/*
+         echo "`/bin/timestamp` :$0: Listing the connection profiles in device: " >>  /opt/logs/NMMonitor.log
+         ls -lh /opt/secure/NetworkManager/system-connections >> /opt/logs/NMMonitor.log
+         echo "`/bin/timestamp` :$0: Deleting existing wifi profiles if any..." >>  /opt/logs/NMMonitor.log
+         for f in /opt/secure/NetworkManager/system-connections/*; do
+             if grep -q "type=wifi" "$f"; then
+                 rm -f "$f"
+             fi
+         done
       fi
       if [ -z $PSK ]; then
           #connect to wifi
