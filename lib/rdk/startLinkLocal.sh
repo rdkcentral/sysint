@@ -28,7 +28,7 @@ LOG_FILE="/opt/logs/unified-logging.txt"
 
 Log()
 {
-    echo "$(/bin/timestamp) : $0: $*" >> "$LOG_FILE"
+    echo "$(/bin/timestamp) : $0: $*" | systemd-cat -t startLinkLocal
 }
 
 INTERFACE="$1"
@@ -54,3 +54,4 @@ fi
 /usr/sbin/avahi-autoipd --daemonize --syslog "$INTERFACE"
 Log "Started avahi-autoipd for $INTERFACE"
 exit 0
+

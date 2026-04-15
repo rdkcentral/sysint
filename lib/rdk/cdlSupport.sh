@@ -23,11 +23,10 @@
 
 
 
-LOG_FILE="/opt/logs/unified-logging.txt"
 #Use log framework to print timestamp and source script name
 swupdateLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t cdlSupport
 }
 
 getPkgMetadata()
@@ -231,5 +230,3 @@ elif [ "x$1" = "xgetModel" ]; then
 else
     echo "ERROR: unknown $1"
 fi
-
-

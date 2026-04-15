@@ -108,12 +108,12 @@ FOUR_CMDLINE_PARAMS=4
 #Log framework to print timestamp and source script name
 swupdateLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t userInitiatedFWDnld
 }
 
 tlsLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $TLS_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t userInitiatedFWDnld-tls
 }
 
 #Cert ops STB Red State recovery RDK-30717
@@ -769,3 +769,4 @@ else
         exit 1
     fi
 fi
+

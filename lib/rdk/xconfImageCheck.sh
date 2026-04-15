@@ -61,7 +61,7 @@ TLS_LOG_FILE="$LOG_PATH/unified-logging.txt"
 
 tlsLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $TLS_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t xconfImageCheck-tls
 }
 
 ## RETRY DELAY in secs
@@ -154,7 +154,7 @@ if [ -f $PERSISTENT_PATH/swupdate.conf ] && [ $BUILD_TYPE != "prod" ] ; then
     urlString=`grep -v '^[[:space:]]*#' $PERSISTENT_PATH/swupdate.conf`
     echo "$urlString" | grep -q -i "^http.*://"
     if [ $? -ne 0 ]; then
-        echo "`Timestamp` Device configured with an invalid overriden URL : $urlString !!! Exiting from Image Upgrade process..!"
+        echo "`Timestamp` Device configured with an invalid overriden URL : $urlString !!! Exiting from Image Upgrade process..!" | systemd-cat -t xconfImageCheck
 	t2ValNotify "SYST_WARN_UPGD_SKIP" "$urlString"
         exit 0
     fi
@@ -167,7 +167,7 @@ Fwupdate_auto_exclude=`tr181 -D Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.F
 mTlsXConfDownload=$(tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsXConfDownload.Enable 2>&1 > /dev/null)
 
 if [ "$Fwupdate_auto_exclude" == "true" ] && [ $BUILD_TYPE != "prod" ] && [ ! $urlString ] ; then
-    echo "Device excluded from firmware update. Exiting !!"
+    echo "Device excluded from firmware update. Exiting !!" | systemd-cat -t xconfImageCheck
     exit 0
 fi
 
@@ -177,7 +177,7 @@ if [ -f $CURL_PROGRESS ]; then
 fi
 
 DisableForcedHttps=`tr181Set Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.EnableHttpCDL.Enable 2>&1 > /dev/null`
-echo "`Timestamp` RFC value for enabling HTTP download is : $DisableForcedHttps"
+echo "`Timestamp` RFC value for enabling HTTP download is : $DisableForcedHttps" | systemd-cat -t xconfImageCheck
 
 IsDirectBlocked()
 {
@@ -186,10 +186,10 @@ IsDirectBlocked()
         modtime=$(($(date +%s) - $(date +%s -r $DIRECT_BLOCK_FILENAME)))
         remtime=$((($DIRECT_BLOCK_TIME/3600) - ($modtime/3600)))
         if [ "$modtime" -le "$DIRECT_BLOCK_TIME" ]; then
-            echo "`Timestamp` ImageUpgrade: Last direct failed blocking is still valid for $remtime hrs, preventing direct"
+            echo "`Timestamp` ImageUpgrade: Last direct failed blocking is still valid for $remtime hrs, preventing direct" | systemd-cat -t xconfImageCheck
             directret=1
         else
-            echo "`Timestamp` ImageUpgrade: Last direct failed blocking has expired, removing $DIRECT_BLOCK_FILENAME, allowing direct"
+            echo "`Timestamp` ImageUpgrade: Last direct failed blocking has expired, removing $DIRECT_BLOCK_FILENAME, allowing direct" | systemd-cat -t xconfImageCheck
             rm -f $DIRECT_BLOCK_FILENAME
         fi
     fi
@@ -203,10 +203,10 @@ IsCodeBigBlocked()
         modtime=$(($(date +%s) - $(date +%s -r $CB_BLOCK_FILENAME)))
         cbremtime=$((($CB_BLOCK_TIME/60) - ($modtime/60)))
         if [ "$modtime" -le "$CB_BLOCK_TIME" ]; then
-            echo "`Timestamp` ImageUpgrade: Last codebig failed blocking is still valid for $cbremtime mins, preventing codebig"
+            echo "`Timestamp` ImageUpgrade: Last codebig failed blocking is still valid for $cbremtime mins, preventing codebig" | systemd-cat -t xconfImageCheck
             codebigret=1
         else
-            echo "`Timestamp` ImageUpgrade: Last codebig failed blocking has expired, removing $CB_BLOCK_FILENAME, allowing codebig"
+            echo "`Timestamp` ImageUpgrade: Last codebig failed blocking has expired, removing $CB_BLOCK_FILENAME, allowing codebig" | systemd-cat -t xconfImageCheck
             rm -f $CB_BLOCK_FILENAME
         fi
     fi
@@ -795,4 +795,3 @@ do
 
     retryCount=$((retryCount + 1))
 done
-

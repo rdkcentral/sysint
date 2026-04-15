@@ -28,9 +28,9 @@ fi
 log_file="$LOG_PATH/unified-logging.txt"
 help_strings()
 {
-    echo "`/bin/timestamp` ERROR: Argument mismatch" >> $log_file
-    echo "`/bin/timestamp` Usage1: cronjobs_update.sh <add/update> <script-name> <new-entry>" >> $log_file
-    echo "`/bin/timestamp` Usage2: cronjobs_update.sh <remove/check-entry> <script-name>" >> $log_file
+    echo "`/bin/timestamp` ERROR: Argument mismatch" | systemd-cat -t cronjobs_update
+    echo "`/bin/timestamp` Usage1: cronjobs_update.sh <add/update> <script-name> <new-entry>" | systemd-cat -t cronjobs_update
+    echo "`/bin/timestamp` Usage2: cronjobs_update.sh <remove/check-entry> <script-name>" | systemd-cat -t cronjobs_update
 }
 
 #No argument check
@@ -66,7 +66,7 @@ add()
 check_entry()
 {
     output=`grep -c "$1" $current_cron_file`
-    echo "`/bin/timestamp` output=$output" >> $log_file
+    echo "`/bin/timestamp` output=$output" | systemd-cat -t cronjobs_update
     echo $output
 }
 
@@ -76,7 +76,7 @@ check_entry()
 if [ -f /etc/os-release ]; then
     touch /var/spool/cron/root
     pid=`pidof crond`
-    echo "`/bin/timestamp` crond pid: $pid" >> $log_file
+    echo "`/bin/timestamp` crond pid: $pid" | systemd-cat -t cronjobs_update
     if [ -z $pid ]; then
         crond -b -L /dev/null -c /var/spool/cron/
     fi
@@ -86,25 +86,25 @@ fi
 current_cron_file="/tmp/cron_list"
 crontab -l -c /var/spool/cron/ > $current_cron_file
 
-echo "`/bin/timestamp` :Arguments - 1st:$1, 2nd:$2, 3rd:$3" >> $log_file
+echo "`/bin/timestamp` :Arguments - 1st:$1, 2nd:$2, 3rd:$3" | systemd-cat -t cronjobs_update
 if [ "$1" = "remove" ]; then
-    echo "`/bin/timestamp` REMOVE" >> $log_file
+    echo "`/bin/timestamp` REMOVE" | systemd-cat -t cronjobs_update
     remove "$2"
 fi
 
 if [ "$1" = "add" ]; then
-    echo "`/bin/timestamp` ADD" >> $log_file
+    echo "`/bin/timestamp` ADD" | systemd-cat -t cronjobs_update
     add "$3"
 fi
 
 if [ "$1" = "update" ]; then
-    echo "`/bin/timestamp` UPDATE" >> $log_file
+    echo "`/bin/timestamp` UPDATE" | systemd-cat -t cronjobs_update
     remove "$2"
     add "$3"
 fi
 
 if [ "$1" = "check-entry" ]; then
-    echo "`/bin/timestamp` ENTRY_CHECK" >> $log_file
+    echo "`/bin/timestamp` ENTRY_CHECK" | systemd-cat -t cronjobs_update
     check_entry "$2"
 fi
 
@@ -116,5 +116,6 @@ crontab $current_cron_file -c /var/spool/cron/
 flock -u 8
 # do not remove the file as this can cause race conditions
 # rm -rf /tmp/.cronjob.LCK
-echo "`/bin/timestamp` Exiting cronjobs_update.sh" >> $log_file
+echo "`/bin/timestamp` Exiting cronjobs_update.sh" | systemd-cat -t cronjobs_update
 exit 0
+

@@ -138,25 +138,25 @@ checkEthernetConnected()
       ret=$?
       if [ $ret -eq  0 ] ; then
         if [ "$lnfSSIDConnected" = "1" ]; then
-          echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED_LNF" >> "$logsFile"
+          echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED_LNF" | systemd-cat -t networkConnectionRecovery
           #Reset count when lnf ssid is connected
           count=0
           t2CountNotify "SYST_INFO_WIFIConn"
         else
           #Skip printing wifi not connected log for the first time
-          [ $count -gt 0 ] && echo "$(/bin/timestamp) TELEMETRY_WIFI_NOT_CONNECTED" >> "$logsFile"
+          [ $count -gt 0 ] && echo "$(/bin/timestamp) TELEMETRY_WIFI_NOT_CONNECTED" | systemd-cat -t networkConnectionRecovery
           count=$((count + 1))
         fi
         return 0
       else
-        echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED" >> "$logsFile"
+        echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED" | systemd-cat -t networkConnectionRecovery
         #Reset count when connectivity is good
         count=0
         t2CountNotify "SYST_INFO_WIFIConn"
         return 0
       fi
     else
-      echo "$(/bin/timestamp) TELEMETRY_ETHERNET_CONNECTED" >> "$logsFile"
+      echo "$(/bin/timestamp) TELEMETRY_ETHERNET_CONNECTED" | systemd-cat -t networkConnectionRecovery
       #Reset count when connectivity is good
       count=0
       t2CountNotify "SYST_INFO_ETHConn"
@@ -167,7 +167,7 @@ checkEthernetConnected()
 
 printEthernetDetails()
 {
-  { echo "$(/bin/timestamp)"; arp -a; ifconfig; route -n; ip -6 route show; iptables -S; ip6tables -S; echo "$(cat /etc/resolv.dnsmasq)"; } >>"$logsFile"
+  { echo "$(/bin/timestamp)"; arp -a; ifconfig; route -n; ip -6 route show; iptables -S; ip6tables -S; echo "$(cat /etc/resolv.dnsmasq)"; } | systemd-cat -t networkConnectionRecovery
 }
 
 printWifiDetails()
@@ -179,7 +179,7 @@ printWifiDetails()
 
 wifiReassociate()
 {
-  echo "$(/bin/timestamp) Packet Loss WiFi Reassociating" >> "$logsFile"
+  echo "$(/bin/timestamp) Packet Loss WiFi Reassociating" | systemd-cat -t networkConnectionRecovery
   t2CountNotify "WIFIV_ERR_reassoc"
   wpa_cli reassociate
   #set IsWifiReassociated to 1 after wifi reassociation
@@ -190,13 +190,13 @@ checkWifiDrvErrors()
 {
   dir=$(find /sys/kernel/debug/ieee80211  -type d -maxdepth 1 | sed '1d')
   if [ -z "$dir" ] ; then
-    echo "$(/bin/timestamp) phy directory not in /sys/kernel/debug/ieee80211" >> "$logsFile"
+    echo "$(/bin/timestamp) phy directory not in /sys/kernel/debug/ieee80211" | systemd-cat -t networkConnectionRecovery
   elif [ ! -f "$dir"/ath10k/fw_stats ]; then
-    echo "$(/bin/timestamp) fw_stats file not in /sys/kernel/debug/ieee80211/$dir/ath10k/" >> "$logsFile"
+    echo "$(/bin/timestamp) fw_stats file not in /sys/kernel/debug/ieee80211/$dir/ath10k/" | systemd-cat -t networkConnectionRecovery
   else
     cat "$dir"/ath10k/fw_stats > /dev/null 2>&1
     if [[ $? -ne 0 ]]; then
-      echo "$(/bin/timestamp) Cant open file /sys/kernel/debug/ieee80211/$dir/ath10k/ status=$?" >> "$logsFile"
+      echo "$(/bin/timestamp) Cant open file /sys/kernel/debug/ieee80211/$dir/ath10k/ status=$?" | systemd-cat -t networkConnectionRecovery
     else
       #Reset tmp variables to 0 when there is no wifi driver issue
       FirstWifiDriverIssueTime=0
@@ -242,19 +242,19 @@ checkPacketLoss()
 
     gwResponseTime=$(echo "$gwResponse" | sed '$!d;s|.*/\([0-9.]*\)/.*|\1|')
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) $version gateway = $gwIp " >> "$logsFile"
+      echo "$(/bin/timestamp) $version gateway = $gwIp " | systemd-cat -t networkConnectionRecovery
       if [ "$ret" = "100" ] ; then
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp" >> "$logsFile"
+        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp" | systemd-cat -t networkConnectionRecovery
         echo "$(/bin/timestamp) Current Packet loss is SYST_WARN_GW100PERC_PACKETLOSS"
         t2CountNotify "SYST_WARN_GW100PERC_PACKETLOSS"
       else
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp" >> "$logsFile"
+        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp" | systemd-cat -t networkConnectionRecovery
       fi
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_PACKET_LOSS:$ret,$gwIp" >> "$logsFile"
+      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_PACKET_LOSS:$ret,$gwIp" | systemd-cat -t networkConnectionRecovery
     fi
   else
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_NO_ROUTE_$version" >> "$logsFile"
+      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_NO_ROUTE_$version" | systemd-cat -t networkConnectionRecovery
       t2CountNotify "WIFIV_INFO_NO${version}ROUTE"
     fi
   fi
@@ -263,11 +263,11 @@ checkPacketLoss()
 
     #Send telemetry notification for 20%,30%....90% packet loss
   if [ "$packetsLostipv4" -gt "$lossThreshold" ] || [ "$packetsLostipv6" -gt "$lossThreshold" ] ; then
-    echo "$(/bin/timestamp) Packet loss more than $lossThreshold% observed." >> "$logsFile"
+    echo "$(/bin/timestamp) Packet loss more than $lossThreshold% observed." | systemd-cat -t networkConnectionRecovery
     if [ "$packetsLostipv4" -ne 100 ] && [ "$packetsLostipv6" -ne 100 ]; then
       for i in {1..9}; do
           if ([ "$packetsLostipv4" -ge $((i*10)) ] && [ "$packetsLostipv4" -lt $((i*10+10)) ]) || ([ "$packetsLostipv6" -ge $((i*10)) ] && [ "$packetsLostipv6" -lt $((i*10+10)) ]); then
-            echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_"$((i*10))"PERC"  >> "$logsFile"
+            echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_"$((i*10))"PERC" | systemd-cat -t networkConnectionRecovery
             t2CountNotify "WIFIV_WARN_PL_"$((i*10))"PERC"
             break
           fi
@@ -276,13 +276,13 @@ checkPacketLoss()
   else
     if [ "$packetsLostipv4" -ne 0 ] && [ "$packetsLostipv6" -ne 0 ]; then
       #Send telemetry notification for 10% packet loss
-      echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_10PERC" >>  "$logsFile"
+      echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_10PERC" | systemd-cat -t networkConnectionRecovery
       t2CountNotify "WIFIV_WARN_PL_10PERC"
     fi
   fi
 
   if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] && [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ]; then
-    echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed for both ipv4 and ipv6." >> "$logsFile"
+    echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed for both ipv4 and ipv6." | systemd-cat -t networkConnectionRecovery
     #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
     [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
     #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
@@ -297,14 +297,14 @@ checkPacketLoss()
   #at that point, causing FirstPacketLossTime to be incorrectly cleared before V6 is measured.
   #Reset if either V4 or V6 is below the reassociate tolerance, indicating recovery on at least one path.
   if [ "$version" = "V6" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" | systemd-cat -t networkConnectionRecovery
     FirstPacketLossTime=0
     PacketLossLogTimeStamp=0
     EthernetLogTimeStamp=0
     IsWifiReassociated=0
     [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
   else
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - skipping reset (version=$version, waiting for V6 measurement). wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - skipping reset (version=$version, waiting for V6 measurement). wifiDriverErrors=$wifiDriverErrors" | systemd-cat -t networkConnectionRecovery
   fi
 
   return 0
@@ -312,7 +312,7 @@ checkPacketLoss()
 
 printLogsDuringPacketLoss()
 {
-  { arp -a; ifconfig; route -n; ip -6 route show; } >> "$logsFile"
+  { arp -a; ifconfig; route -n; ip -6 route show; } | systemd-cat -t networkConnectionRecovery
   #Print wifi logs
 }
 
@@ -324,10 +324,10 @@ wifiReset()
   #Set IsWifiReset to 1 after wifi reset
   IsWifiReset=1
   StoreTotmpFile
-  echo "$(/bin/timestamp) Start WiFi Reset. !!!!!!!!!!!!!!"  >> "$logsFile"
+  echo "$(/bin/timestamp) Start WiFi Reset. !!!!!!!!!!!!!!" | systemd-cat -t networkConnectionRecovery
   
   systemctl restart wifi.service
-  echo "$(/bin/timestamp) WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"  >> "$logsFile"
+  echo "$(/bin/timestamp) WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!" | systemd-cat -t networkConnectionRecovery
   exit 0
 }
 
@@ -335,7 +335,7 @@ checkDnsFile()
 {
   if [ -f "$dnsFile" ] ; then
     if [ $(tr -d ' \r\n\t' < $dnsFile | wc -c ) -eq 0 ] ; then
-      echo "$(/bin/timestamp) DNS File($dnsFile) is empty" >> "$logsFile"
+      echo "$(/bin/timestamp) DNS File($dnsFile) is empty" | systemd-cat -t networkConnectionRecovery
       t2CountNotify "SYST_ERR_DNSFileEmpty" 
       gwIpv4=$(/sbin/ip -4 route show default | awk 'NR==1 {print $3; exit}')
       gwIpv6=$(/sbin/ip -6 route show default | awk 'NR==1 {print $3; exit}')
@@ -358,7 +358,7 @@ checkDnsFile()
       fi
 
       if [ "$dnsFailures" -gt "$maxdnsFailures" ] ; then
-          echo "$(/bin/timestamp) Restarting udhcpc to recover" >> "$logsFile"
+          echo "$(/bin/timestamp) Restarting udhcpc to recover" | systemd-cat -t networkConnectionRecovery
           InterfaceList="$ethernet_interface $WIFI_INTERFACE"
           for interface in $InterfaceList
           do
@@ -376,7 +376,7 @@ checkDnsFile()
       dnsFailures=0
     fi
   else
-    echo "$(/bin/timestamp) DNS File is not there $dnsFile" >> "$logsFile"
+    echo "$(/bin/timestamp) DNS File is not there $dnsFile" | systemd-cat -t networkConnectionRecovery
   fi
 }
 
@@ -384,7 +384,7 @@ checkRfc()
 {
   rfcWifiResetEnable="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.Enable 2>&1 > /dev/null)"
   if [ "$rfcWifiResetEnable" = "true" ] ; then
-    echo "$(/bin/timestamp) WiFiReset RFC is true " >> "$logsFile"
+    echo "$(/bin/timestamp) WiFiReset RFC is true " | systemd-cat -t networkConnectionRecovery
     rfcEthernetLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.EthernetLoggingInterval 2>&1 > /dev/null)"
     if [ ! -z "$rfcEthernetLoggingInterval" ] && [ "$rfcEthernetLoggingInterval" != 0 ] ; then
       EthernetLoggingInterval="$rfcEthernetLoggingInterval"
@@ -427,7 +427,7 @@ LoadFromtmpFile
 if [ "$IsWifiReset" -eq 1 ] ; then
   currentTime=$(($(date +%s)))
   if [ "$(($WifiResetTime+$wifiResetWaitTime))" -gt "$currentTime" ] ; then
-    echo "$(/bin/timestamp) Skip all checks since wifi reset is done recently"  >> "$logsFile"
+    echo "$(/bin/timestamp) Skip all checks since wifi reset is done recently" | systemd-cat -t networkConnectionRecovery
     exit 0
   fi
 fi
@@ -484,3 +484,4 @@ fi
 checkDnsFile
 #Store tmp variables to tmpFile
 StoreTotmpFile
+

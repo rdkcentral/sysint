@@ -1,3 +1,7 @@
+# Logging function for journald
+Log() {
+	echo "`/bin/timestamp` : $0: $*" | systemd-cat -t system_info_collector
+}
 #!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
@@ -60,21 +64,21 @@ cpu_statistics() {
 }
 
 # Adding the Clock Frequency Info
-echo "Clock Frequency Info:"
-grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' 
+Log "Clock Frequency Info:"
+grep 'MHz' /proc/cpuinfo | sed 's/[[:blank:]]*//g' | while read line; do Log "$line"; done
 
 # Adding the Memory Available Info
-echo "Available Memory Info:" >> $LOG_PATH/unified-logging.txt
+Log "Available Memory Info:"
 MEM_AVAILABLE=`cat /proc/meminfo | grep MemAvailable`
-echo $MEM_AVAILABLE  >> $LOG_PATH/unified-logging.txt
+Log "$MEM_AVAILABLE"
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE"
 
 # Swap Memory Info
-echo "Available Swap Memory Info:" >> $LOG_PATH/unified-logging.txt
+Log "Available Swap Memory Info:"
 
 # Logging all the swap info to unified-logging.txt
 SWAP_DATA=`cat /proc/meminfo | grep Swap`
-echo "$SWAP_DATA" >> $LOG_PATH/unified-logging.txt
+Log "$SWAP_DATA"
 
 SWAP_MEM_CACHED=`echo "$SWAP_DATA" | grep SwapCached | tr -s '[:space:]' ' ' | cut -d' ' -f2`
 t2ValNotify "SYST_INFO_SwapCached_split" "$SWAP_MEM_CACHED"
@@ -85,24 +89,24 @@ t2ValNotify "SYST_INFO_SwapTotal_split" "$SWAP_MEM_TOTAL"
 SWAP_MEM_FREE=`echo "$SWAP_DATA" | grep SwapFree | tr -s '[:space:]' ' ' | cut -d' ' -f2`
 t2ValNotify "SYST_INFO_SwapFree_split" "$SWAP_MEM_FREE"
 
-echo "Update VM and CPU stats to the unified-logging.txt file"
+Log "Update VM and CPU stats to the unified-logging.txt file"
 sh  $RDK_PATH/vm_cpu_temp-check.sh
 
 # Logging to top_log.txt directly only for Legacy platforms.
 # Making echo of all the logs so that it directly goes to journal buffer to support lightsleep on HDD enabled Yocto platforms.
-echo "Logging for Yocto platforms..."
-/bin/timestamp 
-uptime 
-run_top_command
-log_disk_usage
+Log "Logging for Yocto platforms..."
+/bin/timestamp | while read line; do Log "$line"; done
+uptime | while read line; do Log "$line"; done
+run_top_command | while read line; do Log "$line"; done
+log_disk_usage | while read line; do Log "$line"; done
 cpu_statistics
 
 if [ -f /tmp/.top_count ]; then
 	curr_count=`cat /tmp/.top_count`
     count=$(( curr_count + 1 ))
 	if [ $count -eq 6 ]; then
-		top -b -n1 | grep -vE 'grep|run.sh'
-		cat /proc/meminfo
+		top -b -n1 | grep -vE 'grep|run.sh' | while read line; do Log "$line"; done
+		cat /proc/meminfo | while read line; do Log "$line"; done
 		count=0
 	fi
 fi

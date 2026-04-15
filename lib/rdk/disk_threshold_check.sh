@@ -55,10 +55,10 @@ LOG_FILE=/tmp/disk_cleanup.log
 usep=0
 count=1
 
-echo "$(/bin/timestamp) ---Received call to disk_threshold_check.sh ----" >> /tmp/disk_cleanup.log
+echo "$(/bin/timestamp) ---Received call to disk_threshold_check.sh ----" | systemd-cat -t disk_threshold_check
 
 if [ -e /tmp/mnt/diska3/persistent ] && [ -f /usr/bin/file ] ; then
-    echo "$(/bin/timestamp) Persistent location type - `file /tmp/mnt/diska3/persistent`" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Persistent location type - `file /tmp/mnt/diska3/persistent`" | systemd-cat -t disk_threshold_check
 fi
 
 if [ -f /tmp/DiskCheck.pid ]
@@ -66,8 +66,8 @@ then
    pid=$(cat /tmp/DiskCheck.pid)
    if [ -d "/proc/$pid" ]
    then
-      echo "$(/bin/timestamp) An instance of disk_threshold_check.sh with pid $pid is already running.." >> /tmp/disk_cleanup.log
-      echo "$(/bin/timestamp) Exiting script" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) An instance of disk_threshold_check.sh with pid $pid is already running.." | systemd-cat -t disk_threshold_check
+    echo "$(/bin/timestamp) Exiting script" | systemd-cat -t disk_threshold_check
       exit 0
    fi
 fi
@@ -87,10 +87,10 @@ disk_size_check()
 
    usep=$(df -kh $WORK_PATH | awk 'NR==2 {sub(/%/, "", $5); print $5}')
    if [ "$usep" -ge "$DEFAULT_THRESHOLD_SIZE" ] ; then
-         echo "$(/bin/timestamp) $retryCount. Running out of space \"$partition ($usep%)\"" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) $retryCount. Running out of space \"$partition ($usep%)\"" | systemd-cat -t disk_threshold_check
    else
-       echo "$(/bin/timestamp) $retryCount. Completed the cleanup during the bootup/runtime at `Timestamp`" >> /tmp/disk_cleanup.log
-       echo "$(/bin/timestamp) $WORK_PATH size $usep is OK to start" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) $retryCount. Completed the cleanup during the bootup/runtime at `Timestamp`" | systemd-cat -t disk_threshold_check
+    echo "$(/bin/timestamp) $WORK_PATH size $usep is OK to start" | systemd-cat -t disk_threshold_check
        if [ "$FLAG" -eq 1 ];then
            if [ -f /tmp/disk_cleanup.log ] && [ ! -f /tmp/.standby ]; then
                 cat /tmp/disk_cleanup.log >> /opt/logs/unified-logging.txt
@@ -107,7 +107,7 @@ dirCleanupWith_latestFileBackup()
    if [ -d "$path" ]; then
        # latest dump backup
        latestDump=$(ls -t "$path" | head -n 1)
-       echo "$(/bin/timestamp) Latest file: $latestDump" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Latest file: $latestDump" | systemd-cat -t disk_threshold_check
        # place the latest dump back to the folder
        if [ "$latestDump" ]; then
             mv "$path/$latestDump" "$PERSISTENT_PATH/"
@@ -124,17 +124,17 @@ dumpsCleanup()
    # first time cleanup
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$CORE_BACK_PATH"
-   echo "$(/bin/timestamp) Deleted all corefiles from the corefiles_back folder" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Deleted all corefiles from the corefiles_back folder" | systemd-cat -t disk_threshold_check
    count=$(counter $count)
    # second time cleanup
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$CORE_PATH"
-   echo "$(/bin/timestamp) Deleted all corefiles from the corefiles folder" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Deleted all corefiles from the corefiles folder" | systemd-cat -t disk_threshold_check
    # third time cleanup
    count=$(counter $count)
    disk_size_check $count
    dirCleanupWith_latestFileBackup "$MINIDUMPS_PATH"
-   echo "$(/bin/timestamp) Deleted all minidumps from the minidumps folder" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Deleted all minidumps from the minidumps folder" | systemd-cat -t disk_threshold_check
 }
 
 wifiFWDumpsCleanup()
@@ -143,7 +143,7 @@ wifiFWDumpsCleanup()
     wifi_fwdumps=$(find $LOG_PATH/*-logbackup/ -type f -name "*.bin")
     for dump in $wifi_fwdumps
     do
-        echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" | systemd-cat -t disk_threshold_check
         rm -rf $dump
     done
 
@@ -152,10 +152,10 @@ wifiFWDumpsCleanup()
     if [ $usep -ge $DEFAULT_THRESHOLD_SIZE ] ; then
         wifi_fwdumps=$(find $LOG_PATH/PreviousLogs*/ -type f -name "*.bin")
         if [ -n "$wifi_fwdumps" ]; then
-            echo "$(/bin/timestamp) Running out of space \"($usep%)\"". Hence deleting wifi driver firmware dumps from PreviousLogs folder >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) Running out of space ($usep%). Hence deleting wifi driver firmware dumps from PreviousLogs folder" | systemd-cat -t disk_threshold_check
             for dump in $wifi_fwdumps
             do
-                echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" >> /tmp/disk_cleanup.log
+                echo "$(/bin/timestamp) Deleting wifi driver firmware dump $dump" | systemd-cat -t disk_threshold_check
                 rm -rf $dump
             done
         fi
@@ -197,9 +197,9 @@ oldLogsFolderCleanup()
     do                                     
        deleteFolder=`echo ${oldestFolder##* }`
        if [ "$deleteFolder" ] && [ -d "$deleteFolder" ];then
-            echo "$(/bin/timestamp) Old Reboot Reasons Inside $deleteFolder ..!" >> /tmp/disk_cleanup.log
-            grep -irn "Reboot" $deleteFolder | grep -v disk_cleanup.log | grep -v dcmscript.log | grep -v dca_output.txt | grep -v top_log.txt >> /tmp/disk_cleanup.log
-            echo "$(/bin/timestamp) Deleting the folder: $deleteFolder" >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) Old Reboot Reasons Inside $deleteFolder ..!" | systemd-cat -t disk_threshold_check
+            grep -irn "Reboot" $deleteFolder | grep -v disk_cleanup.log | grep -v dcmscript.log | grep -v dca_output.txt | grep -v top_log.txt | systemd-cat -t disk_threshold_check
+            echo "$(/bin/timestamp) Deleting the folder: $deleteFolder" | systemd-cat -t disk_threshold_check
             rm -rf $deleteFolder
             count=$(counter $count)
             disk_size_check $count                         
@@ -217,37 +217,37 @@ logsCleanup()
 	 count=$(counter $count)
          disk_size_check $count
          # delete older logs folder
-         echo "$(/bin/timestamp) Deleting older reboot cycle logs from the log backup folder" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleting older reboot cycle logs from the log backup folder" | systemd-cat -t disk_threshold_check
          oldLogsFolderCleanup
          count=$(counter $count)
          disk_size_check $count
          find $LOG_PATH -name "*.txt.5" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.5" -exec rm -rf {} \;
-         echo "$(/bin/timestamp) Deleted files with extensions *.txt.5 & *.log.5 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.5 & *.log.5 from $LOG_PATH" | systemd-cat -t disk_threshold_check
          # 8th time cleanup
          count=$(counter $count)
          disk_size_check $count
          find $LOG_PATH -name "*.txt.4" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.4" -exec rm -rf {} \;
-         echo "$(/bin/timestamp) Deleted files with extensions *.txt.4 & *.log.4 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.4 & *.log.4 from $LOG_PATH" | systemd-cat -t disk_threshold_check
          # 9th time cleanup
          count=$(counter $count)
          disk_size_check $count
          find $LOG_PATH -name "*.txt.3" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.3" -exec rm -rf {} \;
-         echo "$(/bin/timestamp) Deleted files with extensions *.txt.3 & *.log.3 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.3 & *.log.3 from $LOG_PATH" | systemd-cat -t disk_threshold_check
          # 10th time cleanup
          count=$(counter $count)
          disk_size_check $count
          find $LOG_PATH -name "*.txt.2" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.2" -exec rm -rf {} \;
-         echo "$(/bin/timestamp) Deleted files with extensions *.txt.2 & *.log.2 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.2 & *.log.2 from $LOG_PATH" | systemd-cat -t disk_threshold_check
          # 11th time cleanup
          count=$(counter $count)
          disk_size_check $count
          find $LOG_PATH -name "*.txt.1" -exec rm -rf {} \;
          find $LOG_PATH -name "*.log.1" -exec rm -rf {} \;
-         echo "$(/bin/timestamp) Deleted files with extensions *.txt.1 & *.log.1 from $LOG_PATH" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Deleted files with extensions *.txt.1 & *.log.1 from $LOG_PATH" | systemd-cat -t disk_threshold_check
 
 }
 
@@ -263,7 +263,7 @@ reduceFolderSize()
     while [ $optSize -gt $size ]
     do
        oldFile=$(ls -t $path | tail -1)
-       echo "$(/bin/timestamp) Old File: $oldFile" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Old File: $oldFile" | systemd-cat -t disk_threshold_check
        if [ -f $path/$oldFile ]; then rm -rf $path/$oldFile; fi
        optSize=$(du -k $path | awk '{print $1}'| sed 's/[^0-9]*//g')
     done
@@ -274,19 +274,19 @@ command=$(which lsof)
 if [ "$command" ];then
      lsof +L1 | grep "logs.*\(deleted\)" > /tmp/.lsof_ouput
 else
-     echo "$(/bin/timestamp) Missing the binary lsof" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Missing the binary lsof" | systemd-cat -t disk_threshold_check
 fi
 
-    echo "$(/bin/timestamp) Memory Before Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Memory Before Closed FD cleanup: `df -kh /opt`" | systemd-cat -t disk_threshold_check
     if [ -s /tmp/.lsof_ouput ];then
-        echo "$(/bin/timestamp) We have open FDs even after deleting the files: `cat /tmp/.lsof_ouput`" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) We have open FDs even after deleting the files: `cat /tmp/.lsof_ouput`" | systemd-cat -t disk_threshold_check
         while read line; do
             pid=$(echo $line | awk '{print $2}')
             openFD=$(echo $line | awk '{print $4}' | tr -cd [:digit:])
-            echo "$(/bin/timestamp) " /proc/$pid/fd/$openFD >> /tmp/disk_cleanup.log
+            echo "$(/bin/timestamp) " /proc/$pid/fd/$openFD | systemd-cat -t disk_threshold_check
             :> /proc/$pid/fd/$openFD
         done < /tmp/.lsof_ouput
-        echo "$(/bin/timestamp) Memory After Closed FD cleanup: `df -kh /opt`" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) Memory After Closed FD cleanup: `df -kh /opt`" | systemd-cat -t disk_threshold_check
     fi
 
 NetflixDiskcache="/opt/netflix/nrd/gibbon/diskcache"
@@ -295,15 +295,15 @@ if [ -d "$NetflixDiskcache" ]; then
     # check if the used space is grater than 9MB (9216KB)
     if [ $size -ge 9216 ]; then
         # Delete all files under /opt/netflix/nrd/gibbon/diskcache
-        echo "$(/bin/timestamp) Memory consumed is $size which is more than threshold(9216kb), so deleting content of $NetflixDiskcache" >> /tmp/disk_cleanup.log
+        echo "$(/bin/timestamp) Memory consumed is $size which is more than threshold(9216kb), so deleting content of $NetflixDiskcache" | systemd-cat -t disk_threshold_check
         rm -rf /opt/netflix/nrd/gibbon/diskcache/*
     fi
 fi
 
 if [ $FLAG -eq 0 ]; then
-     echo "$(/bin/timestamp) Bootup Time Cleanup..!" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Bootup Time Cleanup..!" | systemd-cat -t disk_threshold_check
      if [ -d /opt/lost+found ]; then
-         echo "$(/bin/timestamp) Clearing /opt/lost+found folder" >> /tmp/disk_cleanup.log
+         echo "$(/bin/timestamp) Clearing /opt/lost+found folder" | systemd-cat -t disk_threshold_check
          rm -rf /opt/lost+found
      fi
    
@@ -317,7 +317,7 @@ if [ $FLAG -eq 0 ]; then
      # check and cleanup logs inside the box
      logsCleanup
 elif [ $FLAG -eq 1 ]; then
-     echo "$(/bin/timestamp) Runtime Cleanup..!" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Runtime Cleanup..!" | systemd-cat -t disk_threshold_check
      # RUNTIME cleanup
      if [ "$HDD_ENABLED" = "true" ]; then
           # cleaning coredump backup area
@@ -342,7 +342,7 @@ elif [ $FLAG -eq 1 ]; then
           logsCleanup
      fi
 else
-     echo "$(/bin/timestamp) Runtime Error: Invalid input flag argument..!" >> /tmp/disk_cleanup.log
+    echo "$(/bin/timestamp) Runtime Error: Invalid input flag argument..!" | systemd-cat -t disk_threshold_check
 fi
 
 # Final runtime/bootup cleanup
@@ -350,7 +350,7 @@ count=$(counter $count)
 disk_size_check $count
 count=$(counter $count)
 disk_size_check $count
-echo "$(/bin/timestamp) CRITICAL ERROR, please check the /opt folder..!" >> /tmp/disk_cleanup.log
+echo "$(/bin/timestamp) CRITICAL ERROR, please check the /opt folder..!" | systemd-cat -t disk_threshold_check
 t2CountNotify "SYST_ERR_OPTFULL"
 
 if [ $FLAG -eq 1 ];then
@@ -360,4 +360,3 @@ if [ $FLAG -eq 1 ];then
     fi
 fi
 exit 0
-

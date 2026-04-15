@@ -91,14 +91,15 @@ elif [ "$1" = "bootup" ];then
           fi
     fi
 
-    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" > $LOG_FILE
-    echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" >> $LOG_FILE
-    echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" >> $LOG_FILE
-    echo "$(/bin/timestamp) PreviousCustomReason: $customReason" >> $LOG_FILE
-    echo "$(/bin/timestamp) PreviousOtherReason: $otherReason" >> $LOG_FILE
+    echo "$(/bin/timestamp) PreviousRebootReason: $rebootReason" | systemd-cat -t reboot-checker
+    echo "$(/bin/timestamp) PreviousRebootInitiatedBy: $rebootInitiatedBy" | systemd-cat -t reboot-checker
+    echo "$(/bin/timestamp) PreviousRebootTime: $rebootTime" | systemd-cat -t reboot-checker
+    echo "$(/bin/timestamp) PreviousCustomReason: $customReason" | systemd-cat -t reboot-checker
+    echo "$(/bin/timestamp) PreviousOtherReason: $otherReason" | systemd-cat -t reboot-checker
     touch /tmp/rebootInfo_Updated
     sh /lib/rdk/update_previous_reboot_info.sh
 else
     echo "Usage: $0 <bootup/shutdown>"
 fi
 exit 0
+

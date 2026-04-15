@@ -58,7 +58,7 @@ PARODUS_LOG="/opt/logs/unified-logging.txt"
 #Use log framework to pring timestamp and source script name
 rebootLog()
 {
-    echo "$0: $*"
+    echo "$0: $*" | systemd-cat -t update_previous_reboot_info
 }
 
 rebootLog "Start of Reboot Reason Script"
@@ -95,8 +95,8 @@ setPreviousRebootInfo()
     existing_reboot_info=$(grep "PreviousRebootInfo" "$PARODUS_LOG" 2>/dev/null | tail -1)
 
     if [ -z "$existing_reboot_info" ]; then
-        echo "$(/bin/timestamp): $0: Updating previous reboot info to Parodus" >> "$PARODUS_LOG"
-        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$reason,$custom,$source" >> "$PARODUS_LOG"
+        echo "$(/bin/timestamp): $0: Updating previous reboot info to Parodus" | systemd-cat -t update_previous_reboot_info
+        echo "$(/bin/timestamp): $0: PreviousRebootInfo:$timestamp,$reason,$custom,$source" | systemd-cat -t update_previous_reboot_info
         rebootLog "Reboot Information Updated to parodus log:$timestamp,$reason,$custom,$source"
     else
         rebootLog "${FUNCNAME[0]}: Reboot info already present in $PARODUS_LOG as $existing_reboot_info, skipping update"
@@ -376,7 +376,7 @@ if [ "$RDK_PROFILE" = "TV" ]; then
         oopsDumpCheck
         kernel_crash=$?
         if [ $kernel_crash -eq 1 ];then
-            echo "`/bin/timestamp` PreviousRebootReason: kernel_panic!" >> $KERNEL_LOG_FILE
+            echo "`/bin/timestamp` PreviousRebootReason: kernel_panic!" | systemd-cat -t update_previous_reboot_info
         else
             if [ -f /lib/rdk/get-reboot-reason.sh ]; then
                 sh /lib/rdk/get-reboot-reason.sh >> $KERNEL_LOG_FILE
@@ -396,7 +396,7 @@ if [ -f "$REBOOT_INFO_FILE" ];then
     if [ -f "$PARODUS_REBOOT_INFO_FILE" ];then
        rebootLog "New $PARODUS_REBOOT_INFO_FILE file found, updating parodus logfile..."
        rebootinfo=`cat $PARODUS_REBOOT_INFO_FILE`
-       echo "`/bin/timestamp` $0: $rebootinfo" >> $PARODUS_LOG
+    echo "`/bin/timestamp` $0: $rebootinfo" | systemd-cat -t update_previous_reboot_info
        mv $PARODUS_REBOOT_INFO_FILE $PREVIOUS_PARODUSREBOOT_INFO_FILE
     fi   
 else
@@ -485,3 +485,4 @@ fi
 
 rebootLog "End of Reboot Reason Script"
 unlock
+

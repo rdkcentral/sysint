@@ -223,7 +223,7 @@ getRFCValueForTR181Param()
 # Flush the logger daemon buffers to the file
 flushLogger()
 {
-    echo "$(/bin/timestamp) [PID:$$]: [utils.sh] flushLogger is called" >> /opt/logs/unified-logging.txt
+    echo "$(/bin/timestamp) [PID:$$]: [utils.sh] flushLogger is called" | systemd-cat -t utils-flushLogger
     # Flush journald buffers
     test -f '/etc/os-release' && which journalctl && journalctl --sync --flush
     if [ "$SYSLOG_NG_ENABLED" != "true" ] ; then
@@ -249,11 +249,11 @@ waitForDumpCompletion()
     waitTime=$1
     while [[ `dumpInProcess` == 'true' ]];
     do
-        echo "`/bin/timestamp` Waiting for core dump completion." >> $CORE_LOG
+        echo "`/bin/timestamp` Waiting for core dump completion." | systemd-cat -t utils-core
         count=`expr $count + 1`
         sleep 1
         if [ $count -gt $waitTime ]; then
-            echo "`/bin/timestamp` Core dump creation is taking more time than expected. Returning." >> $CORE_LOG
+            echo "`/bin/timestamp` Core dump creation is taking more time than expected. Returning." | systemd-cat -t utils-core
             return
         fi
     done
@@ -282,3 +282,4 @@ getPrivacyControlMode()
     #Implement own logic to get the privicyMode settings
     return
 }
+

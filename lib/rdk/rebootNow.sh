@@ -33,7 +33,7 @@ fi
 
 REBOOT_REASON_LOGFILE="/opt/logs/rebootreason.log"
 rebootLog() {
-    echo "`/bin/timestamp` :$0: $*" >> $REBOOT_REASON_LOGFILE
+    echo "`/bin/timestamp` :$0: $*" | systemd-cat -t rebootNow
 }
 
 #Usage: rebootNow.sh [-c "<crash>" | -s "<source>"][-r "<custom reason>"][-o "<other reason>"]
@@ -367,14 +367,14 @@ setPreviousRebootInfo()
 rebootTime=`date -u`
 
 if [ "$otherReason" == "Unknown" ]; then
-    echo "RebootReason: $rebootLogReason" >> $REBOOTINFO_LOGFILE
+    echo "RebootReason: $rebootLogReason" | systemd-cat -t rebootNow
 else
-    echo "RebootReason: $rebootLogReason $otherReason" >> $REBOOTINFO_LOGFILE
+    echo "RebootReason: $rebootLogReason $otherReason" | systemd-cat -t rebootNow
 fi
-echo "RebootInitiatedBy: $source" >> $REBOOTINFO_LOGFILE
-echo "RebootTime: $rebootTime" >> $REBOOTINFO_LOGFILE
-echo "CustomReason: $customReason" >> $REBOOTINFO_LOGFILE
-echo "OtherReason: $otherReason" >> $REBOOTINFO_LOGFILE
+echo "RebootInitiatedBy: $source" | systemd-cat -t rebootNow
+echo "RebootTime: $rebootTime" | systemd-cat -t rebootNow
+echo "CustomReason: $customReason" | systemd-cat -t rebootNow
+echo "OtherReason: $otherReason" | systemd-cat -t rebootNow
 
 # Create /opt/secure/reboot/ folder before reboot/shutdown.
 if [ ! -d $REBOOT_INFO_DIR ]; then
@@ -502,3 +502,4 @@ fi
 kill $REBOOT_PID 2>/dev/null
 rebootLog "Triggering force Reboot after standard soft reboot failure"
 reboot -f
+

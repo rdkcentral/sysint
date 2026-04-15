@@ -41,15 +41,16 @@ else
         rm $TEMP_LOG
     fi
     if [ -f /lib/rdk/cpu-statistics.sh ];then
-        echo "Retrieving CPU instantaneous information for telemetry support" >> $RTL_LOG_FILE
+        echo "Retrieving CPU instantaneous information for telemetry support" | systemd-cat -t vm_cpu_temp-check
         sh /lib/rdk/cpu-statistics.sh >> $LOG_PATH/unified-logging.txt
     fi
     if [ -f /lib/rdk/vm-statistics.sh ];then
-        echo "Retrieving virtual memory information for telemetry support" >> $RTL_LOG_FILE
+        echo "Retrieving virtual memory information for telemetry support" | systemd-cat -t vm_cpu_temp-check
         sh /lib/rdk/vm-statistics.sh >> $LOG_PATH/unified-logging.txt
     fi
     if [ -f /lib/rdk/temperature-telemetry.sh ];then
-        echo "Retrieving CPU Temperature for telemetry support" >> $RTL_LOG_FILE
+        echo "Retrieving CPU Temperature for telemetry support" | systemd-cat -t vm_cpu_temp-check
         sh /lib/rdk/temperature-telemetry.sh >> $LOG_PATH/unified-logging.txt
     fi
 fi
+

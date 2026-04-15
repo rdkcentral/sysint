@@ -75,17 +75,17 @@ LOG_UPLOAD_BIN_PATH="/usr/bin/logupload"
 # Log Functions
 rfcLog ()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $RFC_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t Start_MaintenanceTasks
 }
 
 swupdateLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $SWUPDATE_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t Start_MaintenanceTasks
 }
 
 logUploadLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t Start_MaintenanceTasks
 }
 
 # Utility Function
@@ -178,7 +178,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Application triggered on demand log upload"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/unified-logging.txt
+                "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" | systemd-cat -t Start_MaintenanceTasks
                 result=$?
                 if [ "$result" -eq 0 ]; then
                     logUploadLog "Binary execution succeeded"
@@ -197,7 +197,7 @@ runMaintenanceLogUploadTask()
             logUploadLog "Log upload triggered from regular execution"
             if [ -x "$LOG_UPLOAD_BIN_PATH" ]; then
                 logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/unified-logging.txt &
+                nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" | systemd-cat -t Start_MaintenanceTasks &
                 bg_pid=$!
                 wait $bg_pid
                 result=$?
@@ -256,3 +256,4 @@ case "$1" in
         exit 2
         ;;
 esac
+

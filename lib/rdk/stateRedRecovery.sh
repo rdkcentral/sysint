@@ -25,10 +25,11 @@
 #Log framework to print timestamp and source script name
 swupdateLog()
 {
-    echo "`/bin/timestamp`: $0: $*"
+    echo "`/bin/timestamp`: $0: $*" | systemd-cat -t stateRedRecovery
 }
 
-echo "STATE RED RECOVERY, Initiating recovery software download"
+echo "STATE RED RECOVERY, Initiating recovery software download" | systemd-cat -t stateRedRecovery
 XCONF_BIN="/usr/bin/rdkvfwupgrader"
 
 $XCONF_BIN "3" "6" >> /opt/logs/unified-logging.txt 2>&1
+

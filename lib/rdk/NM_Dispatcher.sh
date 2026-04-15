@@ -38,7 +38,7 @@ FILE=/tmp/.GatewayIP_dfltroute
 
 NMdispatcherLog()
 {
-    echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
+    echo "$(/bin/timestamp) : $0: $*" | systemd-cat -t NM_Dispatcher
 }
 
 # Refactored from updateGlobalIPInfo.sh
@@ -104,8 +104,7 @@ update_global_ip_info_add()
 NMdispatcherLog "From NM_Dispatcher.sh $1 $2"
 
 netInfoLog() {
-    echo "`/bin/timestamp` :$0: $*" >> "$LOG_FILE"
-    echo "`/bin/timestamp` :$0: $*" >> "$NM_LOG_FILE"
+    echo "`/bin/timestamp` :$0: $*" | systemd-cat -t NM_Dispatcher
 }
 
 networkInfoLogger() {
@@ -128,8 +127,8 @@ networkInfoLogger() {
 checkDefaultRoute_Add() {
     #Condition to check for arguments are 7 and not 0.
     if [ $# -eq 0 ] || [ $# -ne 7 ];then
-        echo "No. of arguments supplied are not satisfied, Exiting..!!!"
-        echo "Arguments accepted are [ family | interface | destinationip | gatewayip | preferred_src | metric | add/delete]"
+        echo "No. of arguments supplied are not satisfied, Exiting..!!!" | systemd-cat -t NM_Dispatcher
+        echo "Arguments accepted are [ family | interface | destinationip | gatewayip | preferred_src | metric | add/delete]" | systemd-cat -t NM_Dispatcher
         return 1
     fi
 
@@ -234,3 +233,4 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
        fi
     fi
 fi
+

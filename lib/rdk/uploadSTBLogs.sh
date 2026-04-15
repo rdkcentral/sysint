@@ -95,11 +95,11 @@ LOG_UPLOAD_ABORTED=2
 
 #Common Logging Function
 uploadLog() {
-    echo "`/bin/timestamp` : $0: $*" >> $DCM_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t uploadSTBLogs
 }
 
 tlsLog() {
-    echo "`/bin/timestamp` : $0: $*" >> $TLS_LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t uploadSTBLogs-tls
 }
 
 # we limit the attempt to 1 when called as a part of logupload before deepsleep
@@ -1065,3 +1065,4 @@ else
 fi
 
 exit 0
+

@@ -67,7 +67,7 @@ ESTB_IN_PROGRESS="ESTB in progress"
 #Log framework to print timestamp and source script name
 swupdateLog()
 {
-    echo "`/bin/timestamp` : $0: $*"
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t swupdate_utility
 }
 
 eventSender()
@@ -385,3 +385,4 @@ else
     wait
     exit 0
 fi
+

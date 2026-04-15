@@ -35,7 +35,7 @@ fi
 #Log framework to print timestamp and source script name
 ntpLog()
 {
-    echo "`/bin/timestamp` : $0: $*" >> $LOG_FILE
+    echo "`/bin/timestamp` : $0: $*" | systemd-cat -t timesyncd-conf-update
 }
 
 # NTP URL from the property file
@@ -149,3 +149,4 @@ else
 fi
 
 exit 0
+
