@@ -23,25 +23,57 @@ BOOT_TYPE=$(grep "BOOT_TYPE" /tmp/bootType | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
-if [ -f $RDKV_SUPP_CONF ]; then
-  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
-  PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
+if [[ -f "$RDKV_SUPP_CONF" ]]; then
+    #########################
+    # SSID Extraction #
+    #########################
+    # Efficiently extract the line containing ssid=
+    SSID_LINE=$(grep -m 1 "ssid=" "$RDKV_SUPP_CONF")
 
-  # Case 1: Quoted passphrase
-  if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
-    PSK="${BASH_REMATCH[1]}"
+    # CASE 1: SSID is a quoted readable string like ssid="Test's iPhone"
+    if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
+        SSID="${BASH_REMATCH[1]}"
+        echo "SSID in quoted format SSID: $SSID"
 
-  # Case 2: Unquoted 64-char raw PSK
-  elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]{64}) ]]; then
-    PSK="${BASH_REMATCH[1]}"
+    # CASE 2: SSID is a hex string like ssid=4b61...
+    elif [[ "$SSID_LINE" =~ ssid=([a-fA-F0-9]+) ]]; then
+        HEX_SSID="${BASH_REMATCH[1]}"
+        
+        # Convert hex string to readable UTF-8 string
+        # Using printf with \x formatting for each byte pair
+        SSID=$(printf "$(echo "$HEX_SSID" | sed 's/../\\x&/g')")
+        echo "Converted Hex SSID to string: $SSID"
+        CREATE_FILE=true
+    fi
 
-  # No match
-  else
-    PSK=""
-  fi
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+    echo "Final SSID: $SSID"
+
+    #########################
+    # Passphrase Extraction #
+    #########################
+    PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
+
+    # Case 1: Quoted passphrase
+    if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
+      PSK="${BASH_REMATCH[1]}"
+      echo "PSK in quoted format" 
+
+    # Case 2: Unquoted 64-char raw PSK
+    elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]+) ]]; then
+      HEX_PSK="${BASH_REMATCH[1]}"
+      PSK=$(printf "$(echo "$HEX_PSK" | sed 's/../\\x&/g')")
+      echo "Converted Hex PSK to string"
+      CREATE_FILE=true
+    fi
+
+    sed -i '/network={/,/}/d' $RDKV_SUPP_CONF
+else
+    echo "Config file not found."
 fi
 
+if [ -d /opt/NetworkManager ]; then
+  rm -rf /opt/NetworkManager/
+fi
 
 if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
     if [ -f $MIGRATION_JSON ]; then
@@ -49,13 +81,22 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
         echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
         nmcli dev set eth0 managed no
         
-        if [ -d /opt/NetworkManager ]; then
-         rm -rf /opt/NetworkManager/
-        fi
         if [ -d /opt/secure/NetworkManager/system-connections ]; then
          rm -rf /opt/secure/NetworkManager/system-connections/*
         fi
-        nmcli conn reload
+        
+        if [ "$CREATE_FILE" == "true" ]; then
+            # Create a file to indicate that SSID/PSK was created from hex conversion & add connection with autoconnect=no
+            touch /tmp/load_temp_wifi
+            if [ -z "$PSK" ]; then
+                #connect to wifi
+                nmcli conn add type wifi con-name "$SSID" autoconnect no ifname wlan0 ssid "$SSID"
+            else
+                #connect to wifi
+                nmcli conn add type wifi con-name "$SSID" autoconnect no ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+            fi
+           nmcli conn reload
+        fi
         exit 0
     else
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
