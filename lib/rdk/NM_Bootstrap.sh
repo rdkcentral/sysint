@@ -85,18 +85,11 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
          rm -rf /opt/secure/NetworkManager/system-connections/*
         fi
         
-        if [ "$CREATE_FILE" == "true" ]; then
-            # Create a file to indicate that SSID/PSK was created from hex conversion & add connection with autoconnect=no
-            touch /tmp/load_temp_wifi
-            if [ -z "$PSK" ]; then
-                #connect to wifi
-                nmcli conn add type wifi con-name "$SSID" autoconnect no ifname wlan0 ssid "$SSID"
-            else
-                #connect to wifi
-                nmcli conn add type wifi con-name "$SSID" autoconnect no ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
-            fi
-           nmcli conn reload
-        fi
+        if [ "$CREATE_FILE" == "true" ] && grep -q 'network/wifi' "$MIGRATION_JSON" ; then
+          # Create a file to indicate that SSID/PSK was created from hex conversion 
+          echo "SSID=\"$SSID\"" > /tmp/load_temp_wifi.txt
+          echo "PSK=\"$PSK\"" >> /tmp/load_temp_wifi.txt
+        fi  
         exit 0
     else
         echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
