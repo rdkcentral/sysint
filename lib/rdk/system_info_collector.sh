@@ -94,8 +94,6 @@ sh  $RDK_PATH/vm_cpu_temp-check.sh
 echo "Logging for Yocto platforms..."
 /bin/timestamp 
 uptime 
-run_top_command
-log_disk_usage
 cpu_statistics
 
 if [ -f /tmp/.top_count ]; then
