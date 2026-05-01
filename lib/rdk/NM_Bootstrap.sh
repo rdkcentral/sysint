@@ -53,17 +53,22 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
 
     case "$PSK_LINE" in
         *psk=\"*\")
+            # Case 1: Quoted Passphrase - extract content
             PSK=$(echo "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
+            echo "Extracted quoted PSK passphrase."
             ;;
         *psk=[0-9a-fA-F]*)
-            HEX_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')'
-            HEX_LEN_PSK=${#HEX_PSK}
-            if [ "$((HEX_LEN_PSK % 2))" -ne 0 ] || [ "$HEX_LEN_PSK" -eq 0 ]; then
-                echo "ERROR: Hex PSK length is invalid."
-                PSK=""
+            # Case 2: Raw 64-hex PSK - DO NOT DECODE
+            # Extract only the 64 hex characters
+            RAW_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
+            
+            # Validation: Must be exactly 64 characters for a 256-bit key
+            if [ "${#RAW_PSK}" -eq 64 ]; then
+                PSK="$RAW_PSK"
+                echo "Extracted 64-char raw hex PSK."
             else
-                ESCAPED_PSK=$(echo "$HEX_PSK" | sed 's/../\\x&/g')
-                PSK=$(printf '%b' "$ESCAPED_PSK")
+                echo "ERROR: Unquoted PSK is not 64 hex characters (Len: ${#RAW_PSK})."
+                PSK=""
             fi
             ;;
     esac
