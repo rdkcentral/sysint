@@ -37,11 +37,12 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             HEX_SSID=$(echo "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
             HEX_LEN=${#HEX_SSID}
             if [ "$((HEX_LEN % 2))" -ne 0 ] || [ "$HEX_LEN" -eq 0 ]; then
-                echo "ERROR: Hex SSID length ($HEX_LEN) is invalid."
+                echo "ERROR: Hex SSID length ($HEX_LEN) is invalid." >>  /opt/logs/NMMonitor.log
                 SSID=""
             else
                 ESCAPED_HEX=$(echo "$HEX_SSID" | sed 's/../\\x&/g')
                 SSID=$(printf '%b' "$ESCAPED_HEX")
+                echo "Extracted quoted SSID" >>  /opt/logs/NMMonitor.log
             fi
             ;;
     esac
@@ -55,7 +56,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
         *psk=\"*\")
             # Case 1: Quoted Passphrase - extract content
             PSK=$(echo "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
-            echo "Extracted quoted PSK passphrase."
+            echo "Extracted quoted PSK passphrase." >>  /opt/logs/NMMonitor.log
             ;;
         *psk=[0-9a-fA-F]*)
             # Case 2: Raw 64-hex PSK - DO NOT DECODE
@@ -65,9 +66,9 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             # Validation: Must be exactly 64 characters for a 256-bit key
             if [ "${#RAW_PSK}" -eq 64 ]; then
                 PSK="$RAW_PSK"
-                echo "Extracted 64-char raw hex PSK."
+                echo "Extracted 64-char raw hex PSK." >>  /opt/logs/NMMonitor.log
             else
-                echo "ERROR: Unquoted PSK is not 64 hex characters (Len: ${#RAW_PSK})."
+                echo "ERROR: Unquoted PSK is not 64 hex characters " >>  /opt/logs/NMMonitor.log
                 PSK=""
             fi
             ;;
@@ -77,16 +78,16 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
     # Key_Mgmt Extraction   #
     #########################
     if grep -q "key_mgmt=.*SAE" "$RDKV_SUPP_CONF"; then
-        echo "key_mgmt is SAE"
+        echo "key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
         KEY_MGMT=sae
     else
         echo "key_mgmt is wpa-psk"
-        KEY_MGMT=wpa-psk
+        KEY_MGMT=wpa-psk >>  /opt/logs/NMMonitor.log
     fi
 
     sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 else
-    echo "Config file not found."
+    echo "Config file not found." >>  /opt/logs/NMMonitor.log
 fi
 
 if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
