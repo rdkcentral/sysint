@@ -57,12 +57,11 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             ;;
         *psk=[0-9a-fA-F]*)
             HEX_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
-            if [ "$((${#HEX_PSK} % 2))" -ne 0 ]; then
-                echo "ERROR: Hex PSK length is invalid."
+            if [ "${#HEX_PSK}" -ne 64 ]; then
+                echo "ERROR: Unquoted hex PSK must be a 64-character PMK."
                 PSK=""
             else
-                ESCAPED_PSK=$(echo "$HEX_PSK" | sed 's/../\\x&/g')
-                PSK=$(printf '%b' "$ESCAPED_PSK")
+                PSK="$HEX_PSK"
             fi
             ;;
     esac
