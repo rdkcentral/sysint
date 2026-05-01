@@ -70,7 +70,7 @@ if [[ -f "$RDKV_SUPP_CONF" ]]; then
     #########################
     # Key_Mgmt Extraction   #
     #########################
-    if grep -q "key_mgmt=SAE FT-SAE" "$RDKV_SUPP_CONF"; then
+    if grep -q "key_mgmt=.*SAE" "$RDKV_SUPP_CONF"; then
         echo "key_mgmt is SAE"
         KEY_MGMT=sae
     else
