@@ -24,33 +24,35 @@ RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f "$RDKV_SUPP_CONF" ]; then
+
     #########################
     # SSID Extraction       #
     #########################
     SSID_LINE=$(grep -m 1 '^[[:space:]]*ssid=' "$RDKV_SUPP_CONF")
-
     case "$SSID_LINE" in
         *ssid=\"*\")
-            # Case 1: Quoted string - use printf to safely pipe to sed
+            # Case 1: Quoted string - extract content safely
             SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid="\(.*\)".*/\1/')
+            echo "Successfully extracted SSID from quoted string."
             ;;
         *ssid=[0-9a-fA-F]*)
-            # Case 2: Hex encoded text - must decode for nmcli
+            # Case 2: Hex encoded text - decode back to a string for nmcli
             HEX_SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
             HEX_LEN_SSID=${#HEX_SSID}
             
             if [ "$((HEX_LEN_SSID % 2))" -ne 0 ] || [ "$HEX_LEN_SSID" -eq 0 ]; then
-                echo "ERROR: Hex SSID length invalid ($HEX_LEN_SSID)."
+                echo "ERROR: Hex SSID length invalid ($HEX_LEN_SSID). Cannot decode."
                 SSID=""
             else
-                # printf %b expands the hex escapes safely
+                # Convert hex to \x escapes, then use %b to expand into a string
                 ESCAPED_HEX=$(printf '%s\n' "$HEX_SSID" | sed 's/../\\x&/g')
                 SSID=$(printf '%b' "$ESCAPED_HEX")
+                echo "Successfully decoded SSID from hex format."
             fi
             ;;
     esac
 
-#########################
+    #########################
     # Passphrase Extraction #
     #########################
     PSK_LINE=$(grep -m 1 '^[[:space:]]*psk=' "$RDKV_SUPP_CONF")
