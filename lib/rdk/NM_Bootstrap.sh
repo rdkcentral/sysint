@@ -81,8 +81,8 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
         echo "key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
         KEY_MGMT=sae
     else
-        echo "key_mgmt is wpa-psk"
-        KEY_MGMT=wpa-psk >>  /opt/logs/NMMonitor.log
+        echo "key_mgmt is wpa-psk" >>  /opt/logs/NMMonitor.log
+        KEY_MGMT=wpa-psk 
     fi
 
     sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
