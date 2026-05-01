@@ -27,8 +27,8 @@ if [[ -f "$RDKV_SUPP_CONF" ]]; then
     #########################
     # SSID Extraction #
     #########################
-    # Extract the line containing ssid=
-    SSID_LINE=$(grep -m 1 "ssid=" "$RDKV_SUPP_CONF")
+    # Extract the first line defining the ssid key
+    SSID_LINE=$(grep -m 1 '^[[:space:]]*ssid=' "$RDKV_SUPP_CONF")
 
     # Case 1: SSID is a quoted readable string like ssid="Test's iPhone"
     if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
