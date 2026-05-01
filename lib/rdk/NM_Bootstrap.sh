@@ -63,6 +63,9 @@ if [[ -f "$RDKV_SUPP_CONF" ]]; then
       echo "Converted Hex PSK to string"
     fi
 
+    #########################
+    # Key_Mgmt Extraction   #
+    #########################
     if grep -q "key_mgmt=SAE FT-SAE" "$RDKV_SUPP_CONF"; then
         echo "key_mgmt is SAE"
         KEY_MGMT=sae
