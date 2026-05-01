@@ -52,23 +52,28 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             ;;
     esac
 
+# Example extraction logic
+PSK_LINE=$(grep "^[[:space:]]*psk=" wpa_supplicant.conf)
+
     case "$PSK_LINE" in
         *psk=\"*\")
-            # Case 1: Quoted Passphrase string (e.g., psk="my password")
+            # CASE 1: Quoted Passphrase
+            # Extract the text between the quotes
             PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
-            echo "Successfully extracted PSK passphrase from quoted string."
+            echo "Detected quoted passphrase. Preserving as text."
             ;;
         *psk=[0-9a-fA-F]*)
-            # Case 2: Raw 64-hex PSK - KEEP AS HEX STRING
+            # CASE 2: Unquoted Hex PSK
+            # Extract only the hex characters
             RAW_PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
             
-            # Validation: Raw keys must be exactly 256-bit (64 hex chars)
+            # VALIDATION: A raw PSK MUST be exactly 64 hex characters (256-bit)
             if [ "${#RAW_PSK}" -eq 64 ]; then
                 PSK="$RAW_PSK"
-                echo "Successfully extracted 64-char raw hex PSK key."
+                echo "Detected 64-char raw hex PSK. Preserving as hex string."
             else
-                echo "ERROR: Unquoted PSK is not a valid 64-char hex key (Len: ${#RAW_PSK})."
-                PSK=""
+                echo "Error: Unquoted PSK is not 64 characters. Length is ${#RAW_PSK}."
+                exit 1
             fi
             ;;
     esac
