@@ -52,16 +52,11 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             ;;
     esac
 
-    #########################
-    # Passphrase Extraction #
-    #########################
-    PSK_LINE=$(grep -m 1 '^[[:space:]]*psk=' "$RDKV_SUPP_CONF")
-
     case "$PSK_LINE" in
         *psk=\"*\")
             # Case 1: Quoted Passphrase string (e.g., psk="my password")
             PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
-            echo "Extracted quoted PSK passphrase."
+            echo "Successfully extracted PSK passphrase from quoted string."
             ;;
         *psk=[0-9a-fA-F]*)
             # Case 2: Raw 64-hex PSK - KEEP AS HEX STRING
@@ -70,7 +65,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             # Validation: Raw keys must be exactly 256-bit (64 hex chars)
             if [ "${#RAW_PSK}" -eq 64 ]; then
                 PSK="$RAW_PSK"
-                echo "Extracted 64-char raw hex PSK key."
+                echo "Successfully extracted 64-char raw hex PSK key."
             else
                 echo "ERROR: Unquoted PSK is not a valid 64-char hex key (Len: ${#RAW_PSK})."
                 PSK=""
