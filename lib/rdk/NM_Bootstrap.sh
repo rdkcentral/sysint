@@ -23,7 +23,7 @@ BOOT_TYPE=$(grep "BOOT_TYPE" /tmp/bootType | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
-if [[ -f "$RDKV_SUPP_CONF" ]]; then
+if [ -f "$RDKV_SUPP_CONF" ]; then
 #########################
     # SSID Extraction       #
     #########################
