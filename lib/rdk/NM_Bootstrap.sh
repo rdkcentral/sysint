@@ -74,7 +74,7 @@ if [[ -f "$RDKV_SUPP_CONF" ]]; then
         KEY_MGMT=wpa-psk
     fi
 
-    sed -i '/network={/,/}/d' $RDKV_SUPP_CONF
+    sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 else
     echo "Config file not found."
 fi
