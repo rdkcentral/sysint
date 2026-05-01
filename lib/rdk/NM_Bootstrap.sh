@@ -63,6 +63,14 @@ if [[ -f "$RDKV_SUPP_CONF" ]]; then
       echo "Converted Hex PSK to string"
     fi
 
+    if grep -q "key_mgmt=SAE FT-SAE" "$RDKV_SUPP_CONF"; then
+        echo "key_mgmt is SAE"
+        KEY_MGMT=sae
+    else
+        echo "key_mgmt is wpa-psk"
+        KEY_MGMT=wpa-psk
+    fi
+
     sed -i '/network={/,/}/d' $RDKV_SUPP_CONF
 else
     echo "Config file not found."
@@ -120,7 +128,7 @@ else
           nmcli conn reload
       else
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt $KEY_MGMT wifi-sec.psk "$PSK"
           nmcli conn reload
       fi
 fi
