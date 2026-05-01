@@ -24,25 +24,28 @@ RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f "$RDKV_SUPP_CONF" ]; then
-#########################
+    #########################
     # SSID Extraction       #
     #########################
     SSID_LINE=$(grep -m 1 '^[[:space:]]*ssid=' "$RDKV_SUPP_CONF")
 
     case "$SSID_LINE" in
         *ssid=\"*\")
-            SSID=$(echo "$SSID_LINE" | sed 's/.*ssid="\(.*\)".*/\1/')
+            # Case 1: Quoted string - use printf to safely pipe to sed
+            SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid="\(.*\)".*/\1/')
             ;;
         *ssid=[0-9a-fA-F]*)
-            HEX_SSID=$(echo "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
-            HEX_LEN=${#HEX_SSID}
-            if [ "$((HEX_LEN % 2))" -ne 0 ] || [ "$HEX_LEN" -eq 0 ]; then
-                echo "ERROR: Hex SSID length ($HEX_LEN) is invalid." >>  /opt/logs/NMMonitor.log
+            # Case 2: Hex encoded text - must decode for nmcli
+            HEX_SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
+            HEX_LEN_SSID=${#HEX_SSID}
+            
+            if [ "$((HEX_LEN_SSID % 2))" -ne 0 ] || [ "$HEX_LEN_SSID" -eq 0 ]; then
+                echo "ERROR: Hex SSID length invalid ($HEX_LEN_SSID)."
                 SSID=""
             else
-                ESCAPED_HEX=$(echo "$HEX_SSID" | sed 's/../\\x&/g')
+                # printf %b expands the hex escapes safely
+                ESCAPED_HEX=$(printf '%s\n' "$HEX_SSID" | sed 's/../\\x&/g')
                 SSID=$(printf '%b' "$ESCAPED_HEX")
-                echo "Extracted quoted SSID" >>  /opt/logs/NMMonitor.log
             fi
             ;;
     esac
@@ -54,21 +57,19 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
 
     case "$PSK_LINE" in
         *psk=\"*\")
-            # Case 1: Quoted Passphrase - extract content
-            PSK=$(echo "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
-            echo "Extracted quoted PSK passphrase." >>  /opt/logs/NMMonitor.log
+            # Case 1: Quoted Passphrase
+            PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
+            echo "Extracted quoted PSK passphrase."
             ;;
         *psk=[0-9a-fA-F]*)
-            # Case 2: Raw 64-hex PSK - DO NOT DECODE
-            # Extract only the 64 hex characters
-            RAW_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
+            # Case 2: Raw 64-hex PSK - preserve as hex string
+            RAW_PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
             
-            # Validation: Must be exactly 64 characters for a 256-bit key
             if [ "${#RAW_PSK}" -eq 64 ]; then
                 PSK="$RAW_PSK"
-                echo "Extracted 64-char raw hex PSK." >>  /opt/logs/NMMonitor.log
+                echo "Extracted 64-char raw hex PSK."
             else
-                echo "ERROR: Unquoted PSK is not 64 hex characters " >>  /opt/logs/NMMonitor.log
+                echo "ERROR: Unquoted PSK is not 64 hex characters (Len: ${#RAW_PSK})."
                 PSK=""
             fi
             ;;
