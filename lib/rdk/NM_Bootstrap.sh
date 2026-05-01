@@ -77,14 +77,18 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
     #########################
     # Key_Mgmt Extraction   #
     #########################
-    if grep -q "key_mgmt=.*SAE" "$RDKV_SUPP_CONF"; then
-        echo "key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
-        KEY_MGMT=sae
-    else
-        echo "key_mgmt is wpa-psk" >>  /opt/logs/NMMonitor.log
-        KEY_MGMT=wpa-psk 
-    fi
+    KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")
 
+    case "$KEY_MGMT_LINE" in
+        *SAE*)
+            echo "key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
+            KEY_MGMT=sae
+            ;;
+        *)
+            echo "key_mgmt is wpa-psk" >>  /opt/logs/NMMonitor.log
+            KEY_MGMT=wpa-psk
+            ;;
+    esac
     sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 else
     echo "Config file not found." >>  /opt/logs/NMMonitor.log
