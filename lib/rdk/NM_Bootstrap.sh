@@ -56,12 +56,14 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             PSK=$(echo "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
             ;;
         *psk=[0-9a-fA-F]*)
-            HEX_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
-            if [ "${#HEX_PSK}" -ne 64 ]; then
-                echo "ERROR: Unquoted hex PSK must be a 64-character PMK."
+            HEX_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')'
+            HEX_LEN_PSK=${#HEX_PSK}
+            if [ "$((HEX_LEN_PSK % 2))" -ne 0 ] || [ "$HEX_LEN_PSK" -eq 0 ]; then
+                echo "ERROR: Hex PSK length is invalid."
                 PSK=""
             else
-                PSK="$HEX_PSK"
+                ESCAPED_PSK=$(echo "$HEX_PSK" | sed 's/../\\x&/g')
+                PSK=$(printf '%b' "$ESCAPED_PSK")
             fi
             ;;
     esac
@@ -81,8 +83,6 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
 else
     echo "Config file not found."
 fi
-
-
 
 if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
     if [ -f $MIGRATION_JSON ]; then
