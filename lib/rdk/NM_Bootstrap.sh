@@ -24,44 +24,48 @@ RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [[ -f "$RDKV_SUPP_CONF" ]]; then
+#########################
+    # SSID Extraction       #
     #########################
-    # SSID Extraction #
-    #########################
-    # Extract the first line defining the ssid key
     SSID_LINE=$(grep -m 1 '^[[:space:]]*ssid=' "$RDKV_SUPP_CONF")
 
-    # Case 1: SSID is a quoted readable string like ssid="Test's iPhone"
-    if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
-        SSID="${BASH_REMATCH[1]}"
-        echo "SSID in quoted format SSID: $SSID"
-
-    # Case 2: SSID is a hex string like ssid=4b61...
-    elif [[ "$SSID_LINE" =~ ssid=([a-fA-F0-9]+) ]]; then
-        HEX_SSID="${BASH_REMATCH[1]}"
-
-        # Convert hex string to readable UTF-8 string
-        # Using printf with \x formatting for each byte pair
-        SSID=$(printf "$(echo "$HEX_SSID" | sed 's/../\\x&/g')")
-        echo "Converted Hex SSID to string: $SSID"
-    fi
-
-    echo "Final SSID: $SSID"
+    case "$SSID_LINE" in
+        *ssid=\"*\")
+            SSID=$(echo "$SSID_LINE" | sed 's/.*ssid="\(.*\)".*/\1/')
+            ;;
+        *ssid=[0-9a-fA-F]*)
+            HEX_SSID=$(echo "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
+            HEX_LEN=${#HEX_SSID}
+            if [ "$((HEX_LEN % 2))" -ne 0 ] || [ "$HEX_LEN" -eq 0 ]; then
+                echo "ERROR: Hex SSID length ($HEX_LEN) is invalid."
+                SSID=""
+            else
+                ESCAPED_HEX=$(echo "$HEX_SSID" | sed 's/../\\x&/g')
+                SSID=$(printf '%b' "$ESCAPED_HEX")
+            fi
+            ;;
+    esac
 
     #########################
     # Passphrase Extraction #
     #########################
-    PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF") 
-    # Case 1: Quoted passphrase
-    if [[ "$PSK_LINE" =~ psk=\"(.+)\" ]]; then
-      PSK="${BASH_REMATCH[1]}"
-      echo "PSK in quoted format" 
+    PSK_LINE=$(grep -m 1 '^[[:space:]]*psk=' "$RDKV_SUPP_CONF")
 
-    # Case 2: Unquoted 64-char raw PSK
-    elif [[ "$PSK_LINE" =~ psk=([a-fA-F0-9]+) ]]; then
-      HEX_PSK="${BASH_REMATCH[1]}"
-      PSK=$(printf "$(echo "$HEX_PSK" | sed 's/../\\x&/g')")
-      echo "Converted Hex PSK to string"
-    fi
+    case "$PSK_LINE" in
+        *psk=\"*\")
+            PSK=$(echo "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
+            ;;
+        *psk=[0-9a-fA-F]*)
+            HEX_PSK=$(echo "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
+            if [ "$((${#HEX_PSK} % 2))" -ne 0 ]; then
+                echo "ERROR: Hex PSK length is invalid."
+                PSK=""
+            else
+                ESCAPED_PSK=$(echo "$HEX_PSK" | sed 's/../\\x&/g')
+                PSK=$(printf '%b' "$ESCAPED_PSK")
+            fi
+            ;;
+    esac
 
     #########################
     # Key_Mgmt Extraction   #
