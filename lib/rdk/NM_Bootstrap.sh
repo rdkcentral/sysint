@@ -73,7 +73,7 @@ if [ -f $RDKV_SUPP_CONF ]; then
   # Extract value after '=' and remove quotes                                            
   KEY_MGMT_VALUE=$(printf '%s\n' "$KEY_MGMT_LINE" | sed 's/.*key_mgmt=//; s/"//g')       
                                                                                          
-  if [ "$KEY_MGMT_VALUE" = "SAE" ] || [ "$KEY_MGMT_VALUE" = "SAE SAE_FT" ]; then
+  if [ "$KEY_MGMT_VALUE" = "SAE" ] || [ "$KEY_MGMT_VALUE" = "SAE FT-SAE" ]; then
       echo "`/bin/timestamp`: key_mgmt is SAE" >> /opt/logs/NMMonitor.log       
       KEY_MGMT=sae                                                                
   else                                        
@@ -130,7 +130,7 @@ else
              fi
          done
       fi
-      if [ -z $PSK ]; then
+      if [ -z "$PSK" ]; then
           #connect to wifi
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
           nmcli conn reload
