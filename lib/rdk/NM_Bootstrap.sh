@@ -29,7 +29,7 @@ if [ -f $RDKV_SUPP_CONF ]; then
   # SSID Extraction #
   #########################
   # Efficiently extract the line containing ssid=
-  SSID_LINE=$(grep -m 1 "ssid=" "$RDKV_SUPP_CONF")
+  SSID_LINE=$(grep -m 1 "^[[:space:]]*ssid=" "$RDKV_SUPP_CONF")
 
   # CASE 1: SSID is a quoted readable string like ssid="Test's iPhone"
   if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
@@ -44,7 +44,6 @@ if [ -f $RDKV_SUPP_CONF ]; then
       # Using printf with \x formatting for each byte pair
       SSID=$(printf "$(echo "$HEX_SSID" | sed 's/../\\x&/g')")
       echo "`/bin/timestamp`: Converted Hex to SSID: $SSID" >>  /opt/logs/NMMonitor.log
-      CREATE_FILE=true
   fi
     
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
