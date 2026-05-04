@@ -56,7 +56,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
     #########################
     # Passphrase Extraction #
     #########################
-    PSK_LINE=$(grep "^[[:space:]]*psk=" wpa_supplicant.conf)
+    PSK_LINE=$(grep -m 1 '^[[:space:]]*psk=' "$RDKV_SUPP_CONF")
 
     case "$PSK_LINE" in
         *psk=\"*\"*)
