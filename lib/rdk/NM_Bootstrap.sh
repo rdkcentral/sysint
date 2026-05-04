@@ -79,7 +79,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
                 echo "`/bin/timestamp`:Detected 64-character raw hex PSK. Preserving as hex string." >> /opt/logs/NMMonitor.log
             else
                 echo "`/bin/timestamp`:Error: Unquoted PSK must be exactly 64 hexadecimal characters." >> /opt/logs/NMMonitor.log
-                echo "`/bin/timestamp`:Detected length: ${#RAW_PSK}"
+                echo "`/bin/timestamp`:Detected length: ${#RAW_PSK}" >> /opt/logs/NMMonitor.log
                 exit 1
             fi
             ;;
