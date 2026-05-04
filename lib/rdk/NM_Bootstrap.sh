@@ -39,11 +39,16 @@ if [ -f $RDKV_SUPP_CONF ]; then
   # CASE 2: SSID is a hex string like ssid=4b61...
   elif [[ "$SSID_LINE" =~ ssid=([a-fA-F0-9]+) ]]; then
       HEX_SSID="${BASH_REMATCH[1]}"
-      
-      # Convert hex string to readable UTF-8 string
-      # Using printf with \x formatting for each byte pair
-      SSID=$(printf "$(echo "$HEX_SSID" | sed 's/../\\x&/g')")
-      echo "`/bin/timestamp`: Converted Hex to SSID: $SSID" >>  /opt/logs/NMMonitor.log
+
+      if (( ${#HEX_SSID} % 2 != 0 )); then
+          echo "`/bin/timestamp`: Invalid hex SSID (odd length): $HEX_SSID" >>  /opt/logs/NMMonitor.log
+          SSID=""
+      else
+          # Convert hex string to readable UTF-8 string
+          # Use a fixed printf format so decoded data is not treated as a format string
+          SSID=$(printf '%b' "$(printf '%s' "$HEX_SSID" | sed 's/../\\x&/g')")
+          echo "`/bin/timestamp`: Converted Hex to SSID: $SSID" >>  /opt/logs/NMMonitor.log
+      fi
   fi
     
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
