@@ -40,17 +40,22 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             ;;
         *ssid=[0-9a-fA-F]*)
             # Case 2: Hex encoded text - decode back to a string for nmcli
-            HEX_SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid=\([0-9a-fA-F]*\).*/\1/')
-            HEX_LEN_SSID=${#HEX_SSID}
-            
-            if [ "$((HEX_LEN_SSID % 2))" -ne 0 ] || [ "$HEX_LEN_SSID" -eq 0 ]; then
-                echo "`/bin/timestamp`:ERROR: Hex SSID length invalid ($HEX_LEN_SSID). Cannot decode" >> /opt/logs/NMMonitor.log
-                SSID=""
+            if printf '%s\n' "$SSID_LINE" | grep -Eq '^[[:space:]]*ssid=[0-9A-Fa-f]+([[:space:]]*(#.*)?)?$'; then
+                HEX_SSID=$(printf '%s\n' "$SSID_LINE" | sed -n 's/^[[:space:]]*ssid=\([0-9A-Fa-f][0-9A-Fa-f]*\)[[:space:]]*\(#.*\)\?$/\1/p')
+                HEX_LEN_SSID=${#HEX_SSID}
+                
+                if [ "$((HEX_LEN_SSID % 2))" -ne 0 ] || [ "$HEX_LEN_SSID" -eq 0 ]; then
+                    echo "`/bin/timestamp`:ERROR: Hex SSID length invalid ($HEX_LEN_SSID). Cannot decode" >> /opt/logs/NMMonitor.log
+                    SSID=""
+                else
+                    # Convert hex to \x escapes, then use %b to expand into a string
+                    ESCAPED_HEX=$(printf '%s\n' "$HEX_SSID" | sed 's/../\\x&/g')
+                    SSID=$(printf '%b' "$ESCAPED_HEX")
+                    echo "`/bin/timestamp`:Successfully decoded SSID from hex format" >> /opt/logs/NMMonitor.log
+                fi
             else
-                # Convert hex to \x escapes, then use %b to expand into a string
-                ESCAPED_HEX=$(printf '%s\n' "$HEX_SSID" | sed 's/../\\x&/g')
-                SSID=$(printf '%b' "$ESCAPED_HEX")
-                echo "`/bin/timestamp`:Successfully decoded SSID from hex format" >> /opt/logs/NMMonitor.log
+                echo "`/bin/timestamp`:ERROR: SSID matched hex branch but contains non-hex characters. Cannot decode" >> /opt/logs/NMMonitor.log
+                SSID=""
             fi
             ;;
     esac
