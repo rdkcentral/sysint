@@ -85,8 +85,8 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             ;;
     
         *)
-            echo "`/bin/timestamp`:Error: No valid PSK found in configuration line."  >> /opt/logs/NMMonitor.log
-            exit 1
+            PSK=""
+            echo "`/bin/timestamp`:No PSK found in configuration line. Continuing with empty PSK for open/unsecured network handling." >> /opt/logs/NMMonitor.log
             ;;
     esac
 
