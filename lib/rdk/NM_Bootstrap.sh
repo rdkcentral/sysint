@@ -24,7 +24,9 @@ RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f "$RDKV_SUPP_CONF" ]; then
-
+    SSID=""
+    PSK=""
+    KEY_MGMT=wpa-psk
     #########################
     # SSID Extraction       #
     #########################
