@@ -24,7 +24,29 @@ RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
 MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f $RDKV_SUPP_CONF ]; then
-  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
+
+  #########################
+  # SSID Extraction #
+  #########################
+  # Efficiently extract the line containing ssid=
+  SSID_LINE=$(grep -m 1 "ssid=" "$RDKV_SUPP_CONF")
+
+  # CASE 1: SSID is a quoted readable string like ssid="Test's iPhone"
+  if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
+      SSID="${BASH_REMATCH[1]}"
+      echo "`/bin/timestamp`: Found quoted SSID: $SSID. Do nothing as it's already in the correct format." >>  /opt/logs/NMMonitor.log
+
+  # CASE 2: SSID is a hex string like ssid=4b61...
+  elif [[ "$SSID_LINE" =~ ssid=([a-fA-F0-9]+) ]]; then
+      HEX_SSID="${BASH_REMATCH[1]}"
+      
+      # Convert hex string to readable UTF-8 string
+      # Using printf with \x formatting for each byte pair
+      SSID=$(printf "$(echo "$HEX_SSID" | sed 's/../\\x&/g')")
+      echo "`/bin/timestamp`: Converted Hex to SSID: $SSID" >>  /opt/logs/NMMonitor.log
+      CREATE_FILE=true
+  fi
+    
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
   # Case 1: Quoted passphrase
@@ -39,7 +61,24 @@ if [ -f $RDKV_SUPP_CONF ]; then
   else
     PSK=""
   fi
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+
+  #########################
+  # Key_Mgmt Extraction   #
+  #########################
+  KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")
+
+  case "$KEY_MGMT_LINE" in
+      *SAE*)
+          echo "`/bin/timestamp`:key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
+          KEY_MGMT=sae
+          ;;
+      *)
+          echo "`/bin/timestamp`:key_mgmt is wpa-psk" >>  /opt/logs/NMMonitor.log
+          KEY_MGMT=wpa-psk
+          ;;
+  esac
+    
+  sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 fi
 
 
@@ -62,7 +101,7 @@ if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
     fi
 fi
 
-if [ -z $SSID ]; then
+if [ -z "$SSID" ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
 
@@ -88,13 +127,13 @@ else
              fi
          done
       fi
-      if [ -z $PSK ]; then
+      if [ -z "$PSK" ]; then
           #connect to wifi
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
           nmcli conn reload
       else
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt "$KEY_MGMT"  wifi-sec.psk "$PSK"
           nmcli conn reload
       fi
 fi
