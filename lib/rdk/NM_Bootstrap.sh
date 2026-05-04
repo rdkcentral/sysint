@@ -34,7 +34,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
         *ssid=\"*\")
             # Case 1: Quoted string - extract content safely
             SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid="\(.*\)".*/\1/')
-            echo "Successfully extracted SSID from quoted string."
+            echo "Successfully extracted SSID from quoted string." >> /opt/logs/NMMonitor.log
             ;;
         *ssid=[0-9a-fA-F]*)
             # Case 2: Hex encoded text - decode back to a string for nmcli
@@ -42,13 +42,13 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             HEX_LEN_SSID=${#HEX_SSID}
             
             if [ "$((HEX_LEN_SSID % 2))" -ne 0 ] || [ "$HEX_LEN_SSID" -eq 0 ]; then
-                echo "ERROR: Hex SSID length invalid ($HEX_LEN_SSID). Cannot decode."
+                echo "ERROR: Hex SSID length invalid ($HEX_LEN_SSID). Cannot decode." >> /opt/logs/NMMonitor.log
                 SSID=""
             else
                 # Convert hex to \x escapes, then use %b to expand into a string
                 ESCAPED_HEX=$(printf '%s\n' "$HEX_SSID" | sed 's/../\\x&/g')
                 SSID=$(printf '%b' "$ESCAPED_HEX")
-                echo "Successfully decoded SSID from hex format."
+                echo "Successfully decoded SSID from hex format." >> /opt/logs/NMMonitor.log
             fi
             ;;
     esac
@@ -63,7 +63,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             # CASE 1: Quoted Passphrase
             # Extract the text between the quotes
             PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\([^"]*\)".*/\1/')
-            echo "Detected quoted passphrase. Preserving as text."
+            echo "Detected quoted passphrase. Preserving as text." >> /opt/logs/NMMonitor.log
             ;;
     
         *psk=[0-9a-fA-F]*)
@@ -74,16 +74,16 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
             # VALIDATION: Raw PSK must be exactly 64 hex characters (256-bit)
             if [ "${#RAW_PSK}" -eq 64 ]; then
                 PSK="$RAW_PSK"
-                echo "Detected 64-character raw hex PSK. Preserving as hex string."
+                echo "Detected 64-character raw hex PSK. Preserving as hex string." >> /opt/logs/NMMonitor.log
             else
-                echo "Error: Unquoted PSK must be exactly 64 hexadecimal characters."
+                echo "Error: Unquoted PSK must be exactly 64 hexadecimal characters." >> /opt/logs/NMMonitor.log
                 echo "Detected length: ${#RAW_PSK}"
                 exit 1
             fi
             ;;
     
         *)
-            echo "Error: No valid PSK found in configuration line."
+            echo "Error: No valid PSK found in configuration line."  >> /opt/logs/NMMonitor.log
             exit 1
             ;;
     esac
