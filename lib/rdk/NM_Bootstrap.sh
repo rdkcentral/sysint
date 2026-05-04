@@ -33,8 +33,8 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
     SSID_LINE=$(grep -m 1 '^[[:space:]]*ssid=' "$RDKV_SUPP_CONF")
     
     case "$SSID_LINE" in
-        *ssid=\"*\")
-            # Case 1: Quoted string - extract content safely
+        *ssid=\"*\"*)
+            # Case 1: Quoted string - extract content safely, allowing trailing whitespace/comments
             SSID=$(printf '%s\n' "$SSID_LINE" | sed 's/.*ssid="\([^"]*\)".*/\1/')
             echo "`/bin/timestamp`:Successfully extracted SSID from quoted string" >> /opt/logs/NMMonitor.log
             ;;
