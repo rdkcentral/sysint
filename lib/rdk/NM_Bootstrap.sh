@@ -130,7 +130,7 @@ else
              fi
          done
       fi
-      if [ -z "$PSK" ]; then
+      if [ -z $PSK ]; then
           #connect to wifi
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
           nmcli conn reload
