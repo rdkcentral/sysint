@@ -109,7 +109,7 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
     sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
     
 else
-    echo "Config file not found." >>  /opt/logs/NMMonitor.log
+    echo "`/bin/timestamp` :$0: Config file not found." >>  /opt/logs/NMMonitor.log
 fi
 
 if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
