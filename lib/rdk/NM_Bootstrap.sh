@@ -55,28 +55,35 @@ if [ -f "$RDKV_SUPP_CONF" ]; then
 # Example extraction logic
 PSK_LINE=$(grep "^[[:space:]]*psk=" wpa_supplicant.conf)
 
-    case "$PSK_LINE" in
-        *psk=\"*\")
-            # CASE 1: Quoted Passphrase
-            # Extract the text between the quotes
-            PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\(.*\)".*/\1/')
-            echo "Detected quoted passphrase. Preserving as text."
-            ;;
-        *psk=[0-9a-fA-F]*)
-            # CASE 2: Unquoted Hex PSK
-            # Extract only the hex characters
-            RAW_PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]*\).*/\1/')
-            
-            # VALIDATION: A raw PSK MUST be exactly 64 hex characters (256-bit)
-            if [ "${#RAW_PSK}" -eq 64 ]; then
-                PSK="$RAW_PSK"
-                echo "Detected 64-char raw hex PSK. Preserving as hex string."
-            else
-                echo "Error: Unquoted PSK is not 64 characters. Length is ${#RAW_PSK}."
-                exit 1
-            fi
-            ;;
-    esac
+case "$PSK_LINE" in
+    *psk=\"*\"*)
+        # CASE 1: Quoted Passphrase
+        # Extract the text between the quotes
+        PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk="\([^"]*\)".*/\1/')
+        echo "Detected quoted passphrase. Preserving as text."
+        ;;
+
+    *psk=[0-9a-fA-F]*)
+        # CASE 2: Unquoted Raw Hex PSK
+        # Extract only the hexadecimal characters
+        RAW_PSK=$(printf '%s\n' "$PSK_LINE" | sed 's/.*psk=\([0-9a-fA-F]\{1,\}\).*/\1/')
+
+        # VALIDATION: Raw PSK must be exactly 64 hex characters (256-bit)
+        if [ "${#RAW_PSK}" -eq 64 ]; then
+            PSK="$RAW_PSK"
+            echo "Detected 64-character raw hex PSK. Preserving as hex string."
+        else
+            echo "Error: Unquoted PSK must be exactly 64 hexadecimal characters."
+            echo "Detected length: ${#RAW_PSK}"
+            exit 1
+        fi
+        ;;
+
+    *)
+        echo "Error: No valid PSK found in configuration line."
+        exit 1
+        ;;
+esac
 
     #########################
     # Key_Mgmt Extraction   #
