@@ -64,18 +64,17 @@ if [ -f $RDKV_SUPP_CONF ]; then
   #########################
   # Key_Mgmt Extraction   #
   #########################
-  KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")
-
-  case "$KEY_MGMT_LINE" in
-      *SAE*)
-          echo "`/bin/timestamp`:key_mgmt is SAE" >>  /opt/logs/NMMonitor.log
-          KEY_MGMT=sae
-          ;;
-      *)
-          echo "`/bin/timestamp`:key_mgmt is wpa-psk" >>  /opt/logs/NMMonitor.log
-          KEY_MGMT=wpa-psk
-          ;;
-  esac
+  KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")                  
+  # Extract value after '=' and remove quotes                                            
+  KEY_MGMT_VALUE=$(printf '%s\n' "$KEY_MGMT_LINE" | sed 's/.*key_mgmt=//; s/"//g')       
+                                                                                         
+  if [ "$KEY_MGMT_VALUE" = "SAE" ] || [ "$KEY_MGMT_VALUE" = "SAE SAE_FT" ]; then
+      echo "`/bin/timestamp`: key_mgmt is SAE" >> /opt/logs/NMMonitor.log       
+      KEY_MGMT=sae                                                                
+  else                                        
+      echo "`/bin/timestamp`: key_mgmt is WPA_PSK" >> /opt/logs/NMMonitor.log   
+      KEY_MGMT=wpa-psk                                                       
+  fi 
     
   sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 fi
