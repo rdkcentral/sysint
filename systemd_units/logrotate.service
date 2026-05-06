@@ -23,4 +23,4 @@ Description=Log Rotation Timer Service (R)
 [Service]
 Type=oneshot
 SyslogIdentifier=logrotate
-ExecStart=/usr/sbin/logrotate -s /tmp/logrotatedata.status /etc/logrotatedata.conf -l /opt/logs/logrotate.log --skip-state-lock
+ExecStart=/usr/sbin/logrotate -s /tmp/logrotatedata.status /etc/logrotatedata.conf -l /opt/logs/unified-logging.txt --skip-state-lock
