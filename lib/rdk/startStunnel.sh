@@ -36,7 +36,7 @@ LOG_FILE="$LOG_PATH/stunnel.log"
 
 echo_t()
 {
-    echo "$DT_TIME $@" >> $LOG_FILE
+    echo "$DT_TIME $@" | systemd-cat -t STUNNEL
 }
 
 usage()
