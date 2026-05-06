@@ -50,32 +50,23 @@ elif [ "$1" = "ntpHost4" ]; then
 elif [ "$1" = "ntpHost5" ]; then
     result=`tr181 Device.Time.NTPServer5 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "ChronyEnable" ]; then
-    result=`tr181 Device.Time.ChronyEnable 2>&1 > /dev/null`
+elif [ "$1" = "ntpHost1Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.1.Settings 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "NTPMinpoll" ]; then
-    result=`tr181 Device.Time.NTPMinpoll 2>&1 > /dev/null`
+elif [ "$1" = "ntpHost2Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.2.Settings 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "NTPMaxpoll" ]; then
-    result=`tr181 Device.Time.NTPMaxpoll 2>&1 > /dev/null`
+elif [ "$1" = "ntpHost3Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.3.Settings 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "NTPServer1Directive" ]; then
-    result=`tr181 Device.Time.NTPServer1Directive 2>&1 > /dev/null`
+elif [ "$1" = "ntpHost4Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.4.Settings 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "NTPServer2Directive" ]; then
-    result=`tr181 Device.Time.NTPServer2Directive 2>&1 > /dev/null`
+elif [ "$1" = "ntpHost5Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.5.Settings 2>&1 > /dev/null`
     echo $result
-elif [ "$1" = "NTPServer3Directive" ]; then
-    result=`tr181 Device.Time.NTPServer3Directive 2>&1 > /dev/null`
-    echo $result
-elif [ "$1" = "NTPServer4Directive" ]; then
-    result=`tr181 Device.Time.NTPServer4Directive 2>&1 > /dev/null`
-    echo $result
-elif [ "$1" = "NTPServer5Directive" ]; then
-    result=`tr181 Device.Time.NTPServer5Directive 2>&1 > /dev/null`
-    echo $result
-elif [ "$1" = "NTPMaxstep" ]; then
-    result=`tr181 Device.Time.NTPMaxstep 2>&1 > /dev/null`
+elif [ "$1" = "ntpMakestep" ]; then
+    result=`tr181 Device.Time.Chrony.Makestep 2>&1 > /dev/null`
     echo $result
 elif [ "$1" = "partnerName" ]; then
     result=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1 > /dev/null`
