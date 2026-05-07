@@ -32,7 +32,7 @@ fi
 
 # log format
 DT_TIME=$(/bin/timestamp)
-LOG_FILE="$LOG_PATH/stunnel.log"
+LOG_FILE="$LOG_PATH/unified-logging.txt"
 
 echo_t()
 {
