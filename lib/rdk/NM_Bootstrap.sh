@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
@@ -19,12 +19,30 @@
 # limitations under the License.
 ##############################################################################
 
-RDK_PROFILE=$(grep "RDK_PROFILE" /etc/device.properties | cut -d '=' -f 2)
+BOOT_TYPE=$(grep "BOOT_TYPE" /tmp/bootType | cut -d '=' -f 2)
 RDKV_SUPP_CONF="/opt/secure/wifi/wpa_supplicant.conf"
-
+MIGRATION_JSON="/opt/secure/migration/migration_data_store.json"
 
 if [ -f $RDKV_SUPP_CONF ]; then
-  SSID=$(cat $RDKV_SUPP_CONF | grep -w ssid= | cut -d '"' -f 2)
+
+  #########################
+  # SSID Extraction #
+  #########################
+  # Efficiently extract the line containing ssid=
+  SSID_LINE=$(grep -m 1 "^[[:space:]]*ssid=" "$RDKV_SUPP_CONF")
+
+  # CASE 1: SSID is a quoted readable string like ssid="Test's iPhone"
+  if [[ "$SSID_LINE" =~ ssid=\"(.*)\" ]]; then
+      SSID="${BASH_REMATCH[1]}"
+      echo "`/bin/timestamp`: Found quoted SSID: $SSID. Do nothing as it's already in the correct format." >>  /opt/logs/NMMonitor.log
+
+  # CASE 2: SSID is a hex string like ssid=4b61...
+  elif [[ "$SSID_LINE" =~ ssid=([a-fA-F0-9]+) ]]; then
+      HEX_SSID="${BASH_REMATCH[1]}"
+      SSID=$(printf '%b' "$(printf '%s' "$HEX_SSID" | sed 's/../\\x&/g')")
+      echo "`/bin/timestamp`: Converted Hex to SSID: $SSID" >>  /opt/logs/NMMonitor.log
+  fi
+    
   PSK_LINE=$(grep psk= "$RDKV_SUPP_CONF")
 
   # Case 1: Quoted passphrase
@@ -39,10 +57,45 @@ if [ -f $RDKV_SUPP_CONF ]; then
   else
     PSK=""
   fi
-  sed -i '/network={/,/}/d' /opt/secure/wifi/wpa_supplicant.conf
+
+  #########################
+  # Key_Mgmt Extraction   #
+  #########################
+  KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")                  
+  # Extract value after '=' and remove quotes                                            
+  KEY_MGMT_VALUE=$(printf '%s\n' "$KEY_MGMT_LINE" | sed 's/.*key_mgmt=//; s/"//g')       
+                                                                                         
+  if [ "$KEY_MGMT_VALUE" = "SAE" ] || [ "$KEY_MGMT_VALUE" = "SAE FT-SAE" ]; then
+      KEY_MGMT=sae                                                                
+  else                                        
+      KEY_MGMT=wpa-psk                                                       
+  fi 
+  echo "`/bin/timestamp`: key_mgmt is $KEY_MGMT" >> /opt/logs/NMMonitor.log   
+    
+  sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 fi
 
-if [ -z $SSID ]; then
+
+if [ "$BOOT_TYPE" == "BOOT_MIGRATION" ]; then
+    if [ -f $MIGRATION_JSON ]; then
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... Waiting for IMMUI connect" >>  /opt/logs/NMMonitor.log
+        echo "`/bin/timestamp` :$0: Disable Ethernet for Migration" >>  /opt/logs/NMMonitor.log
+        nmcli dev set eth0 managed no
+        
+        if [ -d /opt/NetworkManager ]; then
+         rm -rf /opt/NetworkManager/
+        fi
+        if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         rm -rf /opt/secure/NetworkManager/system-connections/*
+        fi
+        nmcli conn reload
+        exit 0
+    else
+        echo "`/bin/timestamp` :$0: BOOT_TYPE=$BOOT_TYPE... But migration data JSON does not exist" >>  /opt/logs/NMMonitor.log
+    fi
+fi
+
+if [ -z "$SSID" ]; then
       echo "`/bin/timestamp` :$0: No SSID found in supplicant conf" >>  /opt/logs/NMMonitor.log
       echo "`/bin/timestamp` :$0: Trying with previously configured settings" >>  /opt/logs/NMMonitor.log
 
@@ -58,16 +111,23 @@ else
       if [ -d /opt/NetworkManager/system-connections ]; then
          rm -rf /opt/NetworkManager/system-connections/*
       fi
-      if [ "$RDK_PROFILE" == "TV" ]; then
-        echo "`/bin/timestamp` :$0: Migrating Wifi credentials for TVs from NM_Bootsrtap" >>  /opt/logs/NMMonitor.log
+      if [ -d /opt/secure/NetworkManager/system-connections ]; then
+         echo "`/bin/timestamp` :$0: Listing the connection profiles in device: " >>  /opt/logs/NMMonitor.log
+         ls -lh /opt/secure/NetworkManager/system-connections >> /opt/logs/NMMonitor.log
+         echo "`/bin/timestamp` :$0: Deleting existing wifi profiles if any..." >>  /opt/logs/NMMonitor.log
+         for f in /opt/secure/NetworkManager/system-connections/*; do
+             if grep -q "type=wifi" "$f"; then
+                 rm -f "$f"
+             fi
+         done
       fi
-      if [ -z $PSK ]; then
+      if [ -z "$PSK" ]; then
           #connect to wifi
           nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
           nmcli conn reload
       else
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK"
+          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt "$KEY_MGMT"  wifi-sec.psk "$PSK"
           nmcli conn reload
       fi
 fi

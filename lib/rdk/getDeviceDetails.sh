@@ -45,6 +45,10 @@ logMsg "enter"
 . /etc/include.properties
 . /etc/device.properties
 . $RDK_PATH/utils.sh
+if [ -f /lib/rdk/utils-vendor.sh ]; then
+    . $RDK_PATH/utils-vendor.sh
+fi
+
 
 if [ "$DEVICE_TYPE" != "mediaclient" ]; then
     export SNMP_BIN_DIR=/mnt/nfs/bin/target-snmp/bin
@@ -278,8 +282,10 @@ getDeviceSerialNumber()
 getBluetoothMac()
 {
     bluetooth_mac="00:00:00:00:00:00"
-    if [ "$BLUETOOTH_ENABLED" = "true" ]; then
-        bluetooth_mac=$(getDeviceBluetoothMac)
+    if [ -f /lib/rdk/readBTAddress-vendor.sh ]; then
+        bluetooth_mac=`sh /lib/rdk/readBTAddress-vendor.sh`
+    else
+        bluetooth_mac=`sh /lib/rdk/readBTAddress-generic.sh`
     fi
 
     echo "$bluetooth_mac"
