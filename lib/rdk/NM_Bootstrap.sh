@@ -109,9 +109,9 @@ else
       fi
       if [ -z "$PSK" ]; then
           #connect to wifi
-          nmcli device wifi connect ssid "$SSID"
+          nmcli device wifi connect "$SSID"
       else
           #connect to wifi
-          nmcli device wifi connect ssid "$SSID" password "$PSK"
+          nmcli device wifi connect "$SSID" password "$PSK"
       fi
 fi
