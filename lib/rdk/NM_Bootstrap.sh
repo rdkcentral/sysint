@@ -109,11 +109,9 @@ else
       fi
       if [ -z "$PSK" ]; then
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
-          nmcli conn reload
+          nmcli device wifi connect ssid "$SSID"
       else
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.psk "$PSK"
-          nmcli conn reload
+          nmcli device wifi connect ssid "$SSID" password "$PSK"
       fi
 fi
