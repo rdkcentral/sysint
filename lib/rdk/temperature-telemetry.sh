@@ -21,7 +21,14 @@
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
     source /lib/rdk/t2Shared_api.sh
 fi
-boardTemp=`/bin/cat /sys/class/thermal/thermal_zone0/temp | sed 's/./&./2'`c
+
+powerState=$(/usr/bin/QueryPowerState)
+
+if [[ "$powerState" != "DEEPSLEEP" ]]; then
+    boardTemp=`/bin/cat /sys/class/thermal/thermal_zone0/temp | sed 's/./&./2'`c
+else
+    boardTemp="Device in Deepsleep"
+fi
 
 /bin/echo Temperature:$boardTemp
 t2ValNotify "Board_temperature_split" "$boardTemp"
