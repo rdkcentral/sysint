@@ -24,7 +24,7 @@ fi
 
 powerState=$(/usr/bin/QueryPowerState)
 
-if [[ "$powerState" != "DEEPSLEEP" ]]; then
+if [ "$powerState" != "DEEPSLEEP" ]; then
     boardTemp=`/bin/cat /sys/class/thermal/thermal_zone0/temp | sed 's/./&./2'`c
 else
     boardTemp="Device in Deepsleep"
