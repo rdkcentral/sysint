@@ -22,11 +22,26 @@ jobs:
     runs-on: comcast-ubuntu-latest
     env:
       REPO: ${{ github.repository }}
+      ACTOR: ${{ github.event.review.user.login }}
       GH_TOKEN: ${{ github.token }}
       RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
 
     steps:
+      - name: Verify approver is a maintainer
+        id: auth
+        run: |
+          set -euo pipefail
+          permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.permission' | tr '[:upper:]' '[:lower:]')
+          echo "Approver '${ACTOR}' permission: ${permission}"
+          if [[ "${permission}" == "admin" || "${permission}" == "maintain" ]]; then
+            echo "is_maintainer=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Approver is not a maintainer. Skipping release finish."
+            echo "is_maintainer=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check approval status
+        if: steps.auth.outputs.is_maintainer == 'true'
         id: approvals
         run: |
           set -euo pipefail
@@ -41,27 +56,27 @@ jobs:
           fi
 
       - name: Checkout repository
-        if: steps.approvals.outputs.should_finish == 'true'
+        if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install release tools
-        if: steps.approvals.outputs.should_finish == 'true'
+        if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y git-flow
 
       - name: Configure git identity
-        if: steps.approvals.outputs.should_finish == 'true'
+        if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
         run: |
           set -euo pipefail
-          git config user.name "release-bot"
-          git config user.email "release-bot@users.noreply.github.com"
+          git config user.name "${ACTOR}"
+          git config user.email "${ACTOR}@users.noreply.github.com"
 
       - name: Finish release and push
-        if: steps.approvals.outputs.should_finish == 'true'
+        if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
         run: |
           set -euo pipefail
           release_version="${RELEASE_BRANCH#release/}"
@@ -99,7 +114,7 @@ jobs:
           git push origin develop
 
       - name: Close the release PR
-        if: steps.approvals.outputs.should_finish == 'true'
+        if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
         run: |
           set -euo pipefail
           pr_number="${{ github.event.pull_request.number }}"
