@@ -23,7 +23,7 @@ jobs:
     env:
       REPO: ${{ github.repository }}
       ACTOR: ${{ github.event.review.user.login }}
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.RDKCM_RDKE }}
       RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
 
     steps:
@@ -60,6 +60,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Install release tools
         if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'

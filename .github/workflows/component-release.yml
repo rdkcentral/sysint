@@ -27,7 +27,7 @@ jobs:
       RELEASE_MODE: ${{ github.event.inputs.release_mode }}
       REPO: ${{ github.repository }}
       ACTOR: ${{ github.actor }}
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.RDKCM_RDKE }}
 
     steps:
       - name: Validate version format
@@ -59,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Install release tools
         run: |
