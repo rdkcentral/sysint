@@ -31,9 +31,9 @@ jobs:
         id: auth
         run: |
           set -euo pipefail
-          permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.permission' | tr '[:upper:]' '[:lower:]')
-          echo "Approver '${ACTOR}' permission: ${permission}"
-          if [[ "${permission}" == "admin" || "${permission}" == "maintain" ]]; then
+          role=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.role_name' | tr '[:upper:]' '[:lower:]')
+          echo "Approver '${ACTOR}' role: ${role}"
+          if [[ "${role}" == "admin" || "${role}" == "maintain" ]]; then
             echo "is_maintainer=true" >> "$GITHUB_OUTPUT"
           else
             echo "Approver is not a maintainer. Skipping release finish."

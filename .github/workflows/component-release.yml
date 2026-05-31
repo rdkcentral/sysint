@@ -43,9 +43,9 @@ jobs:
         if: ${{ github.event.inputs.release_mode == 'auto-complete' }}
         run: |
           set -euo pipefail
-          permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.permission' | tr '[:upper:]' '[:lower:]')
-          echo "Actor '${ACTOR}' permission: ${permission}"
-          case "${permission}" in
+          role=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.role_name' | tr '[:upper:]' '[:lower:]')
+          echo "Actor '${ACTOR}' role: ${role}"
+          case "${role}" in
             admin|maintain)
               echo "Authorization successful."
               ;;
