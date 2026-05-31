@@ -1,0 +1,167 @@
+name: Component Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version (example: 5.2.0)"
+        required: true
+        type: string
+      release_mode:
+        description: "Release mode"
+        required: true
+        type: choice
+        options:
+          - approvable
+          - auto-complete
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: comcast-ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+      RELEASE_MODE: ${{ github.event.inputs.release_mode }}
+      REPO: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Validate version format
+        run: |
+          set -euo pipefail
+          if ! [[ "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$ ]]; then
+            echo "Invalid version format: ${RELEASE_VERSION}"
+            echo "Expected format: major.minor.patch with optional suffix (e.g. 5.2.0, 5.2.0-rc1)"
+            exit 1
+          fi
+
+      - name: Authorize auto-complete (maintainers only)
+        if: ${{ github.event.inputs.release_mode == 'auto-complete' }}
+        run: |
+          set -euo pipefail
+          permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" -q '.permission' | tr '[:upper:]' '[:lower:]')
+          echo "Actor '${ACTOR}' permission: ${permission}"
+          case "${permission}" in
+            admin|maintain)
+              echo "Authorization successful."
+              ;;
+            *)
+              echo "ERROR: Only maintainers/owners can run auto-complete releases."
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install release tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y git-flow
+          npm install -g auto-changelog
+
+      - name: Configure git identity
+        run: |
+          set -euo pipefail
+          git config user.name "${ACTOR}"
+          git config user.email "${ACTOR}@users.noreply.github.com"
+
+      - name: Initialize git-flow
+        run: |
+          set -euo pipefail
+          git fetch --prune origin
+          git checkout develop
+          git reset --hard origin/develop
+          git fetch origin main:main
+          git flow init -d
+
+      #
+      # ── AUTO-COMPLETE RELEASE ──
+      #
+      - name: "Auto-complete: full release"
+        if: ${{ github.event.inputs.release_mode == 'auto-complete' }}
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${RELEASE_VERSION} already exists. Skipping."
+            exit 0
+          fi
+
+          git flow release start "${RELEASE_VERSION}"
+          auto-changelog -v "${RELEASE_VERSION}"
+          git add CHANGELOG.md
+          if ! git diff --cached --quiet; then
+            git commit -m "${RELEASE_VERSION} release changelog updates"
+          fi
+          git flow release publish "${RELEASE_VERSION}"
+          git flow release finish -m "${RELEASE_VERSION} release" "${RELEASE_VERSION}"
+          git push origin main
+          git push origin --tags
+          git push origin develop
+
+      #
+      # ── APPROVABLE RELEASE ──
+      #
+      - name: "Approvable: start release and create PR"
+        if: ${{ github.event.inputs.release_mode == 'approvable' }}
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${RELEASE_VERSION} already exists. Skipping."
+            exit 0
+          fi
+
+          release_branch="release/${RELEASE_VERSION}"
+          if git ls-remote --exit-code --heads origin "${release_branch}" >/dev/null 2>&1; then
+            echo "${release_branch} already exists on remote. Skipping release start."
+          else
+            git flow release start "${RELEASE_VERSION}"
+            auto-changelog -v "${RELEASE_VERSION}"
+            git add CHANGELOG.md
+            if ! git diff --cached --quiet; then
+              git commit -m "${RELEASE_VERSION} release changelog updates"
+            fi
+            git flow release publish "${RELEASE_VERSION}"
+          fi
+
+          existing_pr=$(gh pr list --head "${release_branch}" --base develop --state open --json number -q '.[0].number')
+          if [ -z "${existing_pr}" ]; then
+            gh pr create \
+              --base develop \
+              --head "${release_branch}" \
+              --title "Release ${RELEASE_VERSION}" \
+              --body "Automated release PR for ${RELEASE_VERSION}. Approve this PR to trigger release finish."
+            echo "PR created. Waiting for approval to finish release."
+          else
+            echo "PR from ${release_branch} to develop already exists (#${existing_pr})."
+          fi
+
+      #
+      # ── CLEANUP ON FAILURE ──
+      #
+      - name: Cleanup on failure
+        if: failure()
+        run: |
+          git tag -d "${RELEASE_VERSION}" 2>/dev/null || true
+          git push origin ":refs/tags/${RELEASE_VERSION}" 2>/dev/null || true
+          git push origin --delete "release/${RELEASE_VERSION}" 2>/dev/null || true
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          {
+            echo "## Component Release Summary"
+            echo "- Repository: ${REPO}"
+            echo "- Actor: ${ACTOR}"
+            echo "- Version: ${RELEASE_VERSION}"
+            echo "- Mode: ${RELEASE_MODE}"
+          } >> "$GITHUB_STEP_SUMMARY"
