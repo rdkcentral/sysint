@@ -175,13 +175,13 @@ runMaintenanceLogUploadTask()
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
-            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-            "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
+            logUploadLog "Executing logupload binary cancelled : $LOG_UPLOAD_BIN_PATH"
+            #"$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
             result=$?
         else
             logUploadLog "Log upload triggered from regular execution"
-            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-            nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
+            logUploadLog "Executing logupload binary cancelled : $LOG_UPLOAD_BIN_PATH"
+            #nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
             bg_pid=$!
             wait $bg_pid
             result=$?
