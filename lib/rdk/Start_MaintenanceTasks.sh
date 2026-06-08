@@ -19,7 +19,7 @@
 ##############################################################################
 
 ##################################################################
-## Script to Start Maintenance Tasks (RFC, SWUpdate, LogUpload).
+## Script to Start Maintenance Tasks (RFC, SWUpdate).
 ##################################################################
 
 # Sourcing
@@ -56,20 +56,13 @@ MAINT_FWDOWNLOAD_COMPLETE=8
 MAINT_FWDOWNLOAD_ERROR=9
 MAINT_FWDOWNLOAD_INPROGRESS=15
 
-# Maintenance LogUpload Events
-MAINT_LOGUPLOAD_COMPLETE=4
-MAINT_LOGUPLOAD_ERROR=5
-MAINT_LOGUPLOAD_INPROGRESS=16
-
 # Log files
 RFC_LOG_FILE="$LOG_PATH/rfcscript.log"
-LOGUPLOAD_LOG_FILE="$LOG_PATH/dcmscript.log"
 SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
-LOG_UPLOAD_BIN_PATH="/usr/bin/logupload"
 
 # Log Functions
 rfcLog ()
@@ -80,11 +73,6 @@ rfcLog ()
 swupdateLog()
 {
     echo "`/bin/timestamp` : $0: $*" >> $SWUPDATE_LOG_FILE
-}
-
-logUploadLog()
-{
-    echo "`/bin/timestamp` : $0: $*" >> $LOGUPLOAD_LOG_FILE
 }
 
 # Utility Function
@@ -128,75 +116,6 @@ runMaintenanceSWUpdateTask()
     fi
 }
 
-runMaintenanceLogUploadTask()
-{
-    # On Demand Log Upload and other initializations
-    ON_DEMAND_LOG_UPLOAD=5
-    TriggerType=$2 # Marked OnDemand LogUpload for second arg
-    tftp_server=$LOG_SERVER # from dcm.properties
-    
-    if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-          . /opt/dcm.properties
-    else
-          . /etc/dcm.properties
-    fi
-    
-    if [ -f "$LOG_UPLOAD_BIN_PATH" ]; then
-        logUploadLog "Starting log upload"
-        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        [ -z "$upload_protocol" ] && upload_protocol='HTTP'
-        logUploadLog "upload_protocol: $upload_protocol"
-
-        httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ -n "$httplink" ]; then
-            upload_httplink="$httplink"
-        else
-            logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
-        fi
-
-        if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-            logUploadLog "opt override is present. Ignore settings from Bootstrap config"
-        else
-            logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>/dev/null)
-            [ -n "$logUploadEndpointUrl" ] && upload_httplink="$logUploadEndpointUrl"
-        fi
-        logUploadLog "upload_httplink: $upload_httplink"
-
-        uploadOnReboot=0
-        uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ "$uploadCheck" = "true" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
-            uploadOnReboot=1
-        elif [ "$uploadCheck" = "false" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
-        else
-            logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
-        fi
-
-        if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
-            logUploadLog "Application triggered on demand log upload"
-            logUploadLog "Executing logupload binary cancelled : $LOG_UPLOAD_BIN_PATH"
-            #"$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
-            result=$?
-        else
-            logUploadLog "Log upload triggered from regular execution"
-            logUploadLog "Executing logupload binary cancelled : $LOG_UPLOAD_BIN_PATH"
-            #nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
-            bg_pid=$!
-            wait $bg_pid
-            result=$?
-        fi
-    else
-        logUploadLog "LOGUPLOAD binary not found"
-        result=-1
-    fi
-
-    # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
-    if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
-        eventSender "MaintenanceMGR" "$MAINT_LOGUPLOAD_ERROR"
-    fi
-}
-
 ################
 # Main App
 ################
@@ -211,16 +130,12 @@ case "$1" in
         runMaintenanceSWUpdateTask
         swupdateLog "SWUpdate Task execution done"
         ;;
-    "LOGUPLOAD")
-        # Handle LOGUPLOAD Task
-        runMaintenanceLogUploadTask
-        logUploadLog "Log Upload Task execution done"
-        ;;
     *)
         # Handle invalid arguments
         echo "Invalid Task: $1"
-        echo "Usage: $0 [RFC|SWUPDATE|LOGUPLOAD [TRIGGER_TYPE]]"
+        echo "Usage: $0 [RFC|SWUPDATE]"
         exit 2
         ;;
 esac
+
 
