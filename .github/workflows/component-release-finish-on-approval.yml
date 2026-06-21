@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.RDKCM_RDKE }}
+          ssh-key: ${{ secrets.RDKCM_DEPLOY_KEY }}
 
       - name: Install release tools
         if: steps.auth.outputs.is_maintainer == 'true' && steps.approvals.outputs.should_finish == 'true'
