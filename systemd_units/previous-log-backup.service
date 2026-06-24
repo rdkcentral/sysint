@@ -31,6 +31,7 @@ NotifyAccess=all
 Environment="LOG_PATH=/opt/logs"
 Environment="RDK_PATH=/lib/rdk"
 ExecStart=/usr/bin/backup_logs
+ExecStartPost=/sbin/reboot
 RemainAfterExit=yes
 
 [Install]
