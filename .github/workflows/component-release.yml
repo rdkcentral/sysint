@@ -30,6 +30,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: component-release-${{ github.event.inputs.release_type }}-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: comcast-ubuntu-latest
