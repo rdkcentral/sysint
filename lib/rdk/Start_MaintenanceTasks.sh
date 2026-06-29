@@ -69,7 +69,7 @@ SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
-LOGUPLOAD_SCRIPT="$RDK_PATH/uploadSTBLogs.sh"
+LOG_UPLOAD_BIN_PATH="/usr/bin/logupload"
 
 # Log Functions
 rfcLog ()
@@ -141,7 +141,7 @@ runMaintenanceLogUploadTask()
           . /etc/dcm.properties
     fi
     
-    if [ -f "$LOGUPLOAD_SCRIPT" ]; then
+    if [ -f "$LOG_UPLOAD_BIN_PATH" ]; then
         logUploadLog "Starting log upload"
         upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
         [ -z "$upload_protocol" ] && upload_protocol='HTTP'
@@ -165,27 +165,29 @@ runMaintenanceLogUploadTask()
         uploadOnReboot=0
         uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
         if [ "$uploadCheck" = "true" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'true', executing script uploadSTBLogs.sh"
+            logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
             uploadOnReboot=1
         elif [ "$uploadCheck" = "false" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'false', executing script uploadSTBLogs.sh"
+            logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
         else
             logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
         fi
 
         if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
             logUploadLog "Application triggered on demand log upload"
-            sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "$TriggerType" 2>/dev/null
+            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
+            "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
             result=$?
         else
             logUploadLog "Log upload triggered from regular execution"
-            nice -n 19 sh $LOGUPLOAD_SCRIPT "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" &
+            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
+            nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
             bg_pid=$!
             wait $bg_pid
             result=$?
         fi
     else
-        logUploadLog "LOGUPLOAD script not found"
+        logUploadLog "LOGUPLOAD binary not found"
         result=-1
     fi
 
@@ -221,3 +223,4 @@ case "$1" in
         exit 2
         ;;
 esac
+
