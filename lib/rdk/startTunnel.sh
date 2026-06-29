@@ -45,9 +45,9 @@ case $oper in
                  echo "Error: GetConfigFile Not Found"
                  exit 127
              fi
-             GetConfigFile /tmp/nvgeajacl.ipe
-             /usr/bin/ssh -i /tmp/nvgeajacl.ipe $*
-             rm /tmp/nvgeajacl.ipe
+             GetConfigFile /tmp/webpa-key.ipe
+             /usr/bin/ssh -i /tmp/webpa-key.ipe $*
+             rm /tmp/webpa-key.ipe
              exit 1
              ;;
            stop)
