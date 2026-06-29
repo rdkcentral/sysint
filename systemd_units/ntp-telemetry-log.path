@@ -1,0 +1,10 @@
+[Unit]
+Description=NTP Server Response Event
+OnFailure=path-fail-notifier@%n.service
+
+[Path]
+PathChanged=/tmp/ntp-status-latest.log
+Unit=ntp-response-telemetry.service
+
+[Install]
+WantedBy=multi-user.target
