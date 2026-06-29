@@ -119,6 +119,7 @@ jobs:
           git push origin main
           git push origin --tags
           git push origin develop
+            git push origin --delete "release/${RELEASE_VERSION}" || true
 
       #
       # ── APPROVABLE RELEASE ──

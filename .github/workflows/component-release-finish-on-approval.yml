@@ -99,6 +99,7 @@ jobs:
           git push origin main
           git push origin --tags
           git push origin develop
+          git push origin --delete "${RELEASE_BRANCH}" || true
 
       - name: Close the release PR
         if: steps.approvals.outputs.should_finish == 'true'
