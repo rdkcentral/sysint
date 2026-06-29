@@ -19,7 +19,7 @@ jobs:
       github.event.review.state == 'approved' &&
       github.event.pull_request.base.ref == 'develop' &&
       startsWith(github.event.pull_request.head.ref, 'release/')
-    runs-on: comcast-ubuntu-latest
+    runs-on: ubuntu-latest
     env:
       REPO: ${{ github.repository }}
       ACTOR: ${{ github.event.review.user.login }}
