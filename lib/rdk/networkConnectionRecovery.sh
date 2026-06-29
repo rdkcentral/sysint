@@ -1,4 +1,5 @@
 #!/bin/sh
+set -x
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -296,7 +297,7 @@ checkPacketLoss()
   #Resetting on V4 check alone would be premature because packetsLostipv6 is still 0 (script init)
   #at that point, causing FirstPacketLossTime to be incorrectly cleared before V6 is measured.
   #Reset if either V4 or V6 is below the reassociate tolerance, indicating recovery on at least one path.
-  if [ "$version" = "V6" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
+  if [ "$version" = "V6" ] && [ "$gwIp" != "" ] && [ "$gwIp" != "dev" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
     echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
     FirstPacketLossTime=0
     PacketLossLogTimeStamp=0
