@@ -45,9 +45,15 @@ case $oper in
                  echo "Error: GetConfigFile Not Found"
                  exit 127
              fi
-             GetConfigFile /tmp/webpa-key.ipe
-             /usr/bin/ssh -i /tmp/webpa-key.ipe $*
-             rm /tmp/webpa-key.ipe
+<<<<<<< HEAD
+             GetConfigFile /tmp/webpa-user
+             /usr/bin/ssh -i /tmp/webpa-user $*
+             rm /tmp/webpa-user
+=======
+             GetConfigFile /tmp/webpa-user
+             /usr/bin/ssh -i /tmp/webpa-user $*
+             rm /tmp/webpa-user
+>>>>>>> 26f6cf5 (RDK-61614: Remove Sensitive StringFrom Open Source)
              exit 1
              ;;
            stop)
