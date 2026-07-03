@@ -36,6 +36,8 @@ dnsFile="/etc/resolv.dnsmasq"
 wifiStateFile="/tmp/wifi-on"
 packetsLostipv4=0
 packetsLostipv6=0
+ipv4GwPresent=0
+ipv6GwPresent=0
 lossThreshold=10
 lnfSSIDConnected=0
 lnfPskSSID=A16746DF2466410CA2ED9FB2E32FE7D9
@@ -219,11 +221,14 @@ checkPacketLoss()
     if [ "$version" = "V4" ] ; then
       gwIp=$(cat /tmp/checkpacketloss)
       pingCmd="ping"
+    else
+      gwIp=""
     fi
   else
     if [ "$version" = "V4" ] ; then
       gwIp=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
-      pingCmd="ping"
+      gwIp_interface=$(/sbin/ip -4 route | awk '/default/ { print $5 }' | head -n1 | awk '{print $1;}')
+      pingCmd="ping -I $gwIp_interface"
     elif [ "$version" = "V6" ] ; then
       gwIp=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
       gwIp_interface=$(/sbin/ip -6 route | awk '/default/ { print $5 }' | head -n1 | awk '{print $1;}')
@@ -237,17 +242,23 @@ checkPacketLoss()
 
     if [ "$version" = "V4" ] ; then
       packetsLostipv4=$ret
+      ipv4GwPresent=1
     elif [ "$version" = "V6" ] ; then
       packetsLostipv6=$ret
+      ipv6GwPresent=1
     fi
 
     gwResponseTime=$(echo "$gwResponse" | sed '$!d;s|.*/\([0-9.]*\)/.*|\1|')
+    #Notify 100% gateway packet loss on every run, independent of GatewayLoggingInterval,
+    #so the marker is not skipped when the run cadence is shorter than GatewayLoggingInterval.
+    if [ "$ret" = "100" ] ; then
+      echo "$(/bin/timestamp) Current Packet loss is SYST_WARN_GW100PERC_PACKETLOSS" >> "$logsFile"
+      t2CountNotify "SYST_WARN_GW100PERC_PACKETLOSS"
+    fi
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
       echo "$(/bin/timestamp) $version gateway = $gwIp " >> "$logsFile"
       if [ "$ret" = "100" ] ; then
         echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp" >> "$logsFile"
-        echo "$(/bin/timestamp) Current Packet loss is SYST_WARN_GW100PERC_PACKETLOSS"
-        t2CountNotify "SYST_WARN_GW100PERC_PACKETLOSS"
       else
         echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp" >> "$logsFile"
       fi
@@ -265,6 +276,7 @@ checkPacketLoss()
     #Send telemetry notification for 20%,30%....90% packet loss
   if [ "$packetsLostipv4" -gt "$lossThreshold" ] || [ "$packetsLostipv6" -gt "$lossThreshold" ] ; then
     echo "$(/bin/timestamp) Packet loss more than $lossThreshold% observed." >> "$logsFile"
+    echo "$(/bin/timestamp) Total Packet loss ipv4=${packetsLostipv4}% ipv6=${packetsLostipv6}%" >> "$logsFile"
     if [ "$packetsLostipv4" -ne 100 ] && [ "$packetsLostipv6" -ne 100 ]; then
       for i in {1..9}; do
           if ([ "$packetsLostipv4" -ge $((i*10)) ] && [ "$packetsLostipv4" -lt $((i*10+10)) ]) || ([ "$packetsLostipv6" -ge $((i*10)) ] && [ "$packetsLostipv6" -lt $((i*10+10)) ]); then
@@ -282,30 +294,49 @@ checkPacketLoss()
     fi
   fi
 
-  if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] && [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ]; then
-    echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed for both ipv4 and ipv6." >> "$logsFile"
-    #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
-    [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
-    #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
-    [ "$PacketLossLogTimeStamp" -eq 0 ] && PacketLossLogTimeStamp=$(($(date +%s)))
-    #Note down $EthernetLogTimeStamp when EthernetLogTimeStamp is 0 and ethernet connected
-    [ "$IsEthernetConnected" -eq 1 ] && [ "$EthernetLogTimeStamp" -eq 0 ] && EthernetLogTimeStamp=$(($(date +%s)))
-    return 1
-  fi
+  #Evaluate the packet-loss trigger only on the V6 call, once both stacks have
+  #been probed (globals set during the preceding V4 call persist here). Classify
+  #each routed stack as good (loss < tolerance = acceptable connectivity) or bad
+  #(loss >= tolerance); a stack with no default route or an unparseable ping
+  #result is ignored. Because any acceptable stack means we should not tear down
+  #L2, recovery is warranted only when NO routed stack is good and at least one
+  #routed stack is bad:
+  #  - dual-stack (IPv4 + IPv6): both must be at/above tolerance to return 1
+  #  - IPv4-only              : IPv4 packet loss alone controls the result
+  #  - IPv6-only              : IPv6 packet loss alone controls the result
+  if [ "$version" = "V6" ] ; then
+    anyGood=0
+    anyBad=0
+    if [ "$ipv4GwPresent" -eq 1 ] && [ -n "$packetsLostipv4" ] ; then
+      if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
+    fi
+    if [ "$ipv6GwPresent" -eq 1 ] && [ -n "$packetsLostipv6" ] ; then
+      if [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
+    fi
 
-  #Reset tmp parameters to default values only after both V4 and V6 are measured (on V6 call).
-  #Resetting on V4 check alone would be premature because packetsLostipv6 is still 0 (script init)
-  #at that point, causing FirstPacketLossTime to be incorrectly cleared before V6 is measured.
-  #Reset if either V4 or V6 is below the reassociate tolerance, indicating recovery on at least one path.
-  if [ "$version" = "V6" ] && [ "$gwIp" != "" ] && [ "$gwIp" != "dev" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
-    FirstPacketLossTime=0
-    PacketLossLogTimeStamp=0
-    EthernetLogTimeStamp=0
-    IsWifiReassociated=0
-    [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
-  else
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - skipping reset (version=$version, waiting for V6 measurement). wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+    if [ "$anyGood" -eq 0 ] && [ "$anyBad" -eq 1 ] ; then
+      #No routed stack has acceptable connectivity and at least one is bad -> recover.
+      echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed on all routed IP stacks (ipv4Route=$ipv4GwPresent ipv6Route=$ipv6GwPresent v4=$packetsLostipv4 v6=$packetsLostipv6)." >> "$logsFile"
+      #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
+      [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
+      #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
+      [ "$PacketLossLogTimeStamp" -eq 0 ] && PacketLossLogTimeStamp=$(($(date +%s)))
+      #Note down $EthernetLogTimeStamp when EthernetLogTimeStamp is 0 and ethernet connected
+      [ "$IsEthernetConnected" -eq 1 ] && [ "$EthernetLogTimeStamp" -eq 0 ] && EthernetLogTimeStamp=$(($(date +%s)))
+      return 1
+    elif [ "$anyGood" -eq 1 ] ; then
+      #At least one routed stack has acceptable connectivity (below tolerance) -> clear packet-loss state.
+      echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: acceptable connectivity on a routed stack (v4=$packetsLostipv4 v6=$packetsLostipv6) - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+      FirstPacketLossTime=0
+      PacketLossLogTimeStamp=0
+      EthernetLogTimeStamp=0
+      IsWifiReassociated=0
+      [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
+    else
+      #No routed stack was measurable (no route / unparseable) -> skip reset so a total loss of
+      #routes does not wipe an in-progress packet-loss timer.
+      echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: no routed-stack measurement (version=$version) - skipping reset. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+    fi
   fi
 
   return 0
