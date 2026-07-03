@@ -48,6 +48,7 @@ pingInterval=0.2 #Interval between pings
 wifiResetWaitTime=180
 currentTime=0
 tmpFile="/tmp/.Connection.txt"
+prevStateFile="/tmp/.ncr_laststate"
 wifiDriverErrors=0
 
 ##RFC parameters that can be customized
@@ -310,6 +311,16 @@ checkPacketLoss()
   #  - IPv4-only              : IPv4 packet loss alone controls the result
   #  - IPv6-only              : IPv6 packet loss alone controls the result
   if [ "$version" = "V6" ] ; then
+    #Log the per-stack route/loss snapshot only when it changes from the previous
+    #run, so field logs capture every transition without flooding on every run.
+    currState="ipv4Route=$ipv4GwPresent ipv6Route=$ipv6GwPresent ipv4PacketLoss=$ipv4PacketLoss ipv6PacketLoss=$ipv6PacketLoss"
+    prevState=""
+    [ -f "$prevStateFile" ] && prevState=$(cat "$prevStateFile")
+    if [ "$currState" != "$prevState" ] ; then
+      log "[DEBUG_NCR] network state changed: ($currState)"
+      echo "$currState" > "$prevStateFile"
+    fi
+
     anyGood=0
     anyBad=0
     if [ "$ipv4GwPresent" -eq 1 ] && [ -n "$ipv4PacketLoss" ] ; then
