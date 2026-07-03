@@ -103,6 +103,8 @@ if [ -e /opt/.gstreamer ]; then rm -rf /opt/.gstreamer; fi
 if [ -d /opt/persistent/dvr ]; then rm -rf /opt/persistent/dvr; fi
 if [ -d /opt/etc ];then rm -rf /opt/etc;fi
 if [ -d /opt/certs ];then rm -rf /opt/certs; fi
+if [ -d /opt/NetworkManager ];then rm -rf /opt/NetworkManager ; fi
+if [ -d /opt/secure/NetworkManager ];then rm -rf /opt/secure/NetworkManager ; fi
 
 if [ -f /opt/secure/Apparmor_blocklist ];then rm -rf /opt/secure/Apparmor_blocklist ; fi
 
