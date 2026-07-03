@@ -34,8 +34,8 @@ fi
 logsFile=$LOG_PATH/ConnectionStats.txt
 dnsFile="/etc/resolv.dnsmasq"
 wifiStateFile="/tmp/wifi-on"
-packetsLostipv4=0
-packetsLostipv6=0
+ipv4PacketLoss=0
+ipv6PacketLoss=0
 ipv4GwPresent=0
 ipv6GwPresent=0
 lossThreshold=10
@@ -61,6 +61,12 @@ WifiResetIntervalForDriverIssue=120
 WifiReassociateTolerance=100
 dnsFailures=0
 maxdnsFailures=3
+
+# Append a timestamped line to $logsFile.
+log()
+{
+  echo "$(/bin/timestamp) $*" >> "$logsFile"
+}
 
 StoreTotmpFile()
 {
@@ -141,25 +147,25 @@ checkEthernetConnected()
       ret=$?
       if [ $ret -eq  0 ] ; then
         if [ "$lnfSSIDConnected" = "1" ]; then
-          echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED_LNF" >> "$logsFile"
+          log "TELEMETRY_WIFI_CONNECTED_LNF"
           #Reset count when lnf ssid is connected
           count=0
           t2CountNotify "SYST_INFO_WIFIConn"
         else
           #Skip printing wifi not connected log for the first time
-          [ $count -gt 0 ] && echo "$(/bin/timestamp) TELEMETRY_WIFI_NOT_CONNECTED" >> "$logsFile"
+          [ $count -gt 0 ] && log "TELEMETRY_WIFI_NOT_CONNECTED"
           count=$((count + 1))
         fi
         return 0
       else
-        echo "$(/bin/timestamp) TELEMETRY_WIFI_CONNECTED" >> "$logsFile"
+        log "TELEMETRY_WIFI_CONNECTED"
         #Reset count when connectivity is good
         count=0
         t2CountNotify "SYST_INFO_WIFIConn"
         return 0
       fi
     else
-      echo "$(/bin/timestamp) TELEMETRY_ETHERNET_CONNECTED" >> "$logsFile"
+      log "TELEMETRY_ETHERNET_CONNECTED"
       #Reset count when connectivity is good
       count=0
       t2CountNotify "SYST_INFO_ETHConn"
@@ -182,7 +188,7 @@ printWifiDetails()
 
 wifiReassociate()
 {
-  echo "$(/bin/timestamp) Packet Loss WiFi Reassociating" >> "$logsFile"
+  log "Packet Loss WiFi Reassociating"
   t2CountNotify "WIFIV_ERR_reassoc"
   wpa_cli reassociate
   #set IsWifiReassociated to 1 after wifi reassociation
@@ -193,17 +199,17 @@ checkWifiDrvErrors()
 {
   dir=$(find /sys/kernel/debug/ieee80211  -type d -maxdepth 1 | sed '1d')
   if [ -z "$dir" ] ; then
-    echo "$(/bin/timestamp) phy directory not in /sys/kernel/debug/ieee80211" >> "$logsFile"
+    log "phy directory not in /sys/kernel/debug/ieee80211"
   elif [ ! -f "$dir"/ath10k/fw_stats ]; then
-    echo "$(/bin/timestamp) fw_stats file not in /sys/kernel/debug/ieee80211/$dir/ath10k/" >> "$logsFile"
+    log "fw_stats file not in /sys/kernel/debug/ieee80211/$dir/ath10k/"
   else
     cat "$dir"/ath10k/fw_stats > /dev/null 2>&1
     if [[ $? -ne 0 ]]; then
-      echo "$(/bin/timestamp) Cant open file /sys/kernel/debug/ieee80211/$dir/ath10k/ status=$?" >> "$logsFile"
+      log "Cant open file /sys/kernel/debug/ieee80211/$dir/ath10k/ status=$?"
     else
       #Reset tmp variables to 0 when there is no wifi driver issue
       FirstWifiDriverIssueTime=0
-      ["$IsWifiReassociated" -eq 0 ] && IsWifiReset=0 #$IsWifiReassociated=1 indicates wifi reassociation done already and still packetloss happens hence don't make IsWifiReset=0
+      [ "$IsWifiReassociated" -eq 0 ] && IsWifiReset=0 #$IsWifiReassociated=1 indicates wifi reassociation done already and still packetloss happens hence don't make IsWifiReset=0
       return 0
     fi
   fi
@@ -215,6 +221,7 @@ checkWifiDrvErrors()
 checkPacketLoss()
 {
   version=$1
+  packetLoss=""
   currentTime=$(($(date +%s)))
 
   if [ -f "/tmp/checkpacketloss" ] ; then
@@ -238,58 +245,56 @@ checkPacketLoss()
 
   if [ "$gwIp" != "" ] && [ "$gwIp" != "dev" ] ; then
     gwResponse=$($pingCmd -c "$pingCount" -i "$pingInterval" "$gwIp")
-    ret=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
+    packetLoss=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
 
     if [ "$version" = "V4" ] ; then
-      packetsLostipv4=$ret
+      ipv4PacketLoss=$packetLoss
       ipv4GwPresent=1
     elif [ "$version" = "V6" ] ; then
-      packetsLostipv6=$ret
+      ipv6PacketLoss=$packetLoss
       ipv6GwPresent=1
     fi
 
     gwResponseTime=$(echo "$gwResponse" | sed '$!d;s|.*/\([0-9.]*\)/.*|\1|')
     #Notify 100% gateway packet loss on every run, independent of GatewayLoggingInterval,
     #so the marker is not skipped when the run cadence is shorter than GatewayLoggingInterval.
-    if [ "$ret" = "100" ] ; then
-      echo "$(/bin/timestamp) Current Packet loss is SYST_WARN_GW100PERC_PACKETLOSS" >> "$logsFile"
+    if [ "$packetLoss" = "100" ] ; then
+      log "$version SYST_WARN_GW100PERC_PACKETLOSS, gateway $gwIp"
       t2CountNotify "SYST_WARN_GW100PERC_PACKETLOSS"
     fi
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) $version gateway = $gwIp " >> "$logsFile"
-      if [ "$ret" = "100" ] ; then
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp" >> "$logsFile"
+      if [ "$packetLoss" = "100" ] ; then
+        log "TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp"
       else
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp" >> "$logsFile"
+        log "TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp"
       fi
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_PACKET_LOSS:$ret,$gwIp" >> "$logsFile"
+      log "TELEMETRY_GATEWAY_PACKET_LOSS:$packetLoss,$gwIp"
     fi
   else
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_NO_ROUTE_$version" >> "$logsFile"
+      log "TELEMETRY_GATEWAY_NO_ROUTE_$version"
       t2CountNotify "WIFIV_INFO_NO${version}ROUTE"
     fi
   fi
 
   [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] && GatewayLogTimeStamp=$(($(date +%s)))
 
-    #Send telemetry notification for 20%,30%....90% packet loss
-  if [ "$packetsLostipv4" -gt "$lossThreshold" ] || [ "$packetsLostipv6" -gt "$lossThreshold" ] ; then
-    echo "$(/bin/timestamp) Packet loss more than $lossThreshold% observed." >> "$logsFile"
-    echo "$(/bin/timestamp) Total Packet loss ipv4=${packetsLostipv4}% ipv6=${packetsLostipv6}%" >> "$logsFile"
-    if [ "$packetsLostipv4" -ne 100 ] && [ "$packetsLostipv6" -ne 100 ]; then
-      for i in {1..9}; do
-          if ([ "$packetsLostipv4" -ge $((i*10)) ] && [ "$packetsLostipv4" -lt $((i*10+10)) ]) || ([ "$packetsLostipv6" -ge $((i*10)) ] && [ "$packetsLostipv6" -lt $((i*10+10)) ]); then
-            echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_"$((i*10))"PERC"  >> "$logsFile"
-            t2CountNotify "WIFIV_WARN_PL_"$((i*10))"PERC"
-            break
-          fi
-      done
-    fi
-  else
-    if [ "$packetsLostipv4" -ne 0 ] && [ "$packetsLostipv6" -ne 0 ]; then
+  #Send telemetry notification for 20%,30%....90% packet loss
+  if [ -n "$packetLoss" ] ; then
+    if [ "$packetLoss" -gt "$lossThreshold" ] ; then
+      log "$version packet loss more than $lossThreshold% observed (packetLoss=$packetLoss)"
+      if [ "$packetLoss" -ne 100 ] ; then
+        for i in {1..9}; do
+            if [ "$packetLoss" -ge $((i*10)) ] && [ "$packetLoss" -lt $((i*10+10)) ] ; then
+              log "$version packet loss is WIFIV_WARN_PL_$((i*10))PERC"
+              t2CountNotify "WIFIV_WARN_PL_"$((i*10))"PERC"
+              break
+            fi
+        done
+      fi
+    elif [ "$packetLoss" -ne 0 ] ; then
       #Send telemetry notification for 10% packet loss
-      echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_10PERC" >>  "$logsFile"
+      log "$version packet loss is WIFIV_WARN_PL_10PERC"
       t2CountNotify "WIFIV_WARN_PL_10PERC"
     fi
   fi
@@ -307,16 +312,16 @@ checkPacketLoss()
   if [ "$version" = "V6" ] ; then
     anyGood=0
     anyBad=0
-    if [ "$ipv4GwPresent" -eq 1 ] && [ -n "$packetsLostipv4" ] ; then
-      if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
+    if [ "$ipv4GwPresent" -eq 1 ] && [ -n "$ipv4PacketLoss" ] ; then
+      if [ "$ipv4PacketLoss" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
     fi
-    if [ "$ipv6GwPresent" -eq 1 ] && [ -n "$packetsLostipv6" ] ; then
-      if [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
+    if [ "$ipv6GwPresent" -eq 1 ] && [ -n "$ipv6PacketLoss" ] ; then
+      if [ "$ipv6PacketLoss" -ge "$WifiReassociateTolerance" ] ; then anyBad=1 ; else anyGood=1 ; fi
     fi
 
     if [ "$anyGood" -eq 0 ] && [ "$anyBad" -eq 1 ] ; then
       #No routed stack has acceptable connectivity and at least one is bad -> recover.
-      echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed on all routed IP stacks (ipv4Route=$ipv4GwPresent ipv6Route=$ipv6GwPresent v4=$packetsLostipv4 v6=$packetsLostipv6)." >> "$logsFile"
+      log "Packet loss is observed on all routed IP stacks (ipv4Route=$ipv4GwPresent ipv6Route=$ipv6GwPresent ipv4PacketLoss=$ipv4PacketLoss ipv6PacketLoss=$ipv6PacketLoss tolerance=${WifiReassociateTolerance}%)"
       #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
       [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
       #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
@@ -326,7 +331,7 @@ checkPacketLoss()
       return 1
     elif [ "$anyGood" -eq 1 ] ; then
       #At least one routed stack has acceptable connectivity (below tolerance) -> clear packet-loss state.
-      echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: acceptable connectivity on a routed stack (v4=$packetsLostipv4 v6=$packetsLostipv6) - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+      log "[DEBUG_NCR] checkPacketLoss: acceptable connectivity on a routed stack (ipv4PacketLoss=$ipv4PacketLoss ipv6PacketLoss=$ipv6PacketLoss) - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors"
       FirstPacketLossTime=0
       PacketLossLogTimeStamp=0
       EthernetLogTimeStamp=0
@@ -335,7 +340,7 @@ checkPacketLoss()
     else
       #No routed stack was measurable (no route / unparseable) -> skip reset so a total loss of
       #routes does not wipe an in-progress packet-loss timer.
-      echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: no routed-stack measurement (version=$version) - skipping reset. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
+      log "[DEBUG_NCR] checkPacketLoss: no routed-stack measurement (version=$version) - skipping reset. wifiDriverErrors=$wifiDriverErrors"
     fi
   fi
 
@@ -356,10 +361,10 @@ wifiReset()
   #Set IsWifiReset to 1 after wifi reset
   IsWifiReset=1
   StoreTotmpFile
-  echo "$(/bin/timestamp) Start WiFi Reset. !!!!!!!!!!!!!!"  >> "$logsFile"
+  log "Start WiFi Reset. !!!!!!!!!!!!!!"
   
   systemctl restart wifi.service
-  echo "$(/bin/timestamp) WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"  >> "$logsFile"
+  log "WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"
   exit 0
 }
 
@@ -367,7 +372,7 @@ checkDnsFile()
 {
   if [ -f "$dnsFile" ] ; then
     if [ $(tr -d ' \r\n\t' < $dnsFile | wc -c ) -eq 0 ] ; then
-      echo "$(/bin/timestamp) DNS File($dnsFile) is empty" >> "$logsFile"
+      log "DNS File($dnsFile) is empty"
       t2CountNotify "SYST_ERR_DNSFileEmpty" 
       gwIpv4=$(/sbin/ip -4 route show default | awk 'NR==1 {print $3; exit}')
       gwIpv6=$(/sbin/ip -6 route show default | awk 'NR==1 {print $3; exit}')
@@ -390,7 +395,7 @@ checkDnsFile()
       fi
 
       if [ "$dnsFailures" -gt "$maxdnsFailures" ] ; then
-          echo "$(/bin/timestamp) Restarting udhcpc to recover" >> "$logsFile"
+          log "Restarting udhcpc to recover"
           InterfaceList="$ethernet_interface $WIFI_INTERFACE"
           for interface in $InterfaceList
           do
@@ -408,7 +413,7 @@ checkDnsFile()
       dnsFailures=0
     fi
   else
-    echo "$(/bin/timestamp) DNS File is not there $dnsFile" >> "$logsFile"
+    log "DNS File is not there $dnsFile"
   fi
 }
 
@@ -416,7 +421,7 @@ checkRfc()
 {
   rfcWifiResetEnable="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.Enable 2>&1 > /dev/null)"
   if [ "$rfcWifiResetEnable" = "true" ] ; then
-    echo "$(/bin/timestamp) WiFiReset RFC is true " >> "$logsFile"
+    log "WiFiReset RFC is true "
     rfcEthernetLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.EthernetLoggingInterval 2>&1 > /dev/null)"
     if [ ! -z "$rfcEthernetLoggingInterval" ] && [ "$rfcEthernetLoggingInterval" != 0 ] ; then
       EthernetLoggingInterval="$rfcEthernetLoggingInterval"
@@ -459,7 +464,7 @@ LoadFromtmpFile
 if [ "$IsWifiReset" -eq 1 ] ; then
   currentTime=$(($(date +%s)))
   if [ "$(($WifiResetTime+$wifiResetWaitTime))" -gt "$currentTime" ] ; then
-    echo "$(/bin/timestamp) Skip all checks since wifi reset is done recently"  >> "$logsFile"
+    log "Skip all checks since wifi reset is done recently"
     exit 0
   fi
 fi
