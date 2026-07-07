@@ -32,6 +32,15 @@ logFile="/opt/logs/getDeviceDetails.$$.log"
 lockDir=/tmp/.getDeviceDetails.lock
 lockPidFile=/tmp/.getDeviceDetails.lock/.lockPidFile
 deviceDetailsCache=/tmp/.deviceDetails.cache
+DETAILS_CMD_TIMEOUT=5
+
+run_with_timeout() {
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$DETAILS_CMD_TIMEOUT" "$@"
+    else
+        "$@"
+    fi
+}
 
 # to enable logging: uncomment out echo and comment out colon :
 logMsg()
@@ -131,19 +140,22 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
+    #EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
+	EtherMac=$(run_with_timeout ifconfig "$ETHERNET_INTERFACE" 2>/dev/null | awk '/HWaddr/ {print $5}')
 }
 
 getMocaMac()
 {
-    MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/HWaddr/ {print $5}')
+    #MocaMac=$(ifconfig $MOCA_INTERFACE | awk '/HWaddr/ {print $5}')
+	MocaMac=$(run_with_timeout ifconfig "$MOCA_INTERFACE" 2>/dev/null | awk '/HWaddr/ {print $5}')
 }
 
 getWiFiMac()
 {
     # Get the wifi mac only if WIFI_INTERFACE is defined
     if [ "x$WIFI_INTERFACE" != "x" ]; then
-        WiFiMac=$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')
+        #WiFiMac=$(ifconfig $WIFI_INTERFACE | awk '/HWaddr/ {print $5}')
+		WiFiMac=$(run_with_timeout ifconfig "$WIFI_INTERFACE" 2>/dev/null | awk '/HWaddr/ {print $5}')
     fi
 }
 
@@ -217,7 +229,8 @@ getModelNum()
 }
 
 getManufacturer(){
-           output=$(mfr_util --Manufacturer 2>&1)
+           #output=$(mfr_util --Manufacturer 2>&1)
+		   output=$(run_with_timeout mfr_util --Manufacturer 2>&1)
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                output=$(echo $output | sed 's/ /_/g')
                echo "$output" | tee /tmp/.manufacturer
@@ -227,7 +240,8 @@ getManufacturer(){
 }
 
 getBrandName(){
-            output=$(mfr_util --Manufacturer 2>&1)
+            #output=$(mfr_util --Manufacturer 2>&1)
+			output=$(run_with_timeout mfr_util --Manufacturer 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                 echo "$output" > /tmp/.brandname
             fi
