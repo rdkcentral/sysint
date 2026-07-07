@@ -141,55 +141,50 @@ runMaintenanceLogUploadTask()
           . /etc/dcm.properties
     fi
     
-    if [ -f "$LOG_UPLOAD_BIN_PATH" ]; then
-        logUploadLog "Starting log upload"
-        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        [ -z "$upload_protocol" ] && upload_protocol='HTTP'
-        logUploadLog "upload_protocol: $upload_protocol"
+    logUploadLog "Starting log upload"
+    upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+    [ -z "$upload_protocol" ] && upload_protocol='HTTP'
+    logUploadLog "upload_protocol: $upload_protocol"
 
-        httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ -n "$httplink" ]; then
-            upload_httplink="$httplink"
-        else
-            logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
-        fi
-
-        if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
-            logUploadLog "opt override is present. Ignore settings from Bootstrap config"
-        else
-            logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>/dev/null)
-            [ -n "$logUploadEndpointUrl" ] && upload_httplink="$logUploadEndpointUrl"
-        fi
-        logUploadLog "upload_httplink: $upload_httplink"
-
-        uploadOnReboot=0
-        uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ "$uploadCheck" = "true" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
-            uploadOnReboot=1
-        elif [ "$uploadCheck" = "false" ]; then
-            logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
-        else
-            logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
-        fi
-
-        if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
-            logUploadLog "Application triggered on demand log upload"
-            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-            "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
-            result=$?
-        else
-            logUploadLog "Log upload triggered from regular execution"
-            logUploadLog "Executing logupload binary: $LOG_UPLOAD_BIN_PATH"
-            nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
-            bg_pid=$!
-            wait $bg_pid
-            result=$?
-        fi
+    httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+    if [ -n "$httplink" ]; then
+        upload_httplink="$httplink"
     else
-        logUploadLog "LOGUPLOAD binary not found"
-        result=-1
+        logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
     fi
+
+    if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then
+        logUploadLog "opt override is present. Ignore settings from Bootstrap config"
+    else
+        logUploadEndpointUrl=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LogUploadEndpoint.URL 2>/dev/null)
+        [ -n "$logUploadEndpointUrl" ] && upload_httplink="$logUploadEndpointUrl"
+    fi
+    logUploadLog "upload_httplink: $upload_httplink"
+    uploadOnReboot=0
+    uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+    if [ "$uploadCheck" = "true" ]; then
+        logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
+        uploadOnReboot=1
+    elif [ "$uploadCheck" = "false" ]; then
+        logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
+    else
+        logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
+    fi
+
+    if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
+        logUploadLog "Application triggered on demand log upload"
+        logUploadLog "Executing logupload binary"
+        "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
+         result=$?
+     else
+        logUploadLog "Log upload triggered from regular execution"
+        logUploadLog "Executing logupload binary"
+        nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
+        bg_pid=$!
+        wait $bg_pid
+        result=$?
+    fi
+
 
     # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
@@ -223,4 +218,5 @@ case "$1" in
         exit 2
         ;;
 esac
+
 
