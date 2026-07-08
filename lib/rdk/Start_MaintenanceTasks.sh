@@ -69,7 +69,6 @@ SWUPDATE_LOG_FILE="$LOG_PATH/swupdate.log"
 # Task binaries/ scripts
 RFC_BIN="$COMMON_BIN_LOCATION/rfcMgr"
 SWUPDATE_BIN="$COMMON_BIN_LOCATION/rdkvfwupgrader"
-LOG_UPLOAD_BIN_PATH="/usr/bin/logupload"
 
 # Log Functions
 rfcLog ()
@@ -163,23 +162,23 @@ runMaintenanceLogUploadTask()
     uploadOnReboot=0
     uploadCheck=$(grep 'urn:settings:LogUploadSettings:UploadOnReboot' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
     if [ "$uploadCheck" = "true" ]; then
-        logUploadLog "The value of 'UploadOnReboot' is 'true', executing logupload binary"
+        logUploadLog "The value of 'UploadOnReboot' is 'true', executing binary"
         uploadOnReboot=1
     elif [ "$uploadCheck" = "false" ]; then
-        logUploadLog "The value of 'UploadOnReboot' is 'false', executing logupload binary"
+        logUploadLog "The value of 'UploadOnReboot' is 'false', executing binary"
     else
         logUploadLog "Nothing to do here for uploadCheck value = $uploadCheck"
     fi
 
     if [ -n "$TriggerType" ] && [ "$TriggerType" -eq "$ON_DEMAND_LOG_UPLOAD" ]; then
         logUploadLog "Application triggered on demand log upload"
-        logUploadLog "Executing logupload binary"
-        "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
+        logUploadLog "Executing binary"
+        "/usr/bin/logupload" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" "ondemand" >> /opt/logs/dcmscript.log
          result=$?
      else
         logUploadLog "Log upload triggered from regular execution"
-        logUploadLog "Executing logupload binary"
-        nice -n 19 "$LOG_UPLOAD_BIN_PATH" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
+        logUploadLog "Executing binary"
+        nice -n 19 "/usr/bin/logupload" "$tftp_server" 1 1 "$uploadOnReboot" "$upload_protocol" "$upload_httplink" >> /opt/logs/dcmscript.log &
         bg_pid=$!
         wait $bg_pid
         result=$?
@@ -218,5 +217,6 @@ case "$1" in
         exit 2
         ;;
 esac
+
 
 
