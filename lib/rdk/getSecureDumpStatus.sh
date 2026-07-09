@@ -55,4 +55,5 @@ elif [ "$SEC_DUMP" = "true" ]; then
 	MINIDUMPS_PATH="/opt/secure/minidumps"
 	CORE_BACK_PATH="/opt/secure/corefiles_back"
 	PERSISTENT_SEC_PATH="/opt/secure"
+	chmod 777 /opt/secure/minidumps
 fi
