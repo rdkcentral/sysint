@@ -36,8 +36,8 @@ deviceDetailsCache=/tmp/.deviceDetails.cache
 # to enable logging: uncomment out echo and comment out colon :
 logMsg()
 {
-	#echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
-	:
+	echo "$(cat /proc/uptime | awk '{print $1}'): $0: $$: $(ps -o comm= $PPID): $PPID :: $1" >> $logFile
+	#:
 }
 
 logMsg "enter"
@@ -241,6 +241,12 @@ getDeviceType()
 getFriendlyId()
 {
    echo $FRIENDLY_ID
+}
+
+getTest()
+{
+   sleep 5
+   echo "Dinesh"
 }
 
 getModel()
@@ -457,6 +463,10 @@ executeServiceRequest()
       "friendly_id")
 		friendlyId=`getFriendlyId`
 		echo "$friendlyId" > /tmp/.friendly_id
+                ;;
+	  "test")
+		testName=`getTest`
+		echo "$testName" > /tmp/.test_dinesh
                 ;;
       "imageVersion")
                getFWVersion
