@@ -62,7 +62,13 @@ Triggered on approved review for `release/*` PRs targeting `develop`.
 Both workflows use:
 
 - `RDKCM_DEPLOY_KEY`: SSH private key used by checkout and git push operations.
-- `RDKCM_RDKE`: token used by `gh` API/CLI calls.
+- `github.token`: built-in GitHub Actions token used by `gh` API/CLI calls.
+
+Why `github.token`:
+
+- It is automatically provided for each workflow run.
+- It avoids introducing a custom repository secret for API access.
+- It works with the workflow permissions already declared in these jobs.
 
 ## Failure Cleanup Safety
 
