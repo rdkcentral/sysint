@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -22,13 +21,13 @@ set -x
 #Purpose : To recover from the network breakages and log the details
 #Scope   : RDK Devices
 #Usage   : Invoked by systemd service
- 
+
 . /etc/device.properties
 . /etc/include.properties
 . $RDK_PATH/utils.sh
 
 if [ -f /lib/rdk/t2Shared_api.sh ]; then
-    source /lib/rdk/t2Shared_api.sh
+    . /lib/rdk/t2Shared_api.sh
 fi
 
 logsFile=$LOG_PATH/ConnectionStats.txt
@@ -134,8 +133,8 @@ checkWifiConnected()
 {
   [ ! -f "$wifiStateFile" ] && return 0
   strBuffer=$(wpa_cli status 2> /dev/null)
-  [[ ! "$strBuffer" =~ "wpa_state=COMPLETED" ]] && return 0
-  [[ "$strBuffer" =~ "$lnfPskSSID" ]] || [[ "$strBuffer" =~ "$lnfEnterpriseSSID" ]] && lnfSSIDConnected=1 && return 0
+  case "$strBuffer" in *"wpa_state=COMPLETED"*) ;; *) return 0 ;; esac
+  case "$strBuffer" in *"$lnfPskSSID"*|*"$lnfEnterpriseSSID"*) lnfSSIDConnected=1 ; return 0 ;; esac
   return 1
 }
 
@@ -202,11 +201,12 @@ checkWifiDrvErrors()
   if [ -z "$dir" ] ; then
     log "phy directory not in /sys/kernel/debug/ieee80211"
   elif [ ! -f "$dir"/ath10k/fw_stats ]; then
-    log "fw_stats file not in /sys/kernel/debug/ieee80211/$dir/ath10k/"
+    log "fw_stats file not in $dir/ath10k/"
   else
     cat "$dir"/ath10k/fw_stats > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-      log "Cant open file /sys/kernel/debug/ieee80211/$dir/ath10k/ status=$?"
+    catStatus=$?
+    if [ "$catStatus" -ne 0 ]; then
+      log "Can't open file $dir/ath10k/fw_stats status=$catStatus"
     else
       #Reset tmp variables to 0 when there is no wifi driver issue
       FirstWifiDriverIssueTime=0
@@ -285,7 +285,7 @@ checkPacketLoss()
     if [ "$packetLoss" -gt "$lossThreshold" ] ; then
       log "$version packet loss more than $lossThreshold% observed (packetLoss=$packetLoss)"
       if [ "$packetLoss" -ne 100 ] ; then
-        for i in {1..9}; do
+        for i in 1 2 3 4 5 6 7 8 9; do
             if [ "$packetLoss" -ge $((i*10)) ] && [ "$packetLoss" -lt $((i*10+10)) ] ; then
               log "$version packet loss is WIFIV_WARN_PL_$((i*10))PERC"
               t2CountNotify "WIFIV_WARN_PL_"$((i*10))"PERC"
@@ -317,7 +317,7 @@ checkPacketLoss()
     prevState=""
     [ -f "$prevStateFile" ] && prevState=$(cat "$prevStateFile")
     if [ "$currState" != "$prevState" ] ; then
-      log "[DEBUG_NCR] network state changed: ($currState)"
+      log "network state changed: ($currState)"
       echo "$currState" > "$prevStateFile"
     fi
 
@@ -342,7 +342,7 @@ checkPacketLoss()
       return 1
     elif [ "$anyGood" -eq 1 ] ; then
       #At least one routed stack has acceptable connectivity (below tolerance) -> clear packet-loss state.
-      log "[DEBUG_NCR] checkPacketLoss: acceptable connectivity on a routed stack (ipv4PacketLoss=$ipv4PacketLoss ipv6PacketLoss=$ipv6PacketLoss) - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors"
+      # log "[DEBUG_NCR] checkPacketLoss: acceptable connectivity on a routed stack (ipv4PacketLoss=$ipv4PacketLoss ipv6PacketLoss=$ipv6PacketLoss) - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors"
       FirstPacketLossTime=0
       PacketLossLogTimeStamp=0
       EthernetLogTimeStamp=0
@@ -351,7 +351,8 @@ checkPacketLoss()
     else
       #No routed stack was measurable (no route / unparseable) -> skip reset so a total loss of
       #routes does not wipe an in-progress packet-loss timer.
-      log "[DEBUG_NCR] checkPacketLoss: no routed-stack measurement (version=$version) - skipping reset. wifiDriverErrors=$wifiDriverErrors"
+      # log "[DEBUG_NCR] checkPacketLoss: no routed-stack measurement (version=$version) - skipping reset. wifiDriverErrors=$wifiDriverErrors"
+      :
     fi
   fi
 
@@ -373,7 +374,7 @@ wifiReset()
   IsWifiReset=1
   StoreTotmpFile
   log "Start WiFi Reset. !!!!!!!!!!!!!!"
-  
+
   systemctl restart wifi.service
   log "WiFi Reset done as part of  Recovery. !!!!!!!!!!!!!!"
   exit 0
@@ -384,17 +385,17 @@ checkDnsFile()
   if [ -f "$dnsFile" ] ; then
     if [ $(tr -d ' \r\n\t' < $dnsFile | wc -c ) -eq 0 ] ; then
       log "DNS File($dnsFile) is empty"
-      t2CountNotify "SYST_ERR_DNSFileEmpty" 
+      t2CountNotify "SYST_ERR_DNSFileEmpty"
       gwIpv4=$(/sbin/ip -4 route show default | awk 'NR==1 {print $3; exit}')
       gwIpv6=$(/sbin/ip -6 route show default | awk 'NR==1 {print $3; exit}')
       routeIpv4=$(/sbin/ip -4 route)
-      routeIpv6=$(/sbin/ip -6 route)      
+      routeIpv6=$(/sbin/ip -6 route)
       if [ "$gwIpv4" != "" ] || [ "$gwIpv6" != "" ] ; then
 	  dnsFailures=$((dnsFailures + 1))
 	  case $routeIpv4 in
               *"error"*)
                   dnsFailures=0
-                 ;;
+                  ;;
           esac
 	  case $routeIpv6 in
               *"error"*)
