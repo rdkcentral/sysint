@@ -1,0 +1,12 @@
+[Unit]
+Description=Monitor system D-Bus traffic and capture to PCAP
+After=dbus.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'dbus-monitor --system --pcap > /tmp/dbus.pcap'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
