@@ -35,7 +35,7 @@ This prevents two runs for the same version/type from racing on branches/tags.
 **Main release - approvable**
 1. Validates version format.
 2. Runs `git flow release start` -> changelog -> `release publish`.
-3. Creates a PR: `release/<version>` -> `develop`.
+3. Creates a PR: `release/<version>` -> `main`.
 4. Stops and waits for PR approval.
 5. On approval, the second workflow finishes the release.
 
@@ -48,21 +48,28 @@ This prevents two runs for the same version/type from racing on branches/tags.
 
 ### 2. Component Release Finish On Approval (`component-release-finish-on-approval.yml`)
 
-Triggered on approved review for `release/*` PRs targeting `develop`.
+Triggered on approved review for `release/*` PRs targeting `main`.
 
 #### What it does
 1. Verifies PR review decision is `APPROVED`.
 2. Checks out release branch.
 3. Runs `git flow release finish` (merge to `main` + `develop`, create tag).
 4. Pushes `main`, `develop`, and tags.
-5. Closes the release PR.
+5. Deletes remote `release/<version>` branch.
+6. Closes the release PR.
 
 ## Authentication and Secrets
 
 Both workflows use:
 
 - `RDKCM_DEPLOY_KEY`: SSH private key used by checkout and git push operations.
-- `RDKCM_RDKE`: token used by `gh` API/CLI calls.
+- `github.token`: built-in GitHub Actions token used by `gh` API/CLI calls.
+
+Why `github.token`:
+
+- It is automatically provided for each workflow run.
+- It avoids introducing a custom repository secret for API access.
+- It works with the workflow permissions already declared in these jobs.
 
 ## Failure Cleanup Safety
 
