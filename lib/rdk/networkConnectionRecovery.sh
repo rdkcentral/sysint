@@ -283,7 +283,7 @@ checkPacketLoss()
   #Send telemetry notification for 20%,30%....90% packet loss
   if [ -n "$packetLoss" ] ; then
     if [ "$packetLoss" -gt "$lossThreshold" ] ; then
-      log "$version packet loss more than $lossThreshold% observed (packetLoss=$packetLoss)"
+      log "$version Packet loss more than $lossThreshold% observed (packetLoss=$packetLoss)"
       if [ "$packetLoss" -ne 100 ] ; then
         for i in 1 2 3 4 5 6 7 8 9; do
             if [ "$packetLoss" -ge $((i*10)) ] && [ "$packetLoss" -lt $((i*10+10)) ] ; then
@@ -319,6 +319,29 @@ checkPacketLoss()
     if [ "$currState" != "$prevState" ] ; then
       log "network state changed: ($currState)"
       echo "$currState" > "$prevStateFile"
+    fi
+
+    #100% packet-loss field-triage marker. Fires when every routed IP stack shows
+    #exactly 100% loss - the successor to the legacy
+    #"100% Packet loss is observed for both ipv4 and ipv6." print, generalized so it
+    #is also emitted correctly on IPv4-only and IPv6-only networks (the old dual-stack
+    #test silently missed those). A stack with no default route or an unparseable ping
+    #result is not counted. This is a log-only marker: it is independent of
+    #WifiReassociateTolerance and of the recovery decision below, so it appears in the
+    #same 100%-loss situation as the legacy print. Field triage greps the
+    #"100% Packet loss is observed" head across the fleet.
+    routedStacks=0
+    all100=1
+    if [ "$ipv4GwPresent" -eq 1 ] && [ -n "$ipv4PacketLoss" ] ; then
+      routedStacks=$((routedStacks + 1))
+      [ "$ipv4PacketLoss" = "100" ] || all100=0
+    fi
+    if [ "$ipv6GwPresent" -eq 1 ] && [ -n "$ipv6PacketLoss" ] ; then
+      routedStacks=$((routedStacks + 1))
+      [ "$ipv6PacketLoss" = "100" ] || all100=0
+    fi
+    if [ "$routedStacks" -gt 0 ] && [ "$all100" -eq 1 ] ; then
+      log "100% Packet loss is observed on all routed IP stacks"
     fi
 
     anyGood=0
