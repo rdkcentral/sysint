@@ -82,7 +82,11 @@ get_ntp_hosts_from_bootstrap() {
 }
 
 
+<<<<<<< HEAD
 ntpLog "Retrieve NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
+=======
+ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
+>>>>>>> 4.2.1v17
 while [ "$attempts" -le "$max_attempts" ]; do
 
     ntpLog "Attempt $attempts/$max_attempts to retrieve NTP server URL(s)..."
