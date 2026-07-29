@@ -69,10 +69,7 @@ MEM_AVAILABLE=$(cat /proc/meminfo | grep MemAvailable)
 echo $MEM_AVAILABLE  >> $LOG_PATH/messages.txt
 MEM_AVAILABLE_VAL=$(echo "$MEM_AVAILABLE" | tr -s '[:space:]' ' ' | cut -d' ' -f2)
 t2ValNotify "SYST_INFO_MemAvailable_split" "$MEM_AVAILABLE_VAL"
-<<<<<<< HEAD
 
-=======
->>>>>>> 4.2.1v17
 # Swap Memory Info
 echo "Available Swap Memory Info:" >> $LOG_PATH/messages.txt
 
