@@ -74,19 +74,12 @@ checkForInterface()
    fi
 }
 
-if [ "BUILD_TYPE" != "dev" ]; then
-    DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1 > /dev/null)
-    if [ "$DEVICETYPE" = "TEST" ]; then
-        USE_DEVKEYS="-f authorized_keys_dev"
-        echo " dropbear using dev authorization keys"
-    else
-        USE_DEVKEYS=""
-        echo " dropbear using prod authorization keys"
-    fi
-else
-    USE_DEVKEYS=""
-    echo " Build type is dev , use dev authorization keys by default"
+USE_DEVKEYS="-f authorized_keys_dev
+DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>/dev/null)
+if [ "$BUILD_TYPE" != "dev" -a "$DEVICETYPE" != "TEST" ]; then
+USE_DEVKEYS=""
 fi
+
 /bin/systemctl set-environment USE_DEVKEYS="$USE_DEVKEYS"
 
 #RFC check for MOCA SSH enable/not.
