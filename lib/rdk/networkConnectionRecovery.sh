@@ -222,31 +222,21 @@ checkWifiDrvErrors()
 checkPacketLoss()
 {
   version=$1
-<<<<<<< HEAD
-=======
   packetLoss=""
->>>>>>> 4.2.1v17
   currentTime=$(($(date +%s)))
 
   if [ -f "/tmp/checkpacketloss" ] ; then
     if [ "$version" = "V4" ] ; then
       gwIp=$(cat /tmp/checkpacketloss)
       pingCmd="ping"
-<<<<<<< HEAD
-=======
     else
       gwIp=""
->>>>>>> 4.2.1v17
     fi
   else
     if [ "$version" = "V4" ] ; then
       gwIp=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
-<<<<<<< HEAD
-      pingCmd="ping"
-=======
       gwIp_interface=$(/sbin/ip -4 route | awk '/default/ { print $5 }' | head -n1 | awk '{print $1;}')
       pingCmd="ping -I $gwIp_interface"
->>>>>>> 4.2.1v17
     elif [ "$version" = "V6" ] ; then
       gwIp=$(/sbin/ip -6 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
       gwIp_interface=$(/sbin/ip -6 route | awk '/default/ { print $5 }' | head -n1 | awk '{print $1;}')
@@ -256,31 +246,6 @@ checkPacketLoss()
 
   if [ "$gwIp" != "" ] && [ "$gwIp" != "dev" ] ; then
     gwResponse=$($pingCmd -c "$pingCount" -i "$pingInterval" "$gwIp")
-<<<<<<< HEAD
-    ret=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
-
-    if [ "$version" = "V4" ] ; then
-      packetsLostipv4=$ret
-    elif [ "$version" = "V6" ] ; then
-      packetsLostipv6=$ret
-    fi
-
-    gwResponseTime=$(echo "$gwResponse" | sed '$!d;s|.*/\([0-9.]*\)/.*|\1|')
-    if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) $version gateway = $gwIp " >> "$logsFile"
-      if [ "$ret" = "100" ] ; then
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:NR,$gwIp" >> "$logsFile"
-        echo "$(/bin/timestamp) Current Packet loss is SYST_WARN_GW100PERC_PACKETLOSS"
-        t2CountNotify "SYST_WARN_GW100PERC_PACKETLOSS"
-      else
-        echo "$(/bin/timestamp) TELEMETRY_GATEWAY_RESPONSE_TIME:$gwResponseTime,$gwIp" >> "$logsFile"
-      fi
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_PACKET_LOSS:$ret,$gwIp" >> "$logsFile"
-    fi
-  else
-    if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
-      echo "$(/bin/timestamp) TELEMETRY_GATEWAY_NO_ROUTE_$version" >> "$logsFile"
-=======
     packetLoss=$(echo "$gwResponse" | grep "packet"|awk '{print $7}'|cut -d'%' -f1)
 
     if [ "$version" = "V4" ] ; then
@@ -309,31 +274,12 @@ checkPacketLoss()
   else
     if [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] ; then
       log "TELEMETRY_GATEWAY_NO_ROUTE_$version"
->>>>>>> 4.2.1v17
       t2CountNotify "WIFIV_INFO_NO${version}ROUTE"
     fi
   fi
 
   [ "$(($GatewayLogTimeStamp+$GatewayLoggingInterval))" -le "$currentTime" ] && GatewayLogTimeStamp=$(($(date +%s)))
 
-<<<<<<< HEAD
-    #Send telemetry notification for 20%,30%....90% packet loss
-  if [ "$packetsLostipv4" -gt "$lossThreshold" ] || [ "$packetsLostipv6" -gt "$lossThreshold" ] ; then
-    echo "$(/bin/timestamp) Packet loss more than $lossThreshold% observed." >> "$logsFile"
-    if [ "$packetsLostipv4" -ne 100 ] && [ "$packetsLostipv6" -ne 100 ]; then
-      for i in {1..9}; do
-          if ([ "$packetsLostipv4" -ge $((i*10)) ] && [ "$packetsLostipv4" -lt $((i*10+10)) ]) || ([ "$packetsLostipv6" -ge $((i*10)) ] && [ "$packetsLostipv6" -lt $((i*10+10)) ]); then
-            echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_"$((i*10))"PERC"  >> "$logsFile"
-            t2CountNotify "WIFIV_WARN_PL_"$((i*10))"PERC"
-            break
-          fi
-      done
-    fi
-  else
-    if [ "$packetsLostipv4" -ne 0 ] && [ "$packetsLostipv6" -ne 0 ]; then
-      #Send telemetry notification for 10% packet loss
-      echo "$(/bin/timestamp) Current Packet loss is WIFIV_WARN_PL_10PERC" >>  "$logsFile"
-=======
   #Send telemetry notification for 20%,30%....90% packet loss
   if [ -n "$packetLoss" ] ; then
     if [ "$packetLoss" -gt "$lossThreshold" ] ; then
@@ -350,39 +296,10 @@ checkPacketLoss()
     elif [ "$packetLoss" -ne 0 ] ; then
       #Send telemetry notification for 10% packet loss
       log "$version packet loss is WIFIV_WARN_PL_10PERC"
->>>>>>> 4.2.1v17
       t2CountNotify "WIFIV_WARN_PL_10PERC"
     fi
   fi
 
-<<<<<<< HEAD
-  if [ "$packetsLostipv4" -ge "$WifiReassociateTolerance" ] && [ "$packetsLostipv6" -ge "$WifiReassociateTolerance" ]; then
-    echo "$(/bin/timestamp) ${WifiReassociateTolerance}% Packet loss is observed for both ipv4 and ipv6." >> "$logsFile"
-    #Note down $FirstPacketLossTime when threshold packetloss is detected for the first time
-    [ "$FirstPacketLossTime" -eq 0 ] && FirstPacketLossTime=$(($(date +%s)))
-    #Note down $PacketLossLogTimeStamp when PacketLossLogTimeStamp is 0
-    [ "$PacketLossLogTimeStamp" -eq 0 ] && PacketLossLogTimeStamp=$(($(date +%s)))
-    #Note down $EthernetLogTimeStamp when EthernetLogTimeStamp is 0 and ethernet connected
-    [ "$IsEthernetConnected" -eq 1 ] && [ "$EthernetLogTimeStamp" -eq 0 ] && EthernetLogTimeStamp=$(($(date +%s)))
-    return 1
-  fi
-
-  #Reset tmp parameters to default values only after both V4 and V6 are measured (on V6 call).
-  #Resetting on V4 check alone would be premature because packetsLostipv6 is still 0 (script init)
-  #at that point, causing FirstPacketLossTime to be incorrectly cleared before V6 is measured.
-  #Reset if either V4 or V6 is below the reassociate tolerance, indicating recovery on at least one path.
-  if [ "$version" = "V6" ] && { [ "$packetsLostipv4" -lt "$WifiReassociateTolerance" ] || [ "$packetsLostipv6" -lt "$WifiReassociateTolerance" ]; }; then
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - resetting FirstPacketLossTime/PacketLossLogTimeStamp/IsWifiReassociated. wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
-    FirstPacketLossTime=0
-    PacketLossLogTimeStamp=0
-    EthernetLogTimeStamp=0
-    IsWifiReassociated=0
-    [ "$wifiDriverErrors" -eq 0 ] && IsWifiReset=0 #Make IsWifiReset=0 only when there is no wifidriverissue
-  else
-    echo "$(/bin/timestamp) [DEBUG_NCR] checkPacketLoss: BELOW TOLERANCE returning 0 - skipping reset (version=$version, waiting for V6 measurement). wifiDriverErrors=$wifiDriverErrors" >> "$logsFile"
-  fi
-
-=======
   #Evaluate the packet-loss trigger only on the V6 call, once both stacks have
   #been probed (globals set during the preceding V4 call persist here). Classify
   #each routed stack as good (loss < tolerance = acceptable connectivity) or bad
@@ -462,7 +379,6 @@ checkPacketLoss()
     fi
   fi
 
->>>>>>> 4.2.1v17
   return 0
 }
 
