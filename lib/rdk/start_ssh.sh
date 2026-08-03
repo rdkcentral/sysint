@@ -75,7 +75,7 @@ checkForInterface()
 }
 
 USE_DEVKEYS="-f authorized_keys_dev"
-DEVICETYPE=$(tr181 -d Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>/dev/null)
+DEVICETYPE=$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1)
 if [ "$BUILD_TYPE" != "dev" ] && [ "$DEVICETYPE" != "TEST" ]; then
     USE_DEVKEYS=""
 fi
