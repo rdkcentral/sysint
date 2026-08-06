@@ -282,3 +282,9 @@ getPrivacyControlMode()
     #Implement own logic to get the privicyMode settings
     return
 }
+
+# use device specific functions, if available
+# eg: getEstbMacAddress has device specific implementations
+if [ -f /lib/rdk/utils-vendor.sh ]; then
+    . $RDK_PATH/utils-vendor.sh
+fi
