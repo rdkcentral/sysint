@@ -203,7 +203,24 @@ rm -f $STUNNEL_CONF_FILE
 rm -f $D_FILE
 
 
-REVSSHPID1=$(cat $REVSSH_PID_FILE)
+LOCK_FILE=/var/tmp/rssh_launch.lock
+
+acquire_lock() {
+    local lock_count=0
+    while ! mkdir "$LOCK_FILE" 2>/dev/null; do
+        lock_count=$((lock_count + 1))
+        if [ $lock_count -gt 30 ]; then
+            echo_t "STUNNEL: WARNING - Launch lock timeout, proceeding with possible PID race"
+            break
+        fi
+        sleep 1
+    done
+}
+
+release_lock() {
+    rmdir "$LOCK_FILE" 2>/dev/null
+}
+
 STUNNELPID=$(cat $STUNNEL_PID_FILE)
 
 count=0
@@ -225,13 +242,23 @@ while [ -z "$STUNNELPID" ]; do
     fi
 done
 
+# Ensure lock is removed on any exit (signal, error, or normal)
+trap 'release_lock' EXIT INT TERM
+
+# Serialize SSH launch + PID capture across parallel instances to prevent PID file race
+acquire_lock
+
+REVSSHPID1=$(cat $REVSSH_PID_FILE 2>/dev/null)
+
 #Starting startTunnel
 /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${SHORTSARGS}
 
-REVSSHPID2=$(cat $REVSSH_PID_FILE)
+REVSSHPID2=$(cat $REVSSH_PID_FILE 2>/dev/null)
+
+release_lock
 
 #Terminate stunnel if revssh fails.
-if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" == "$REVSSHPID2" ]; then
+if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" = "$REVSSHPID2" ]; then
     kill -9 $STUNNELPID
     rm -f $STUNNEL_PID_FILE
     if [ "x$CRED_INDEX" == "x0" ]; then

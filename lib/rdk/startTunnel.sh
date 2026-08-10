@@ -48,12 +48,12 @@ case $oper in
              GetConfigFile /tmp/nvgeajacl.ipe
              /usr/bin/ssh -i /tmp/nvgeajacl.ipe $*
              rm /tmp/nvgeajacl.ipe
-             exit 1
+             exit 0
              ;;
            stop)
              cat /var/tmp/rssh.pid |xargs kill -9
              rm /var/tmp/rssh.pid
-             exit 1
+             exit 0
              ;;
            *)
              usage
