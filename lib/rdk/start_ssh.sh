@@ -98,10 +98,6 @@ if [ "$COMMUNITY_BUILDS" = "true" ]; then
     # Source Dropbear configuration    
     [ -f /etc/default/dropbear ] && . /etc/default/dropbear
 
-    if [ ! -z "${DROPBEAR_EXTRA_ARGS}" ]; then
-         EXTRA_ARGS=" ${DROPBEAR_EXTRA_ARGS} "
-    fi
-
     if [ -z "${DROPBEAR_RSAKEY_DIR}" ]; then
         echo "DROPBEAR_RSAKEY_DIR is not set"
         exit 1
@@ -109,7 +105,7 @@ if [ "$COMMUNITY_BUILDS" = "true" ]; then
         systemctl start dropbearkey.service
     fi
 
-    DROPBEAR_PARAMS="${DROPBEAR_RSAKEY_DIR}/dropbear_rsa_host_key ${EXTRA_ARGS}"
+    DROPBEAR_PARAMS="${DROPBEAR_RSAKEY_DIR}/dropbear_rsa_host_key"
 fi
 loop=1
 address=""
