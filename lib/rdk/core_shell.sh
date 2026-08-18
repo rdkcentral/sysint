@@ -337,6 +337,7 @@ if  [ "$1" = "xcal-discovery-" ] || [ "$1" = "xdiscovery" ] || [ "$1" = "IARMDae
     [ "$1" = "civetweb-worker" ] || [ "$1" = "nfrtool" ] || [ "$1" = "rdm" ] ||
     [ "$1" = "dcmd" ] || [ "$1" = "logupload" ] || [ "$1" = "backup_logs" ] ||
     [ "$1" = "update-prev-reboot-info" ] || [ "$1" = "rebootnow" ] ||
+    [ "$1" = "remotedebugger" ] ||
     [ "$1" = "OCDM_WVMediaKey" ] || [ "$1" = "OCDM_SaThread" ] || [ "$1" = "multiqueue28:sr" ]; then
         dumpFile
         exit 0
