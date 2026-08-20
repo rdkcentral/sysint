@@ -17,7 +17,7 @@ jobs:
     name: Finish release when PR is approved
     if: >
       github.event.review.state == 'approved' &&
-      github.event.pull_request.base.ref == 'develop' &&
+      github.event.pull_request.base.ref == 'main' &&
       startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     env:
@@ -91,7 +91,14 @@ jobs:
           git checkout develop 2>/dev/null || git checkout -b develop origin/develop
           git checkout "${RELEASE_BRANCH}"
 
-          # Initialize git-flow
+          # Initialize git-flow with main as production branch
+          git config gitflow.branch.master main
+          git config gitflow.branch.develop develop
+          git config gitflow.prefix.feature feature/
+          git config gitflow.prefix.release release/
+          git config gitflow.prefix.hotfix hotfix/
+          git config gitflow.prefix.support support/
+          git config gitflow.prefix.versiontag ""
           git flow init -d
 
           # Finish release: merges to main + develop, creates tag
