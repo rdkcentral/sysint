@@ -88,14 +88,17 @@ isMOCASSHEnable=$(/usr/bin/tr181Set -d  Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.F
 echo "RFC_ENABLE_MOCASSH:$isMOCASSHEnable"
 
 if [ "$COMMUNITY_BUILDS" = "true" ]; then
-     EXTRA_ARGS=" -B "
-     DROPBEAR_KEY_DIR="/opt/dropbear"
-     if [ ! -f ${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key ] ; then
+    # Source Dropbear configuration    
+    [ -f /etc/default/dropbear ] && . /etc/default/dropbear
+
+    if [ -z "${DROPBEAR_RSAKEY_DIR}" ]; then
+        echo "DROPBEAR_RSAKEY_DIR is not set"
+        exit 1
+    elif [ ! -f "${DROPBEAR_RSAKEY_DIR}/dropbear_rsa_host_key" ]; then
         systemctl start dropbearkey.service
-     fi
-     DROPBEAR_PARAMS="${DROPBEAR_KEY_DIR}/dropbear_rsa_host_key"
-else
-     EXTRA_ARGS=" -s -a"
+    fi
+
+    DROPBEAR_PARAMS="${DROPBEAR_RSAKEY_DIR}/dropbear_rsa_host_key"
 fi
 loop=1
 address=""
@@ -138,7 +141,6 @@ if [ "$DEVICE_TYPE" = "mediaclient" ]; then
                 else
                       /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2"
                 fi
-                /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
                 /bin/systemctl set-environment IP_ADDRESS_PARAM="$IP_ADDRESS_PARAM"
           else
               dropbear -s -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 $IP_ADDRESS_PARAM $USE_DEVKEYS &
@@ -158,7 +160,6 @@ startDropbear()
           else
                 /bin/systemctl set-environment DROPBEAR_PARAMS="-r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2"
           fi
-          /bin/systemctl set-environment DROPBEAR_EXTRA_ARGS="$EXTRA_ARGS"
      else
           dropbear -b /etc/sshbanner.txt -s -a -r $DROPBEAR_PARAMS_1 -r $DROPBEAR_PARAMS_2 -p $ipAddress:22 $USE_DEVKEYS &
      fi
