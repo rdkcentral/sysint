@@ -354,7 +354,7 @@ fi
         "ASNetworkService" "ASNetworkServic"
         "ASConviva" "SkyBrowserLaunc"
         "AS_CHERRY_STATU" "QNetworkAccessM" 
-	"civetweb-worker" )
+	"civetweb-worker" "WPEWebProcess" "aampfMP4DRM")
 
     for anAppName in "${APP_NAMES[@]}"; do
         if [ "$1" = "${anAppName}" ]; then
