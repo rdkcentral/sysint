@@ -29,7 +29,7 @@ BASE_BIN_DIR    =       /bin
 IPK_DIR		=	ipk
 IPK_NAME	=	sysint.ipk
 
-install:
+install: rdk-secure-debug-check
 	install -d $(STAGING_DIR)$(BASE_LIB_DIR)/rdk
 	install -m 0755 $(WRKDIR)/lib/rdk/* $(STAGING_DIR)$(BASE_LIB_DIR)/rdk
 
@@ -42,6 +42,7 @@ install:
 	install -m 0644 $(WRKDIR)/etc/*.conf $(STAGING_DIR)$(SYS_CONF_DIR)
 
 	install -d $(STAGING_DIR)$(SYS_USR_DIR)/bin
+	install -m 0755 $(WRKDIR)/rdk-secure-debug-check $(STAGING_DIR)$(SYS_USR_DIR)/bin/
 	install -m 0755 $(WRKDIR)/systemd_units/update_hosts.sh $(STAGING_DIR)$(SYS_USR_DIR)/bin/
 
 	install -m 0755 $(WRKDIR)/etc/init.d/dump-backup-service $(STAGING_DIR)$(SYS_CONF_DIR)
@@ -84,6 +85,12 @@ install:
 
 	ln -sf /lib/rdk/rebootSTB.sh $(STAGING_DIR)
 	ln -sf /lib/rdk/rebootNow.sh $(STAGING_DIR)
+
+rdk-secure-debug-check: src/rdk_secure_debug_check.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(LDFLAGS) -lfwutils
+
+clean:
+	rm -f rdk-secure-debug-check
 
 package_ipk: install
 	tar -czvf $(IPK_DIR)/data.tar.gz -C $(STAGING_DIR) . 
