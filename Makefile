@@ -91,6 +91,8 @@ rdk-secure-debug-check: src/rdk_secure_debug_check.c
 
 clean:
 	rm -f rdk-secure-debug-check
+	rm -rf $(STAGING_DIR)
+	rm -f $(IPK_DIR)/data.tar.gz $(IPK_DIR)/control.tar.gz $(IPK_DIR)/$(IPK_NAME)
 
 package_ipk: install
 	tar -czvf $(IPK_DIR)/data.tar.gz -C $(STAGING_DIR) . 
