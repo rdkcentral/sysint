@@ -40,6 +40,12 @@ echo_t()
     echo "$DT_TIME $@" >> $LOG_FILE
 }
 
+# SHORTS enforcement is keyed on BUILD_TYPE (immutable, build-time), not RFC DeviceType (runtime-mutable).
+is_prod_hardened()
+{
+    [ "$BUILD_TYPE" = "prod" ]
+}
+
 usage()
 {
   echo_t "STUNNEL USAGE:  startSTunnel.sh <localport> <jumpfqdn> <jumpserverip> <jumpserverport> <reverseSSHArgs>"
@@ -77,11 +83,15 @@ echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 
 t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
-isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
-echo_t "isShortsenabled = $isShortsenabled "
-if [ "$isShortsenabled" == "false" ];then
-    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
-    exit 0
+if is_prod_hardened; then
+    echo_t "STUNNEL: prod-hardened device - SHORTS.Enable RFC ignored, SHORTS mandatory"
+else
+    isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
+    echo_t "isShortsenabled = $isShortsenabled "
+    if [ "$isShortsenabled" == "false" ];then
+        /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
+        exit 0
+    fi
 fi
 
 STUNNEL_PID_FILE=/tmp/stunnel_$LOCAL_PORT.pid
@@ -112,7 +122,10 @@ PROD_SAN=$DEFAULT_PROD_SAN
 echo "cert        = $CERT_PATH"          >> $STUNNEL_CONF_FILE
 echo "CAfile      = $CA_FILE"            >> $STUNNEL_CONF_FILE
 echo "verifyChain = yes"                 >> $STUNNEL_CONF_FILE
-echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
+if ! is_prod_hardened; then
+    # FQDN-only OR-fallback permitted only on non-hardened (dev-built) devices.
+    echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
+fi
 
 DEVICETYPE=`tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1`
 echo_t "STUNNEL: Device type is $DEVICETYPE"
@@ -126,6 +139,11 @@ if [ ! -z "$DEVICETYPE" ]; then
         t2CountNotify "SHORTS_DEVICE_TYPE_PROD"
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
+elif is_prod_hardened; then
+    # Hardened devices MUST NOT skip SAN validation on unknown DeviceType - default to PROD_SAN.
+    echo_t "STUNNEL: Device type is Unknown - defaulting to PROD_SAN (prod-hardened)"
+    t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
+    echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
 else
     echo_t "STUNNEL: Device type is Unknown"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
@@ -195,6 +213,7 @@ fi
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
+    is_prod_hardened && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
     exit 1
 fi
 
@@ -221,6 +240,14 @@ while [ -z "$STUNNELPID" ]; do
         fi
         echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
         t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
+        if is_prod_hardened; then
+            # Best-effort: distinguish a SAN/hostname mismatch from other stunnel failures via the log.
+            if grep -qi "subjectAltName\|certificate host name\|checkHost" $LOG_FILE 2>/dev/null; then
+                t2CountNotify "SHORTS_MANDATORY_SAN_VALIDATION_FAILURE"
+            else
+                t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
+            fi
+        fi
         exit
     fi
 done
