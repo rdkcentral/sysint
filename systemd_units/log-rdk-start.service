@@ -21,8 +21,8 @@
 Description=Log RDK Started Service
 
 Before=multi-user.target
-After=previous-log-backup.service 
 DefaultDependencies=no
+ConditionPathExists=/tmp/.backup_logs_done
 
 [Service]
 Type=oneshot
