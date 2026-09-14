@@ -454,6 +454,13 @@ checkDnsFile()
 
 checkRfc()
 {
+  rfcNwSelfHealScriptEnable="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.NwSelfHealScriptEnable 2>&1 > /dev/null)"
+  if [ "$rfcNwSelfHealScriptEnable" != "true" ] ; then
+    log "NwSelfHealScriptEnable RFC is not true. Exiting network connection recovery script"
+    exit 0
+  fi
+  log "rfcNwSelfHealScriptEnable is enabled and collecting NW data"
+
   rfcWifiResetEnable="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.Enable 2>&1 > /dev/null)"
   if [ "$rfcWifiResetEnable" = "true" ] ; then
     log "WiFiReset RFC is true "
