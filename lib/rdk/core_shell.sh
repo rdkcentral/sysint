@@ -17,4 +17,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
-echo "/media/apps/core.%e.%p.%t" > /proc/sys/kernel/core_pattern
+ulimit -c unlimited
+echo "/tmp/core.%e.%p.%t" > /proc/sys/kernel/core_pattern
