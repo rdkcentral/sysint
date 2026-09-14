@@ -40,15 +40,31 @@ echo_t()
     echo "$DT_TIME $@" >> $LOG_FILE
 }
 
-# SHORTS enforcement is keyed on BUILD_TYPE (immutable, build-time), not RFC DeviceType (runtime-mutable).
-is_prod_hardened()
-{
-    [ "$BUILD_TYPE" = "prod" ]
-}
-
 usage()
 {
   echo_t "STUNNEL USAGE:  startSTunnel.sh <localport> <jumpfqdn> <jumpserverip> <jumpserverport> <reverseSSHArgs>"
+}
+
+# Differentiates the generic SHORTS_SSH_CLIENT_FAILURE bucket into a specific root cause by
+# grepping only this session's stunnel.log lines (from LOG_LINE_MARK onward) for known patterns.
+# TLS_VERIFY/TLS_CONNECT patterns are best-effort stunnel/OpenSSL wording; verify against real
+# on-device logs before relying on them for alerting.
+classify_stunnel_failure()
+{
+    local session_log
+    session_log=$(tail -n +"$((LOG_LINE_MARK + 1))" "$LOG_FILE" 2>/dev/null)
+
+    if echo "$session_log" | grep -q "SAN fields not present in certificate, rejecting connection"; then
+        t2CountNotify "SHORTS_SAN_MISSING"
+    elif echo "$session_log" | grep -q "not matched with"; then
+        t2CountNotify "SHORTS_SAN_MISMATCH"
+    elif echo "$session_log" | grep -Eqi "certificate verify failed|verification error|certificate has expired|self signed certificate"; then
+        t2CountNotify "SHORTS_TLS_VERIFY_FAILURE"
+    elif echo "$session_log" | grep -Eqi "connect: Connection refused|connect: Connection timed out|connect: Network is unreachable"; then
+        t2CountNotify "SHORTS_TLS_CONNECT_FAILURE"
+    else
+        t2CountNotify "SHORTS_SSH_AUTH_FAILURE"
+    fi
 }
 
 if [ $# -lt 5 ]; then
@@ -83,12 +99,21 @@ echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 
 t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
-if is_prod_hardened; then
-    echo_t "STUNNEL: prod-hardened device - SHORTS.Enable RFC ignored, SHORTS mandatory"
+isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
+if [ "$BUILD_TYPE" = "prod" ]; then
+    # SHORTS is mandatory on PROD builds regardless of RFC.
+    # Only treat an actual plain SSH trigger as a blocked prod attempt.
+    if [ -n "$NONSHORTSARGS" ]; then
+        echo_t "STUNNEL: plain reverse SSH trigger attempted on PROD build; SHORTS is mandatory."
+        t2CountNotify "SHORTS_MANDATORY_NON_SHORTS_BLOCKED"
+    fi
+
+    if [ "$isShortsenabled" = "false" ]; then
+        echo_t "STUNNEL: SHORTS.Enable RFC is false but SHORTS is mandatory for PROD builds. Ignoring RFC."
+    fi
 else
-    isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
     echo_t "isShortsenabled = $isShortsenabled "
-    if [ "$isShortsenabled" == "false" ];then
+    if [ "$isShortsenabled" = "false" ]; then
         /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
         exit 0
     fi
@@ -113,6 +138,9 @@ extract_stunnel_client_cert
 if [ ! -f $CERT_PATH -o ! -f $CA_FILE ]; then
     echo_t "STUNNEL: Required cert/CA file not found. Exiting..."
     t2CountNotify "SHORTS_STUNNEL_CERT_FAILURE"
+    [ ! -f $CERT_PATH ] && t2CountNotify "SHORTS_CERT_FILE_MISSING"
+    [ ! -f $CA_FILE ] && t2CountNotify "SHORTS_CA_FILE_MISSING"
+    [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
     exit 1
 fi
 
@@ -122,10 +150,7 @@ PROD_SAN=$DEFAULT_PROD_SAN
 echo "cert        = $CERT_PATH"          >> $STUNNEL_CONF_FILE
 echo "CAfile      = $CA_FILE"            >> $STUNNEL_CONF_FILE
 echo "verifyChain = yes"                 >> $STUNNEL_CONF_FILE
-if ! is_prod_hardened; then
-    # FQDN-only OR-fallback permitted only on non-hardened (dev-built) devices.
-    echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
-fi
+echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
 
 DEVICETYPE=`tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1`
 echo_t "STUNNEL: Device type is $DEVICETYPE"
@@ -139,11 +164,6 @@ if [ ! -z "$DEVICETYPE" ]; then
         t2CountNotify "SHORTS_DEVICE_TYPE_PROD"
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
-elif is_prod_hardened; then
-    # Hardened devices MUST NOT skip SAN validation on unknown DeviceType - default to PROD_SAN.
-    echo_t "STUNNEL: Device type is Unknown - defaulting to PROD_SAN (prod-hardened)"
-    t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
-    echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
 else
     echo_t "STUNNEL: Device type is Unknown"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
@@ -210,10 +230,16 @@ if [ -f /usr/sbin/NetworkManager ]; then
     $IPTABLE_CMD -I INPUT -i lo -j ACCEPT #accept traffic for localhost (whitebox)
 fi
 
+# Marks where this session's stunnel.log output begins, so later failure classification
+# only inspects lines produced by this attempt.
+LOG_LINE_MARK=$(wc -l < "$LOG_FILE" 2>/dev/null)
+LOG_LINE_MARK=${LOG_LINE_MARK:-0}
+
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
-    is_prod_hardened && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
+    t2CountNotify "SHORTS_STUNNEL_LAUNCH_FAILURE"
+    [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
     exit 1
 fi
 
@@ -240,14 +266,7 @@ while [ -z "$STUNNELPID" ]; do
         fi
         echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
         t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
-        if is_prod_hardened; then
-            # Best-effort: distinguish a SAN/hostname mismatch from other stunnel failures via the log.
-            if grep -qi "subjectAltName\|certificate host name\|checkHost" $LOG_FILE 2>/dev/null; then
-                t2CountNotify "SHORTS_MANDATORY_SAN_VALIDATION_FAILURE"
-            else
-                t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
-            fi
-        fi
+        [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
         exit
     fi
 done
@@ -266,6 +285,7 @@ if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" == "$REVSSHPID2" ]; then
     fi
     echo_t "STUNNEL: Reverse SSH failed to connect. Exiting..."
     t2CountNotify "SHORTS_SSH_CLIENT_FAILURE"
+    classify_stunnel_failure
     exit
 fi
 
