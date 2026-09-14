@@ -98,7 +98,6 @@ runMaintenanceRFCTask()
         rfcLog "No RFC Bin/ Script"
         result=-1
     fi
-    touch /tmp/.RFCsynccomplete
     # Handle both success (0) and acceptable warning (1) exit codes, flag other results as errors
     if [ "$result" -ne 0 ] && [ "$result" -ne 1 ]; then
         eventSender "MaintenanceMGR" "$MAINT_RFC_ERROR"
