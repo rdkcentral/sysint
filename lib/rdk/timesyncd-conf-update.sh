@@ -25,8 +25,8 @@
 output=""
 count=0
 LOG_FILE="/opt/logs/ntp.log"
-attempts=0
-max_attempts=2
+attempts=1
+max_attempts=5
 
 if [ -f /etc/env_setup.sh ]; then
     . /etc/env_setup.sh
@@ -49,14 +49,59 @@ if [ -f /lib/rdk/getPartnerProperty.sh ]; then
 fi
 }
 
-ntpLog "Retrive NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
-while [ ! "$hostName" ] && [ ! "$hostName2" ] && [ ! "$hostName3" ] && [ ! "$hostName4" ] && [ ! "$hostName5" ] && [ $attempts -lt $max_attempts ]
-do
-    # NTP URL from the property file
+get_ntp_hosts_from_bootstrap() {
+    BOOTSTRAP="/opt/secure/RFC/bootstrap.ini"
+
+    if [ ! -f "$BOOTSTRAP" ]; then
+        ntpLog "bootstrap.ini not found at $BOOTSTRAP"
+        return 1
+    fi
+
+    # Helper to fetch key=value from bootstrap.ini (first match)
+    get_bs_val() {
+        key="$1"
+        # Extract RHS after '=' and trim whitespace
+        grep -m1 -E "^[[:space:]]*$key=" "$BOOTSTRAP" 2>/dev/null | \
+            cut -d'=' -f2- | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+    }
+
+    bs1="$(get_bs_val 'Device.Time.NTPServer1')"
+    bs2="$(get_bs_val 'Device.Time.NTPServer2')"
+    bs3="$(get_bs_val 'Device.Time.NTPServer3')"
+    bs4="$(get_bs_val 'Device.Time.NTPServer4')"
+    bs5="$(get_bs_val 'Device.Time.NTPServer5')"
+
+    # Only fill missing values (don’t override TR-181 values if present)
+    [ -z "$hostName" ]  && hostName="$bs1"
+    [ -z "$hostName2" ] && hostName2="$bs2"
+    [ -z "$hostName3" ] && hostName3="$bs3"
+    [ -z "$hostName4" ] && hostName4="$bs4"
+    [ -z "$hostName5" ] && hostName5="$bs5"
+
+    return 0
+}
+
+
+ntpLog "Retrieve NTP Server URL from /lib/rdk/getPartnerProperty.sh..."
+while [ "$attempts" -le "$max_attempts" ]; do
+
+    ntpLog "Attempt $attempts/$max_attempts to retrieve NTP server URL(s)..."
     get_ntp_hosts
-    sleep 5
-	echo "Attempt $attempts - Failed to retrieve NTP server URL, attempting again..."
-   attempts=$((attempts + 1))
+
+    if [ "$hostName" ] || [ "$hostName2" ] || [ "$hostName3" ] || [ "$hostName4" ] || [ "$hostName5" ]; then
+        break
+    fi
+
+     # If this is the last attempt, try bootstrap as fallback and then break
+    if [ $attempts -eq $max_attempts ]; then
+        ntpLog "TR-181 returned empty NTP server list; falling back to /opt/secure/RFC/bootstrap.ini..."
+        get_ntp_hosts_from_bootstrap
+        break
+    fi
+
+    sleep 3
+    attempts=$((attempts + 1))
+
 done
 
 partnerHostnames="$hostName $hostName2 $hostName3 $hostName4 $hostName5"
@@ -87,7 +132,7 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                sed -i "s/^NTP=.*/NTP=/g" /tmp/timesyncd.conf
                sed -i "s/^NTP=/NTP=$updateHostname $defaultHostName2/" /tmp/timesyncd.conf
                systemd_ver=`systemctl --version | grep systemd | awk '{print $2}'`
-	       if [ "$systemd_ver" -ge 248 ]; then
+           if [ "$systemd_ver" -ge 248 ]; then
 		   # For systemd version >= 248, add the ConnectionRetrySec parameter
 		   echo "ConnectionRetrySec=5" >> /tmp/timesyncd.conf
 	       fi
