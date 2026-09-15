@@ -56,7 +56,7 @@ if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
    if [ ! -f /tmp/estb_ipv4 ] && [ ! -f /tmp/estb_ipv6 ];
    then
       if [ -f "$LOGMILESTONE_BIN" ]; then
-          $LOGMILESTONE_BIN "IP_ACQUISTION_COMPLETED:$ifc"
+          #$LOGMILESTONE_BIN "IP_ACQUISTION_COMPLETED:$ifc"
           if [ $ifc == "eth0" ]; then
               ifc_uptime=$(awk '{printf "%.0f", $1 * 1000}' /proc/uptime)
               t2ValNotify "btime_ipacqEth_split" "$ifc_uptime"
