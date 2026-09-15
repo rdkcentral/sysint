@@ -23,7 +23,7 @@ After=network-online.target
 Requires=network-online.target
 
 [Service]
-ExecStart=/lib/rdk/uploadDumps.sh  "" 1 
+ExecStart=/bin/bash -c 'if [ -f /tmp/rustEnable ]; then /usr/bin/crash-upload 1 "" ""; else /lib/rdk/uploadDumps.sh "" 1; fi'
 KillSignal=SIGKILL
 
 [Install]
