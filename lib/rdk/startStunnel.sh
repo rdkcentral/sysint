@@ -167,6 +167,7 @@ if [ ! -z "$DEVICETYPE" ]; then
 else
     echo_t "STUNNEL: Device type is Unknown"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
+    echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
 fi
 
 #Function to find available fd at this point in time
