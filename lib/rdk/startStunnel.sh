@@ -45,6 +45,28 @@ usage()
   echo_t "STUNNEL USAGE:  startSTunnel.sh <localport> <jumpfqdn> <jumpserverip> <jumpserverport> <reverseSSHArgs>"
 }
 
+# Differentiates the generic SHORTS_SSH_CLIENT_FAILURE bucket into a specific root cause by
+# grepping only this session's stunnel.log lines (from LOG_LINE_MARK onward) for known patterns.
+# TLS_VERIFY/TLS_CONNECT patterns are best-effort stunnel/OpenSSL wording; verify against real
+# on-device logs before relying on them for alerting.
+classify_stunnel_failure()
+{
+    local session_log
+    session_log=$(tail -n +"$((LOG_LINE_MARK + 1))" "$LOG_FILE" 2>/dev/null)
+
+    if echo "$session_log" | grep -q "SAN fields not present in certificate, rejecting connection"; then
+        t2CountNotify "SHORTS_SAN_MISSING"
+    elif echo "$session_log" | grep -q "not matched with"; then
+        t2CountNotify "SHORTS_SAN_MISMATCH"
+    elif echo "$session_log" | grep -Eqi "certificate verify failed|verification error|certificate has expired|self signed certificate"; then
+        t2CountNotify "SHORTS_TLS_VERIFY_FAILURE"
+    elif echo "$session_log" | grep -Eqi "connect: Connection refused|connect: Connection timed out|connect: Network is unreachable"; then
+        t2CountNotify "SHORTS_TLS_CONNECT_FAILURE"
+    else
+        t2CountNotify "SHORTS_SSH_AUTH_FAILURE"
+    fi
+}
+
 if [ $# -lt 5 ]; then
    usage
    exit 1
@@ -78,10 +100,23 @@ echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
-echo_t "isShortsenabled = $isShortsenabled "
-if [ "$isShortsenabled" == "false" ];then
-    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
-    exit 0
+if [ "$BUILD_TYPE" = "prod" ]; then
+    # SHORTS is mandatory on PROD builds regardless of RFC.
+    # Only treat an actual plain SSH trigger as a blocked prod attempt.
+    if [ -n "$NONSHORTSARGS" ]; then
+        echo_t "STUNNEL: plain reverse SSH trigger attempted on PROD build; SHORTS is mandatory."
+        t2CountNotify "SHORTS_MANDATORY_NON_SHORTS_BLOCKED"
+    fi
+
+    if [ "$isShortsenabled" = "false" ]; then
+        echo_t "STUNNEL: SHORTS.Enable RFC is false but SHORTS is mandatory for PROD builds. Ignoring RFC."
+    fi
+else
+    echo_t "isShortsenabled = $isShortsenabled "
+    if [ "$isShortsenabled" = "false" ]; then
+        /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
+        exit 0
+    fi
 fi
 
 STUNNEL_PID_FILE=/tmp/stunnel_$LOCAL_PORT.pid
@@ -103,6 +138,9 @@ extract_stunnel_client_cert
 if [ ! -f $CERT_PATH -o ! -f $CA_FILE ]; then
     echo_t "STUNNEL: Required cert/CA file not found. Exiting..."
     t2CountNotify "SHORTS_STUNNEL_CERT_FAILURE"
+    [ ! -f $CERT_PATH ] && t2CountNotify "SHORTS_CERT_FILE_MISSING"
+    [ ! -f $CA_FILE ] && t2CountNotify "SHORTS_CA_FILE_MISSING"
+    [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
     exit 1
 fi
 
@@ -129,6 +167,7 @@ if [ ! -z "$DEVICETYPE" ]; then
 else
     echo_t "STUNNEL: Device type is Unknown"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
+    echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
 fi
 
 #Function to find available fd at this point in time
@@ -192,9 +231,16 @@ if [ -f /usr/sbin/NetworkManager ]; then
     $IPTABLE_CMD -I INPUT -i lo -j ACCEPT #accept traffic for localhost (whitebox)
 fi
 
+# Marks where this session's stunnel.log output begins, so later failure classification
+# only inspects lines produced by this attempt.
+LOG_LINE_MARK=$(wc -l < "$LOG_FILE" 2>/dev/null)
+LOG_LINE_MARK=${LOG_LINE_MARK:-0}
+
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
+    t2CountNotify "SHORTS_STUNNEL_LAUNCH_FAILURE"
+    [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
     exit 1
 fi
 
@@ -221,6 +267,7 @@ while [ -z "$STUNNELPID" ]; do
         fi
         echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
         t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
+        [ "$BUILD_TYPE" = "prod" ] && t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
         exit
     fi
 done
@@ -239,6 +286,7 @@ if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" == "$REVSSHPID2" ]; then
     fi
     echo_t "STUNNEL: Reverse SSH failed to connect. Exiting..."
     t2CountNotify "SHORTS_SSH_CLIENT_FAILURE"
+    classify_stunnel_failure
     exit
 fi
 
