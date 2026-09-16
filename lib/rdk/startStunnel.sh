@@ -47,7 +47,7 @@ usage()
 
 is_non_prod_build()
 {
-    [ "$BUILD_TYPE" != "prod" ]
+    [ -n "$BUILD_TYPE" ] && [ "$BUILD_TYPE" != "prod" ]
 }
 
 if [ $# -lt 5 ]; then
