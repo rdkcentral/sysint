@@ -77,9 +77,19 @@ echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 
 t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
+# BUILD_TYPE=dev (from /etc/device.properties) identifies a PROD build
+is_prod_build() {
+    [ "$BUILD_TYPE" = "prod" ]
+}
+
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
 echo_t "isShortsenabled = $isShortsenabled "
-if [ "$isShortsenabled" == "false" ];then
+if [ "$isShortsenabled" == "false" ]; then
+    if is_prod_build; then
+        echo_t "STUNNEL: SHORTS is mandatory for PROD builds. Non-SHORTS connection blocked."
+        t2CountNotify "SHORTS_MANDATORY_NON_SHORTS_BLOCKED"
+        exit 1
+    fi
     /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
     exit 0
 fi
@@ -114,7 +124,7 @@ echo "CAfile      = $CA_FILE"            >> $STUNNEL_CONF_FILE
 echo "verifyChain = yes"                 >> $STUNNEL_CONF_FILE
 echo "checkHost   = $JUMP_FQDN"          >> $STUNNEL_CONF_FILE
 
-DEVICETYPE=`tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1`
+DEVICETYPE=$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType 2>&1)
 echo_t "STUNNEL: Device type is $DEVICETYPE"
 if [ ! -z "$DEVICETYPE" ]; then
     if [ "$DEVICETYPE" == "TEST" ] || [ "$DEVICETYPE" == "test" ]; then
@@ -127,8 +137,9 @@ if [ ! -z "$DEVICETYPE" ]; then
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
-    echo_t "STUNNEL: Device type is Unknown"
+    echo_t "STUNNEL: Device type is Unknown, treating as PROD"
     t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
+    echo "checkHost   = $PROD_SAN"             >> $STUNNEL_CONF_FILE
 fi
 
 #Function to find available fd at this point in time
@@ -195,6 +206,9 @@ fi
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
+    if is_prod_build; then
+        t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
+    fi
     exit 1
 fi
 
@@ -221,6 +235,9 @@ while [ -z "$STUNNELPID" ]; do
         fi
         echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
         t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
+        if is_prod_build; then
+            t2CountNotify "SHORTS_MANDATORY_STUNNEL_FAILURE"
+        fi
         exit
     fi
 done
