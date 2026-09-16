@@ -114,7 +114,7 @@ extract_stunnel_client_cert
 
 if [ ! -f $CERT_PATH -o ! -f $CA_FILE ]; then
     echo_t "STUNNEL: Required cert/CA file not found. Exiting..."
-    t2ValNotify "SHORTS_STUNNEL_CERT_FAILURE" "Required cert/CA file not found"
+    t2CountNotify "SHORTS_STUNNEL_CERT_FAILURE"
     [ ! -f $CERT_PATH ] && t2ValNotify "SHORTS_CERT_FILE_MISSING" "$CERT_PATH not found"
     [ ! -f $CA_FILE ] && t2ValNotify "SHORTS_CA_FILE_MISSING" "$CA_FILE not found"
     exit 1
