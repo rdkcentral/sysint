@@ -113,7 +113,7 @@ echo "connect = $JUMP_SERVER:$JUMP_PORT" >> $STUNNEL_CONF_FILE
 extract_stunnel_client_cert
 
 if [ ! -f $CERT_PATH -o ! -f $CA_FILE ]; then
-    echo_t "STUNNEL: Required cert/CA file not found."
+    echo_t "STUNNEL: Required cert/CA file not found. Exiting..."
     t2ValNotify "SHORTS_STUNNEL_CERT_FAILURE" "Required cert/CA file not found"
     [ ! -f $CERT_PATH ] && t2ValNotify "SHORTS_CERT_FILE_MISSING" "$CERT_PATH not found"
     [ ! -f $CA_FILE ] && t2ValNotify "SHORTS_CA_FILE_MISSING" "$CA_FILE not found"
@@ -141,7 +141,7 @@ if [ ! -z "$DEVICETYPE" ]; then
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
-    echo_t "STUNNEL: Device type is unknown; applying PROD SAN policy."
+    echo_t "STUNNEL: Device type is Unknown"
     echo "checkHost   = $PROD_SAN"             >> $STUNNEL_CONF_FILE
 fi
 
@@ -208,7 +208,7 @@ fi
 
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
-    echo_t "STUNNEL: Failed to start stunnel process."
+    echo_t "STUNNEL: ERROR - Failed to start stunnel process."
     t2ValNotify "SHORTS_STUNNEL_LAUNCH_FAILURE" "Failed to start stunnel process"
     exit 1
 fi
@@ -234,8 +234,8 @@ while [ -z "$STUNNELPID" ]; do
         if [ "x$CRED_INDEX" == "x0" ]; then
             touch /tmp/.$SE_DEVICE_CERT
         fi
-        echo_t "STUNNEL: stunnel client failed to establish."
-        t2ValNotify "SHORTS_STUNNEL_CLIENT_FAILURE" "stunnel client failed to establish"
+        echo_t "STUNNEL: stunnel-client failed to establish. Exiting..."
+        t2CountNotify "SHORTS_STUNNEL_CLIENT_FAILURE"
         exit
     fi
 done
@@ -252,8 +252,8 @@ if [ -z "$REVSSHPID2" ] || [ "$REVSSHPID1" == "$REVSSHPID2" ]; then
     if [ "x$CRED_INDEX" == "x0" ]; then
         touch /tmp/.$SE_DEVICE_CERT
     fi
-    echo_t "STUNNEL: Reverse SSH failed to connect."
-    t2ValNotify "SHORTS_SSH_CLIENT_FAILURE" "Reverse SSH failed to connect"
+    echo_t "STUNNEL: Reverse SSH failed to connect. Exiting..."
+    t2CountNotify "SHORTS_SSH_CLIENT_FAILURE"
     exit
 fi
 
