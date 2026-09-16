@@ -21,6 +21,8 @@
 . /etc/device.properties
 TEMP_LOG="/tmp/logs/messages.txt"
 RTL_LOG_FILE="$LOG_PATH/dcmscript.log"
+SYSTEM_METRIC_CRON_INTERVAL="*/15 * * * *"
+
 if [ "$LIGHTSLEEP_ENABLE" == "true" ] && [ -f /tmp/.standby ]; then
     if [ ! -d /tmp/logs ] ;then
         mkdir /tmp/logs
@@ -53,3 +55,13 @@ else
         sh /lib/rdk/temperature-telemetry.sh >> $LOG_PATH/messages.txt
     fi
 fi
+
+systemHealthLog=`sh /lib/rdk/cronjobs_update.sh "check-entry" "vm_cpu_temp-check.sh"`
+if [ "$systemHealthLog" != "0" ]; then
+    echo "Remove existing cron Update VM and CPU stats to the messages.txt file"
+    sh /lib/rdk/cronjobs_update.sh "remove" "vm_cpu_temp-check.sh"
+fi
+echo "Scheduling Cron Update VM and CPU stats to the messages.txt file"
+sh /lib/rdk/cronjobs_update.sh "update" "vm_cpu_temp-check.sh" "$SYSTEM_METRIC_CRON_INTERVAL nice -n 10 /bin/sh $RDK_PATH/vm_cpu_temp-check.sh"
+echo "Created/Updated CRONJOB to run the script on every $SYSTEM_METRIC_CRON_INTERVAL" >> $LOG_PATH/messages.txt
+
