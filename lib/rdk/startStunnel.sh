@@ -141,7 +141,7 @@ if [ ! -z "$DEVICETYPE" ]; then
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
-    echo_t "STUNNEL: Device type is Unknown"
+    echo_t "STUNNEL: Device type is Unknown, Defaulting to prod"
     echo "checkHost   = $PROD_SAN"             >> $STUNNEL_CONF_FILE
 fi
 
