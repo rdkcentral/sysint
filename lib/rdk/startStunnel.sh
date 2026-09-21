@@ -45,6 +45,8 @@ usage()
   echo_t "STUNNEL USAGE:  startSTunnel.sh <localport> <jumpfqdn> <jumpserverip> <jumpserverport> <reverseSSHArgs>"
 }
 
+echo_t "STUNNEL: Build type is $BUILD_TYPE"
+
 is_non_prod_build()
 {
     [ -n "$BUILD_TYPE" ] && [ "$BUILD_TYPE" != "prod" ]
@@ -141,7 +143,8 @@ if [ ! -z "$DEVICETYPE" ]; then
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
-    echo_t "STUNNEL: Device type is Unknown, Defaulting to prod"
+    echo_t "STUNNEL: Device type is Unknown, applying PROD SAN policy."
+    t2CountNotify "SHORTS_DEVICE_TYPE_PROD"
     echo "checkHost   = $PROD_SAN"             >> $STUNNEL_CONF_FILE
 fi
 
@@ -209,7 +212,7 @@ fi
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
-    t2ValNotify "SHORTS_STUNNEL_LAUNCH_FAILURE" "Failed to start stunnel process"
+    t2CountNotify "SHORTS_STUNNEL_LAUNCH_FAILURE" "Failed to start stunnel process"
     exit 1
 fi
 
