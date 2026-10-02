@@ -1,0 +1,13 @@
+[Unit]
+Description=Monitor NM State
+After=dbus.service
+Requires=dbus.service
+Before=NetworkManager.service
+
+[Service]
+ExecStart=/lib/rdk/get-nm-status.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
