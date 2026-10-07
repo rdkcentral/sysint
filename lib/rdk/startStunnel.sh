@@ -45,6 +45,13 @@ usage()
   echo_t "STUNNEL USAGE:  startSTunnel.sh <localport> <jumpfqdn> <jumpserverip> <jumpserverport> <reverseSSHArgs>"
 }
 
+echo_t "STUNNEL: Build type is $BUILD_TYPE"
+
+is_non_prod_build()
+{
+    [ -n "$BUILD_TYPE" ] && [ "$BUILD_TYPE" != "prod" ]
+}
+
 if [ $# -lt 5 ]; then
    usage
    exit 1
@@ -78,10 +85,17 @@ echo_t "NONSHORTSARGS :$NONSHORTSARGS"
 t2ValNotify "SSH_INFO_SOURCE_IP" "$JUMP_SERVER"
 
 isShortsenabled=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable 2>&1 > /dev/null`
-echo_t "isShortsenabled = $isShortsenabled "
-if [ "$isShortsenabled" == "false" ];then
-    /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
-    exit 0
+if is_non_prod_build; then
+    echo_t "isShortsenabled = $isShortsenabled "
+    if [ "$isShortsenabled" = "false" ]; then
+        /bin/sh /lib/rdk/startTunnel.sh start ${REVERSESSHARGS}${NONSHORTSARGS}
+        exit 0
+    fi
+else
+    if [ "$isShortsenabled" = "false" ]; then
+        echo_t "STUNNEL: SHORTS RFC is false on PROD build; enforcing SHORTS."
+        t2CountNotify "SHORTS_MANDATORY_NON_SHORTS_BLOCKED"
+    fi
 fi
 
 STUNNEL_PID_FILE=/tmp/stunnel_$LOCAL_PORT.pid
@@ -127,8 +141,9 @@ if [ ! -z "$DEVICETYPE" ]; then
         echo "checkHost   = $PROD_SAN"         >> $STUNNEL_CONF_FILE
     fi
 else
-    echo_t "STUNNEL: Device type is Unknown"
-    t2CountNotify "SHORTS_DEVICE_TYPE_UNKNOWN"
+    echo_t "STUNNEL: Device type is Unknown, applying PROD SAN policy."
+    t2CountNotify "SHORTS_DEVICE_TYPE_PROD"
+    echo "checkHost   = $PROD_SAN"             >> $STUNNEL_CONF_FILE
 fi
 
 #Function to find available fd at this point in time
@@ -195,6 +210,7 @@ fi
 /usr/bin/stunnel $STUNNEL_CONF_FILE
 if [ $? -ne 0 ]; then
     echo_t "STUNNEL: ERROR - Failed to start stunnel process."
+    t2CountNotify "SHORTS_STUNNEL_LAUNCH_FAILURE" "Failed to start stunnel process"
     exit 1
 fi
 
