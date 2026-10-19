@@ -79,9 +79,9 @@ graph TD
 
 ### Initialization to Active State
 
-On each boot, Sysint transitions through a fixed sequence governed by systemd ordering constraints. The earliest units (`previous-log-backup.service`, `log-rdk-start.service`) run before `multi-user.target` and are anchored to `local-fs.target`. Once the local filesystem and NVRAM are available, these units execute. A second wave of services activates at `multi-user.target`: `dump-backup.service`, `iptables.service`, `oops-dump.service`, `zram.service`, and `NM_Bootstrap.service`. A third wave, gated on `network-online.target`, activates the time-sync event chain, crash upload services, SSH daemon, and device detail refresh. `network-up.target` is activated through two independent, unconditional paths that do **not** verify internet connectivity: `notify-network-ready.service` touches `/tmp/connectivity_check_done` as soon as `dbus.service` is active (no connectivity check is performed), which `network-up.path` detects; and `network-up.timer` activates `network-up.target` directly 120 seconds after boot regardless of whether `notify-network-ready.service` has run. Either path unblocks services ordered after `network-up.target`, so that target should be read as "network bring-up assumed complete," not as confirmed internet connectivity.
+On each boot, Sysint's units activate according to their individual systemd ordering declarations rather than one guaranteed serial sequence. `previous-log-backup.service` and `log-rdk-start.service` are ordered `Before=multi-user.target` and anchored to `local-fs.target`, so they run once the local filesystem and NVRAM are available. A functional group of units reaches `multi-user.target` with no network dependency — `dump-backup.service`, `oops-dump.service` (both anchored to `local-fs.target`), and `NM_Bootstrap.service` (ordered `After=NetworkManager.service`) — so none of these are guaranteed to run before or after network bring-up. `iptables.service` and `zram.service` are separately declared `After=network-online.target`, as are `dropbear.service` and `update-device-details.service`. `ntp-event.path`, by contrast, declares no ordering dependency on `network-online.target`: it is armed as soon as `multi-user.target` is reached and fires whenever the time-sync daemon writes its sentinel file, independent of network state. `network-up.target` is activated through two independent, unconditional paths that do **not** verify internet connectivity: `notify-network-ready.service` touches `/tmp/connectivity_check_done` as soon as `dbus.service` is active (no connectivity check is performed), which `network-up.path` detects; and `network-up.timer` activates `network-up.target` directly 120 seconds after boot regardless of whether `notify-network-ready.service` has run. Either path unblocks services ordered after `network-up.target`, so that target should be read as "network bring-up assumed complete," not as confirmed internet connectivity.
 
-The component transitions through the following states during its lifecycle: **LogRecovery** (backup previous logs, mark RDK_STARTED) → **SecuritySetup** (iptables rules, OCSP flags, ZRAM) → **NetworkBringup** (NM bootstrap, dispatcher registration) → **TimeSyncMonitoring** (NTP path watches active) → **Active** (all timers running, crash upload paths watching, connection stats running) → **Shutdown** (individual services are stopped via `systemctl stop`).
+The following functional groups describe what each unit does, not a guaranteed serial pipeline: **LogRecovery** (backup previous logs, mark RDK_STARTED), **SecuritySetup** (iptables rules and ZRAM, both ordered after `network-online.target`; OCSP flags), **NetworkBringup** (NM bootstrap ordered after `NetworkManager.service`; dispatcher registration), and **TimeSyncMonitoring** (NTP path armed at `multi-user.target`, independent of network state). Once these groups have run, Sysint reaches **Active** state (all timers running, crash upload paths watching, connection stats running) until **Shutdown** (individual services stopped via `systemctl stop`).
 
 The sequence diagram below covers the boot flow end-to-end, from log recovery through network-up target activation:
 
@@ -107,24 +107,24 @@ sequenceDiagram
     LogStart->>LogStart: rdkLogMileStone RDK_STARTED
     LogStart-->>Systemd: complete
 
-    Systemd->>DumpBkp: Activate (multi-user.target)
-    DumpBkp->>DumpBkp: dumpbackup.sh — stage crash artifacts
-
-    Systemd->>IPT: Activate (after network-online.target)
-    IPT->>IPT: iptables_init — apply firewall rules
+    Systemd->>DumpBkp: Activate (multi-user.target, no network dependency)
+    DumpBkp->>DumpBkp: dumpbackup.sh — ensure CORE_PATH/MINIDUMPS_PATH exist
 
     Systemd->>NMBoot: Activate (after NetworkManager.service)
     NMBoot->>NMBoot: NM_Bootstrap.sh — migrate WiFi credentials
 
-    Systemd->>Zram: Activate (multi-user.target)
-    Zram->>Zram: init-zram.sh — load zram module, configure swap
+    Systemd->>NTPPath: Activate (multi-user.target, no network dependency) — watch /tmp/clock-event
+    Note over NTPPath: Path unit remains armed independent of network state
 
     Systemd->>NetOnline: network-online.target reached
+    Systemd->>IPT: Activate (after network-online.target)
+    IPT->>IPT: iptables_init — apply firewall rules
+
+    Systemd->>Zram: Activate (after network-online.target)
+    Zram->>Zram: init-zram.sh — load zram module, configure swap
+
     Systemd->>Dropbear: Activate (after network-online.target)
     Dropbear->>Dropbear: start_ssh.sh — configure and start SSH
-
-    Systemd->>NTPPath: Activate — watch /tmp/clock-event
-    Note over NTPPath: Path unit remains armed at runtime
 
     Systemd->>NetReady: Activate (after dbus.service)
     NetReady->>NetReady: touch /tmp/connectivity_check_done (unconditional, no connectivity check)
@@ -144,7 +144,7 @@ Once all boot-time services have completed, Sysint operates through timer-driven
 - `disk-threshold-check.timer` periodically invokes `disk_threshold_check.sh` to detect and remediate persistent storage exceeding configured thresholds.
 - `network-connection-stats.timer` periodically invokes `networkConnectionRecovery.sh` to check gateway reachability, packet loss, and WiFi driver health; it triggers reassociation or a driver reset when configurable thresholds are exceeded.
 - `ntp-event.path` watches `/tmp/clock-event` (or `/run/systemd/timesync/synchronized` on Dunfell builds). When the time-sync daemon writes this file, `ntp-event.service` fires, dispatching a system event bus signal `NTPReceivedEvent` and logging the `CONNECT_TO_NTP_SERVER` milestone.
-- `restart-parodus.path` watches `/tmp/authservice_parodus_restart`. When this file appears, `restart-parodus.service` invokes `systemctl restart parodus.service` after `wpeframework.service` is confirmed active.
+- `restart-parodus.path` watches `/tmp/authservice_parodus_restart`. When this file appears, `restart-parodus.service` (ordered `After=wpeframework.service`) invokes `systemctl restart parodus.service`. This is an ordering constraint only — it does not start Thunder or verify that `wpeframework.service` is currently active; the restart proceeds once that ordering point is reached even if Thunder is inactive or failed.
 - `stateRedRecovery.path` watches a sentinel file; when triggered, `stateRedRecovery.sh` initiates a recovery firmware download via `rdkvfwupgrader`.
 
 **Context Switching Scenarios:**
@@ -191,17 +191,17 @@ The [README](../README.md#key-responsibilities--modules) summarizes the primary 
 
 **Firmware / Image Management**
 
-| File                     | Type   | Functionality                                                                          |
-| ------------------------ | ------ | -------------------------------------------------------------------------------------- |
-| `imageFlasher.sh`        | script | Flashes firmware images to device storage (uses `/usr/bin/FlashApp` on media clients). |
-| `eMMC_Upgrade.sh`        | script | Manages eMMC firmware upgrade with RFC version checks and retry tracking.              |
-| `emmc_format.sh`         | script | Unmounts eMMC partitions ahead of format/upgrade operations.                           |
-| `emmc_debug_launcher.sh` | script | Captures eMMC debug telemetry at a configurable interval.                              |
-| `swupdate_utility.sh`    | script | Device-initiated firmware download handler integrated with DCM settings.               |
-| `userInitiatedFWDnld.sh` | script | User-initiated firmware download with device state tracking.                           |
-| `xconfImageCheck.sh`     | script | Checks firmware update status against the XConf configuration server.                  |
-| `restore`                | script | Reverts to the previous firmware version from a `.prev.tgz` backup and reboots.        |
-| `rfcOverrides.sh`        | script | Enables the SD-card scratchpad for firmware downloads when the RFC flag is set.        |
+| File                     | Type   | Functionality                                                                                                                        |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `imageFlasher.sh`        | script | Flashes firmware images to device storage (uses `/usr/bin/FlashApp` on media clients).                                               |
+| `eMMC_Upgrade.sh`        | script | Manages eMMC firmware upgrade with RFC version checks and retry tracking.                                                            |
+| `emmc_format.sh`         | script | Unmounts filesystems and reformats the MMC devices/partitions found in the mount table using `mkfs`, destroying their existing data. |
+| `emmc_debug_launcher.sh` | script | Captures eMMC debug telemetry at a configurable interval.                                                                            |
+| `swupdate_utility.sh`    | script | Device-initiated firmware download handler integrated with DCM settings.                                                             |
+| `userInitiatedFWDnld.sh` | script | User-initiated firmware download with device state tracking.                                                                         |
+| `xconfImageCheck.sh`     | script | Checks firmware update status against the XConf configuration server.                                                                |
+| `restore`                | script | Reverts to the previous firmware version from a `.prev.tgz` backup and reboots.                                                      |
+| `rfcOverrides.sh`        | script | Enables the SD-card scratchpad for firmware downloads when the RFC flag is set.                                                      |
 
 **Device Identity & Provisioning**
 
