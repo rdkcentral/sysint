@@ -36,20 +36,20 @@
 
 ## Key Configuration Parameters
 
-| Parameter                                                                        | Type | Default                   | Description                                                                                                                                       |
-| -------------------------------------------------------------------------------- | ---- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable`                  | bool | `false`                   | Enables ZRAM compressed swap initialization on boot.                                                                                              |
-| `Device.Time.ChronyEnable`                                                       | bool | —                         | Selects `chronyd` as the active time-sync daemon instead of `systemd-timesyncd`; the two are mutually exclusive. Read by `getPartnerProperty.sh`. |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SecDump.Enable`                  | bool | `true`                    | Enables secure (encrypted) crash dump collection path.                                                                                            |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.StandbyReboot.Enable`            | bool | `true`                    | Enables automatic reboot from standby after the configured interval.                                                                              |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.StandbyReboot.StandbyAutoReboot` | int  | `86400`                   | Standby auto-reboot interval in seconds (default 24 hours).                                                                                       |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsDCMUpload.Enable`       | bool | `true`                    | Enforces mutual TLS for DCM log upload.                                                                                                           |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsCrashdumpUpload.Enable` | bool | `true`                    | Enforces mutual TLS for crash dump upload.                                                                                                        |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CRL.Enable`                      | bool | —                         | Enables OCSP stapling; controls creation of `/tmp/.EnableOCSPStapling`.                                                                           |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CRL.DirectOCSP`                  | bool | —                         | Enables direct OCSP CA validation; controls creation of `/tmp/.EnableOCSPCA`.                                                                     |
-| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.USB_AutoMount.Enable`            | bool | —                         | Controls whether the `usb-storage` kernel module is loaded at boot.                                                                               |
-| `DEFAULT_THRESHOLD_SIZE`                                                         | int  | `80` (flash) / `90` (HDD) | Persistent storage fill percentage at which disk cleanup is triggered.                                                                            |
-| `ZRAM_MEM_MAX_PERCENTAGE`                                                        | int  | `50`                      | Maximum percentage of total RAM allocated to ZRAM swap devices, read from `device.properties`.                                                    |
+| Parameter                                                                        | Type | Default                   | Description                                                                                                      |
+| -------------------------------------------------------------------------------- | ---- | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable`                  | bool | `false`                   | Enables ZRAM compressed swap initialization on boot.                                                             |
+| `Device.Time.ChronyEnable`                                                       | bool | —                         | Selects `chronyd` as the active time-sync daemon instead of `systemd-timesyncd`; the two are mutually exclusive. |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SecDump.Enable`                  | bool | `true`                    | Enables secure (encrypted) crash dump collection path.                                                           |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.StandbyReboot.Enable`            | bool | `true`                    | Enables automatic reboot from standby after the configured interval.                                             |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.StandbyReboot.StandbyAutoReboot` | int  | `86400`                   | Standby auto-reboot interval in seconds (default 24 hours).                                                      |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsDCMUpload.Enable`       | bool | `true`                    | Enforces mutual TLS for DCM log upload.                                                                          |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsCrashdumpUpload.Enable` | bool | `true`                    | Enforces mutual TLS for crash dump upload.                                                                       |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CRL.Enable`                      | bool | —                         | Enables OCSP stapling; controls creation of `/tmp/.EnableOCSPStapling`.                                          |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CRL.DirectOCSP`                  | bool | —                         | Enables direct OCSP CA validation; controls creation of `/tmp/.EnableOCSPCA`.                                    |
+| `Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.USB_AutoMount.Enable`            | bool | —                         | Controls whether the `usb-storage` kernel module is loaded at boot.                                              |
+| `DEFAULT_THRESHOLD_SIZE`                                                         | int  | `80` (flash) / `90` (HDD) | Persistent storage fill percentage at which disk cleanup is triggered.                                           |
+| `ZRAM_MEM_MAX_PERCENTAGE`                                                        | int  | `50`                      | Maximum percentage of total RAM allocated to ZRAM swap devices, read from `device.properties`.                   |
 
 ## Build-Time Configurations
 
@@ -68,7 +68,7 @@ The following flags are evaluated in the Yocto recipe's `do_install()` and contr
 
 ## Runtime Configuration
 
-RFC parameters can be updated remotely via the RFC server. After a parameter push, the feature takes effect at the next activation of the relevant Sysint script — timer-driven services apply the change on the next timer interval, while one-shot boot services apply it on the next reboot. To refresh access lists at runtime, update `$RFC_RAM_PATH/.RFC_SSHWhiteList.list` or `$RFC_RAM_PATH/.RFC_SNMPWhiteList.list` and invoke `/lib/rdk/iptables_init SSH_Refresh` or `/lib/rdk/iptables_init SNMP_Refresh`, respectively. The separate `Refresh` argument updates interface-dependent rules, not these whitelists.
+RFC parameters can be updated remotely via the RFC server. Uncached values are read at the next activation of the relevant Sysint script; one-shot boot services normally apply changes on the next reboot. `SecDump.Enable` is cached by `getSecureDumpStatus.sh` in `/tmp/.SecureDumpEnable` or `/tmp/.SecureDumpDisable`, so subsequent script invocations (including `core_shell.sh`) retain the cached value — pushing a new `SecDump.Enable` setting does not switch the active crash-dump path until those markers are cleared, normally at reboot. To refresh access lists at runtime, update `$RFC_RAM_PATH/.RFC_SSHWhiteList.list` or `$RFC_RAM_PATH/.RFC_SNMPWhiteList.list` and invoke `/lib/rdk/iptables_init SSH_Refresh` or `/lib/rdk/iptables_init SNMP_Refresh`, respectively. The separate `Refresh` argument updates interface-dependent rules, not these whitelists.
 
 ## Configuration Persistence
 
