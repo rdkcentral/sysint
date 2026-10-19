@@ -187,7 +187,7 @@ The [README](../README.md#key-responsibilities--modules) summarizes the primary 
 | `vm_cpu_temp-check.sh`                      | script        | Collects VM/CPU temperature stats during light sleep (`temperature-telemetry.sh`, `vm-statistics.sh`). |
 | `ubifs-node-setup`                          | script        | Sets up the kernel OOPS (panic) dump module on NAND or eMMC storage.                                   |
 | `systemd_units/oops-dump.service`           | service       | Initializes kernel panic (OOPS) dump capture by running `ubifs-node-setup` after `local-fs.target`.    |
-| `systemd_units/dumpdata.service` / `.timer` | service/timer | Runs `emmc_debug_launcher.sh` 900s after boot to collect eMMC debug data.                              |
+| `systemd_units/dumpdata.service` / `.timer` | service/timer | Runs `emmc_debug_launcher.sh` 900s after boot to configure a recurring `dumpDummyData.sh` cron job when the helper is installed and `/opt/.disable_data_dump` is absent. |
 
 **Firmware / Image Management**
 
@@ -196,7 +196,7 @@ The [README](../README.md#key-responsibilities--modules) summarizes the primary 
 | `imageFlasher.sh`        | script | Flashes firmware images to device storage (uses `/usr/bin/FlashApp` on media clients).                                               |
 | `eMMC_Upgrade.sh`        | script | Manages eMMC firmware upgrade with RFC version checks and retry tracking.                                                            |
 | `emmc_format.sh`         | script | Unmounts filesystems and reformats the MMC devices/partitions found in the mount table using `mkfs`, destroying their existing data. |
-| `emmc_debug_launcher.sh` | script | Captures eMMC debug telemetry at a configurable interval.                                                                            |
+| `emmc_debug_launcher.sh` | script | Configures a `dumpDummyData.sh` cron job using interval/size settings from `/opt/emmc_debug_config`, with defaults when absent; exits if `/opt/.disable_data_dump` exists.            |
 | `swupdate_utility.sh`    | script | Device-initiated firmware download handler integrated with DCM settings.                                                             |
 | `userInitiatedFWDnld.sh` | script | User-initiated firmware download with device state tracking.                                                                         |
 | `xconfImageCheck.sh`     | script | Checks firmware update status against the XConf configuration server.                                                                |
@@ -230,7 +230,7 @@ The [README](../README.md#key-responsibilities--modules) summarizes the primary 
 | File                                                             | Type    | Functionality                                                               |
 | ---------------------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
 | `disk_init`                                                      | script  | Initializes SD-card partitions with the expected TSB/APP layout.            |
-| `disk_checkV2`                                                   | script  | Validates SD-card mount status, read/write access, and partition integrity. |
+| `disk_checkV2`                                                   | script  | Checks and repairs SD-card filesystems and mount/read-write status. `start`/`restart` reformat the target partition; repair paths also reformat on `e2fsck` exit codes 4 or 8, destroying existing data. |
 | `systemd_units/disk-check.service` / `disk-check-sdcard.service` | service | Run disk initialization/health checks after local filesystem mounts.        |
 | `updateMountFailureCount.sh`                                     | script  | Aggregates mount-failure counters from `/tmp` into persistent storage.      |
 | `systemd_units/mount-failure-count.service`                      | service | Runs `updateMountFailureCount.sh` on boot, after `nvram.service`.           |
@@ -252,7 +252,7 @@ The [README](../README.md#key-responsibilities--modules) summarizes the primary 
 | File                                                                   | Type           | Functionality                                                     |
 | ---------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
 | `disableUSBEthernet.sh`                                                | script         | Validates USB Ethernet devices against a vendor/model allow-list. |
-| `usbmodule-whitelist.sh` / `systemd_units/usbmodule-whitelist.service` | script/service | Loads permitted USB HID/storage kernel modules per RFC.           |
+| `usbmodule-whitelist.sh` / `systemd_units/usbmodule-whitelist.service` | script/service | Always loads `usbhid`; loads `usb-storage` only when the `USB_AutoMount.Enable` RFC is true.           |
 | `systemd_units/usb-input@.service`                                     | service        | Disables unauthorized USB input devices (templated per device).   |
 
 **Power & Thermal Management**
