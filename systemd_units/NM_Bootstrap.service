@@ -22,7 +22,7 @@ Wants=NetworkManager.service
 After=NetworkManager.service
 
 [Service]
-Type=exec
+Type=simple
 ExecStart= /bin/sh -c '/lib/rdk/NM_Bootstrap.sh'
 
 [Install]
