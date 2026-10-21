@@ -464,35 +464,42 @@ checkRfc()
   rfcWifiResetEnable="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.Enable 2>&1 > /dev/null)"
   if [ "$rfcWifiResetEnable" = "true" ] ; then
     log "WiFiReset RFC is true "
-    rfcEthernetLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.EthernetLoggingInterval 2>&1 > /dev/null)"
-    if [ ! -z "$rfcEthernetLoggingInterval" ] && [ "$rfcEthernetLoggingInterval" != 0 ] ; then
-      EthernetLoggingInterval="$rfcEthernetLoggingInterval"
-    fi
-    rfcWifiLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiLoggingInterval 2>&1 > /dev/null)"
-    if [ ! -z "$rfcWifiLoggingInterval" ] && [ "$rfcWifiLoggingInterval" != 0 ] ; then
-      WifiLoggingInterval="$rfcWifiLoggingInterval"
-    fi
-    rfcPacketLossLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.PacketLossLoggingInterval 2>&1 > /dev/null)"
-    if [ ! -z "$rfcPacketLossLoggingInterval" ] && [ "$rfcPacketLossLoggingInterval" != 0 ] ; then
-      PacketLossLoggingInterval="$rfcPacketLossLoggingInterval"
-    fi
-    rfcWifiReassociateInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiReassociateInterval 2>&1 > /dev/null)"
-    if [ ! -z "$rfcWifiReassociateInterval" ] && [ "$rfcWifiReassociateInterval" != 0 ] ; then
-      WifiReassociateInterval="$rfcWifiReassociateInterval"
-    fi
-    rfcWifiResetIntervalForPacketLoss="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiResetIntervalForPacketLoss 2>&1 > /dev/null)"
-    if [ ! -z "$rfcWifiResetIntervalForPacketLoss" ] && [ "$rfcWifiResetIntervalForPacketLoss" != 0 ] ; then
-      WifiResetIntervalForPacketLoss="$rfcWifiResetIntervalForPacketLoss"
-    fi
-    rfcWifiResetIntervalForDriverIssue="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiResetIntervalForDriverIssue 2>&1 > /dev/null)"
-    if [ ! -z "$rfcWifiResetIntervalForDriverIssue" ] && [ "$rfcWifiResetIntervalForDriverIssue" != 0 ] ; then
-      WifiResetIntervalForDriverIssue="$rfcWifiResetIntervalForDriverIssue"
-    fi
   fi
 
+  rfcEthernetLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.EthernetLoggingInterval 2>&1 > /dev/null)"
+  if [ ! -z "$rfcEthernetLoggingInterval" ] && [ "$rfcEthernetLoggingInterval" != 0 ] ; then
+    EthernetLoggingInterval="$rfcEthernetLoggingInterval"
+    log "EthernetLoggingInterval RFC is $rfcEthernetLoggingInterval"
+  fi
+  rfcWifiLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiLoggingInterval 2>&1 > /dev/null)"
+  if [ ! -z "$rfcWifiLoggingInterval" ] && [ "$rfcWifiLoggingInterval" != 0 ] ; then
+    WifiLoggingInterval="$rfcWifiLoggingInterval"
+    log "WifiLoggingInterval RFC is $rfcWifiLoggingInterval"
+  fi
+  rfcPacketLossLoggingInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.PacketLossLoggingInterval 2>&1 > /dev/null)"
+  if [ ! -z "$rfcPacketLossLoggingInterval" ] && [ "$rfcPacketLossLoggingInterval" != 0 ] ; then
+    PacketLossLoggingInterval="$rfcPacketLossLoggingInterval"
+    log "PacketLossLoggingInterval RFC is $rfcPacketLossLoggingInterval"
+  fi
+  rfcWifiReassociateInterval="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiReassociateInterval 2>&1 > /dev/null)"
+  if [ ! -z "$rfcWifiReassociateInterval" ] && [ "$rfcWifiReassociateInterval" != 0 ] ; then
+    WifiReassociateInterval="$rfcWifiReassociateInterval"
+    log "WifiReassociateInterval RFC is $rfcWifiReassociateInterval"
+  fi
+  rfcWifiResetIntervalForPacketLoss="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiResetIntervalForPacketLoss 2>&1 > /dev/null)"
+  if [ ! -z "$rfcWifiResetIntervalForPacketLoss" ] && [ "$rfcWifiResetIntervalForPacketLoss" != 0 ] ; then
+    WifiResetIntervalForPacketLoss="$rfcWifiResetIntervalForPacketLoss"
+    log "WifiResetIntervalForPacketLoss RFC is $rfcWifiResetIntervalForPacketLoss"
+  fi
+  rfcWifiResetIntervalForDriverIssue="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.WifiResetIntervalForDriverIssue 2>&1 > /dev/null)"
+  if [ ! -z "$rfcWifiResetIntervalForDriverIssue" ] && [ "$rfcWifiResetIntervalForDriverIssue" != 0 ] ; then
+    WifiResetIntervalForDriverIssue="$rfcWifiResetIntervalForDriverIssue"
+    log "WifiResetIntervalForDriverIssue RFC is $rfcWifiResetIntervalForDriverIssue"
+  fi
   rfcWifiReassociateTolerance="$(tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFiReset.ReassociateTolerance 2>&1 > /dev/null)"
   if [ ! -z "$rfcWifiReassociateTolerance" ] && [ "$rfcWifiReassociateTolerance" != 0 ] ; then
     WifiReassociateTolerance="$rfcWifiReassociateTolerance"
+    log "ReassociateTolerance RFC is $rfcWifiReassociateTolerance"
   fi
 }
 
