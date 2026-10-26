@@ -18,28 +18,21 @@
 # limitations under the License.
 
 #!/bin/sh
+
 INTERFACE="${1:-wlan0}"
 CONFIG_FILE="/opt/secure/wifi/wpa_supplicant.conf"
 DISABLE_FILE="/opt/persistent/wifi.interface.disable"
 
 # Do not apply parameters if the Wi-Fi disable flag file is present
-[ -f "$DISABLE_FILE" ] && exit 0
-
+[ -f "$DISABLE_FILE" ] && exit
 # Ensure the config file exists
-[ -f "$CONFIG_FILE" ] || exit 1
+[ -f "$CONFIG_FILE" ] || exit 
 
-sed '/^network=/q' "$CONFIG_FILE" | while IFS='=' read -r key val; do
-    
-    # Clean whitespace                    
-    key=$(echo "$key" | tr -d '[:space:]')
-    val=$(echo "$val" | tr -d '[:space:]') 
-
-    # Skip comments (lines starting with #) and empty lines
+sed '/^network=/,$d' "$CONFIG_FILE" | while IFS='=' read -r key val; do
     case "$key" in
         '#'*|'') continue ;;
     esac
 
-    # Ensure both a key and value exist before applying
     if [ -n "$key" ] && [ -n "$val" ]; then
         wpa_cli -i "$INTERFACE" set "$key" "$val"
     fi
