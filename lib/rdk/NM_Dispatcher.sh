@@ -40,6 +40,67 @@ NMdispatcherLog()
 {
     echo "$(/bin/timestamp) : $0: $*" >> $NM_LOG_FILE
 }
+
+# Refactored from updateGlobalIPInfo.sh
+refresh_devicedetails()
+{
+    #Refresh device cache info
+    if [ -f /lib/rdk/getDeviceDetails.sh ]; then
+        sh /lib/rdk/getDeviceDetails.sh refresh $1
+    else
+        NMdispatcherLog "DeviceDetails file not present"
+    fi
+}
+
+check_valid_IPaddress()
+{
+    local mode=$1
+    local addr=$2
+    # Neglect IPV6 ULA address and autoconfigured IPV4 address
+    if [ "x$mode" == "xipv6" ]; then
+        if [[ $addr == fc* || $addr == fd* ]]; then
+            return 1
+        fi
+    elif [ "x$mode" == "xipv4" ]; then
+        autoIPTrunc=$(echo $addr | cut -d "." -f1-2)
+        if [ "$autoIPTrunc" == "169.254" ]; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+update_global_ip_info_add()
+{
+    local cmd=$1
+    local mode=$2
+    local ifc=$3
+    local addr=$4
+    local flags=$5
+
+    NMdispatcherLog "update_global_ip_info: cmd:$cmd, mode:$mode, ifc:$ifc, addr:$addr, flags:$flags"
+
+    if [ "x$cmd" == "xadd" ] && [ "x$flags" == "xglobal" ]; then
+        if ! check_valid_IPaddress "$mode" "$addr"; then
+            return
+        fi
+
+        if [[ "$ifc" == "$ESTB_INTERFACE" || "$ifc" == "$DEFAULT_ESTB_INTERFACE" || "$ifc" == "$ESTB_INTERFACE:0" ]]; then
+            NMdispatcherLog "Updating Box/ESTB IP"
+            echo "$addr" > /tmp/.$mode$ESTB_INTERFACE
+            refresh_devicedetails "estb_ip"
+        elif [[ "$ifc" == "$MOCA_INTERFACE" || "$ifc" == "$MOCA_INTERFACE:0" ]]; then
+            NMdispatcherLog "Updating MoCA IP"
+            echo "$addr" > /tmp/.$mode$MOCA_INTERFACE
+            refresh_devicedetails "moca_ip"
+        elif [[ "$ifc" == "$WIFI_INTERFACE" || "$ifc" == "$WIFI_INTERFACE:0" ]]; then
+            NMdispatcherLog "Updating Wi-Fi IP"
+            echo "$addr" > /tmp/.$mode$WIFI_INTERFACE
+            refresh_devicedetails "boxIP"
+        fi
+    fi
+}
+
 NMdispatcherLog "From NM_Dispatcher.sh $1 $2"
 
 netInfoLog() {
@@ -106,6 +167,30 @@ checkDefaultRoute_Add() {
 interfaceName=$1
 interfaceStatus=$2
 
+if [ "$interfaceStatus" = "connectivity-change" ] && [ -z "$interfaceName" ]; then
+    NMdispatcherLog "Global connectivity-change - checking all interfaces"
+    for iface in $ETHERNET_INTERFACE $WIFI_INTERFACE; do
+        # Skip if interface doesn't exist
+        if [ ! -e "/sys/class/net/$iface" ]; then
+            continue
+        fi
+        # Check carrier state
+        CARRIER=$(cat /sys/class/net/$iface/carrier 2>/dev/null || echo "0")
+        if [ "$CARRIER" = "0" ]; then
+                NMdispatcherLog "$iface - stopping avahi-autoipd"
+                /usr/sbin/avahi-autoipd --kill "$iface" 2>/dev/null || true
+        else
+                if pgrep -f "avahi-autoipd.*$iface" > /dev/null 2>&1; then
+                    NMdispatcherLog "avahi-autoipd already running for $iface"
+                else
+                    NMdispatcherLog "Started avahi-autoipd for $iface"
+                    /usr/sbin/avahi-autoipd --daemonize --syslog "$iface"
+                fi
+        fi
+    done
+    exit 0
+fi
+
 if [ "$interfaceStatus" = "up" ]; then
    
     CON_STATE=$(nmcli -t -f GENERAL.STATE device show "$interfaceName" 2>/dev/null | cut -d: -f2)
@@ -114,6 +199,7 @@ fi
 
 if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     if [ "$interfaceStatus" == "dhcp4-change" ]; then
+        /usr/sbin/avahi-autoipd --kill "$interfaceName" 2>/dev/null
         mode="ipv4"
         gwip=$(/sbin/ip -4 route | awk '/default/ { print $3 }' | head -n1 | awk '{print $1;}')
         imode=2
@@ -126,8 +212,8 @@ if [ "x$interfaceName" != "x" ] && [ "$interfaceName" != "lo" ]; then
     fi
 
     if [ "$interfaceStatus" == "dhcp6-change" ] || [ "$interfaceStatus" == "dhcp4-change" ]; then
-        sh -x /lib/rdk/updateGlobalIPInfo.sh "add" $mode $interfaceName $ipaddr "global"
-        NMdispatcherLog "updateGlobalIPInfo.sh"
+        update_global_ip_info_add "add" "$mode" "$interfaceName" "$ipaddr" "global"
+        NMdispatcherLog "update_global_ip_info completed"
         
         sh /lib/rdk/ipv6addressChange.sh "add" $mode $interfaceName $ipaddr "global"
         NMdispatcherLog "ipv6addressChange.sh"
