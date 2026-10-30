@@ -380,9 +380,9 @@ sendTLSCodebigRequest()
 
     if [ "$1" == "XCONF" ]; then
         echo "Attempting $TLS connection to Codebig XCONF server"
-	if [ -f $LOGMILESTONE_BIN ];then
-            $LOGMILESTONE_BIN "CONNECT_TO_XCONF_CDL"
-        fi
+#	if [ -f $LOGMILESTONE_BIN ];then
+#            $LOGMILESTONE_BIN "CONNECT_TO_XCONF_CDL"
+#        fi
         if [ -f $EnableOCSPStapling ] || [ -f $EnableOCSP ]; then
            CURL_CMD="curl $TLS --cert-status --connect-timeout $CURL_TLS_TIMEOUT  -w '%{http_code}\n' -o \"$FILENAME\" \"$CB_SIGNED_REQUEST\" -m 10"      
         else
