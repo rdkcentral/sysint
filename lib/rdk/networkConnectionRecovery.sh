@@ -32,7 +32,6 @@ fi
 
 logsFile=$LOG_PATH/ConnectionStats.txt
 dnsFile="/etc/resolv.dnsmasq"
-wifiStateFile="/tmp/wifi-on"
 ipv4PacketLoss=0
 ipv6PacketLoss=0
 ipv4GwPresent=0
@@ -131,10 +130,13 @@ fi
 
 checkWifiConnected()
 {
-  [ ! -f "$wifiStateFile" ] && return 0
-  strBuffer=$(wpa_cli status 2> /dev/null)
-  case "$strBuffer" in *"wpa_state=COMPLETED"*) ;; *) return 0 ;; esac
-  case "$strBuffer" in *"$lnfPskSSID"*|*"$lnfEnterpriseSSID"*) lnfSSIDConnected=1 ; return 0 ;; esac
+  strBuffer=$(iw dev "$WIFI_INTERFACE" link 2> /dev/null)
+  case "$strBuffer" in *"Connected to "*) ;; *) return 0 ;; esac
+  # LNF SSIDs are hidden, so prefer the kernel's station state; the scan-cache SSID
+  # reported by "iw link" can be empty for an AP that cloaks its SSID in beacons.
+  ssidBuffer=$(iw dev "$WIFI_INTERFACE" info 2> /dev/null | sed -n 's/^[[:space:]]*ssid //p')
+  [ -z "$ssidBuffer" ] && ssidBuffer=$(printf '%s\n' "$strBuffer" | sed -n 's/^[[:space:]]*SSID: //p')
+  case "$ssidBuffer" in *"$lnfPskSSID"*|*"$lnfEnterpriseSSID"*) lnfSSIDConnected=1 ; return 0 ;; esac
   return 1
 }
 
@@ -190,8 +192,25 @@ wifiReassociate()
 {
   log "Packet Loss WiFi Reassociating"
   t2CountNotify "WIFIV_ERR_reassoc"
-  wpa_cli reassociate
-  #set IsWifiReassociated to 1 after wifi reassociation
+  # Hand-run equivalent of the two calls below, for triage:
+  #   wpa_cli reassociate
+  # It needs wpa_supplicant started with -O /var/run/wpa_supplicant on RDKE builds,
+  # because NetworkManager re-creates the supplicant interface without a control socket.
+  wpaIfacePath=$(timeout 10 dbus-send --system --print-reply --reply-timeout=5000 \
+    --dest=fi.w1.wpa_supplicant1 /fi/w1/wpa_supplicant1 \
+    fi.w1.wpa_supplicant1.GetInterface string:"$WIFI_INTERFACE" 2> /dev/null \
+    | sed -n 's/.*object path "\(.*\)".*/\1/p')
+  if [ -z "$wpaIfacePath" ] ; then
+    log "WiFi Reassociate not performed: could not resolve wpa_supplicant interface object"
+  elif timeout 10 dbus-send --system --print-reply --reply-timeout=5000 \
+         --dest=fi.w1.wpa_supplicant1 "$wpaIfacePath" \
+         fi.w1.wpa_supplicant1.Interface.Reassociate > /dev/null 2>&1 ; then
+    log "WiFi Reassociate done"
+  else
+    log "WiFi Reassociate not performed: Reassociate call failed"
+  fi
+  #Advance the rung counter even when the request failed, otherwise the ladder can never
+  #escalate to wifiReset and would retry the reassociate rung indefinitely
   IsWifiReassociated=1
 }
 
