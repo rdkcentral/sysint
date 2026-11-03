@@ -50,6 +50,24 @@ elif [ "$1" = "ntpHost4" ]; then
 elif [ "$1" = "ntpHost5" ]; then
     result=`tr181 Device.Time.NTPServer5 2>&1 > /dev/null`
     echo $result
+elif [ "$1" = "ntpHost1Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.1.Settings 2>&1 > /dev/null`
+    echo $result
+elif [ "$1" = "ntpHost2Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.2.Settings 2>&1 > /dev/null`
+    echo $result
+elif [ "$1" = "ntpHost3Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.3.Settings 2>&1 > /dev/null`
+    echo $result
+elif [ "$1" = "ntpHost4Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.4.Settings 2>&1 > /dev/null`
+    echo $result
+elif [ "$1" = "ntpHost5Settings" ]; then
+    result=`tr181 Device.Time.Chrony.NTPServer.5.Settings 2>&1 > /dev/null`
+    echo $result
+elif [ "$1" = "ntpMakestep" ]; then
+    result=`tr181 Device.Time.Chrony.Makestep 2>&1 > /dev/null`
+    echo $result
 elif [ "$1" = "partnerName" ]; then
     result=`tr181 Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1 > /dev/null`
     echo $result

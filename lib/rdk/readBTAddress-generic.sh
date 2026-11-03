@@ -1,3 +1,4 @@
+#!/bin/sh
 ##############################################################################
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
@@ -16,15 +17,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##############################################################################
+# Purpose: This script is used to fetch device Bluetooth Mac information
+# Scope: RDK devices.
+# Usage: This script is triggered by a systemd service and shell scripts.
 
-[Unit]
-Description=Update Previous reboot info path
-OnFailure=path-fail-notifier@%n.service
+. /etc/include.properties
+. /etc/device.properties
+. $RDK_PATH/utils.sh
 
-[Path]
-PathChanged=/tmp/stt_received
-Unit=update-reboot-info.service
-
-[Install]
-WantedBy=multi-user.target
-
+if [ "$BLUETOOTH_ENABLED" = "true" ]; then
+    bluetooth_mac=$(getDeviceBluetoothMac)
+fi
+echo $bluetooth_mac
