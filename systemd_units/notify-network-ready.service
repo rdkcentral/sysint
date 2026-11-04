@@ -5,4 +5,5 @@ After=dbus.service
 [Service]
 Type=oneshot
 ExecStartPre=/bin/touch /tmp/connectivity_check_done
-ExecStart=/lib/rdk/logMilestone.sh "INTERNET_FULLY_CONNECTED"
+#ExecStart=/lib/rdk/logMilestone.sh "INTERNET_FULLY_CONNECTED"
+ExecStart=/bin/true
