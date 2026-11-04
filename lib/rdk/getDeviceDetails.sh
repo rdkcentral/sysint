@@ -32,6 +32,10 @@ logFile="/opt/logs/getDeviceDetails.$$.log"
 lockDir=/tmp/.getDeviceDetails.lock
 lockPidFile=/tmp/.getDeviceDetails.lock/.lockPidFile
 deviceDetailsCache=/tmp/.deviceDetails.cache
+GDD_TRACE=${GDD_TRACE:-1}
+trace_gdd() {
+    [ "$GDD_TRACE" = "1" ] && echo "GDD_TRACE: ts=$(date +%s) pid=$$ cmd=$command param=$parameter $*" >> /tmp/gdd_trace.log
+}
 
 # to enable logging: uncomment out echo and comment out colon :
 logMsg()
@@ -405,7 +409,9 @@ executeServiceRequest()
   		echo "$IPAddress" > /tmp/.estb_ip
                 ;;
       "macAddress" | "estb_mac")
+	    trace_gdd "estb_mac_start"
 		MacAddress=`getEstbMacAddress`
+		trace_gdd "estb_mac_done rc=$?"
   		echo "$MacAddress" > /tmp/.macAddress
   		echo "$MacAddress" > /tmp/.estb_mac
                 ;;
@@ -425,7 +431,9 @@ executeServiceRequest()
       "wifi_mac")
 		[ -f /proc/device-tree/wifi-mac-addr ] && WiFiMac=$(cat /proc/device-tree/wifi-mac-addr) || WiFiMac=
 		if [ "$WiFiMac" == "" ]; then
+		    trace_gdd "wifi_mac_start"
 			getWiFiMac
+			trace_gdd "wifi_mac_done rc=$?"
 		fi
 		echo "$WiFiMac" > /tmp/.wifi_mac
                 ;;
@@ -541,6 +549,7 @@ updateMissingParameters()
 
 lock()
 {
+trace_gdd "lock_wait_start"
         locktime=0
 	while ! mkdir "$lockDir" &>/dev/null ; do
 		logMsg "wait to acquire lock"
@@ -563,6 +572,7 @@ lock()
 	echo "$$" > $lockPidFile
 	logMsg "lock acquired successfully"
 	trap 'unlock "active process"'  0 1 13 15 &>/dev/null
+	trace_gdd "lock_wait_done"
 }
 
 unlock()
