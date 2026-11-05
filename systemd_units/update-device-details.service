@@ -26,7 +26,6 @@ Type=forking
 RemainAfterExit=yes
 SyslogIdentifier="getDeviceDetails"
 ExecStart=/bin/sh -c '/lib/rdk/getDeviceDetails.sh "" "" "true" &'
-ExecStop=/bin/kill -9 $MAINPID
 TimeoutStopSec=3
 
 [Install]
