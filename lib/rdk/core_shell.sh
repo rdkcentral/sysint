@@ -65,12 +65,12 @@ upload() {
          fi
     fi
     # Checking whether cores are leading to /opt size exceeding.
-    count=`ls $CORE_PATH | grep $process | wc -l`
+    count=`ls $CORE_PATH | grep "$process" | wc -l`
     while [ $count -gt 5 ]; do
-        oldcore=`ls -t $CORE_PATH | grep $process | tail -1`
+        oldcore=`ls -t $CORE_PATH | grep "$process" | tail -1`
         echo $(/bin/timestamp) "Deleting $oldcore as the same process has more than 5 cores in $CORE_PATH" >> $LOG_PATH/core_log.txt
-        rm -rf $CORE_PATH/$oldcore
-        count=`ls $CORE_PATH | grep $process | wc -l`
+        rm -rf "$CORE_PATH/$oldcore"
+        count=`ls $CORE_PATH | grep "$process" | wc -l`
     done
 
     sh /lib/rdk/diskCleanup.sh
