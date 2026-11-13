@@ -80,7 +80,7 @@ fi
 
 echo "Warehouse Reset:Starting file cleanUp"
 # /opt override cleanup
-ls /opt/*.conf | grep -v receiver.conf | xargs rm
+find /opt -maxdepth 1 -name "*.conf" ! -name "receiver.conf" -exec rm {} \;
 rm -rf /opt/*.ini
 if [ -f /opt/hosts ]; then rm -rf /opt/hosts; fi
 if [ -f /opt/dcm.properties ];then rm -rf /opt/dcm.properties ; fi

@@ -50,24 +50,31 @@ if [ $# -ne 3 ] && [ "$1" = "add" -o "$1" = "update" ]; then
 fi
 
 LOCK="/tmp/.cronjob.LCK"
+if [ -L "$LOCK" ]; then
+    rm -f "$LOCK"
+fi
 exec 8>$LOCK
-flock -x 8
+flock -x -w 30 8 || exit 1
 
 remove()
 {
-    sed -i "/[A-Za-z0-9]*$1[A-Za-z0-9]*/d" $current_cron_file
+    escaped=$(printf '%s\n' "$1" | sed 's/[][\\.^$*\/]/\\&/g')
+    sed -i "/[A-Za-z0-9]*${escaped}[A-Za-z0-9]*/d" "$current_cron_file"
 }
 
 add()
 {
-    echo "$1" >> $current_cron_file
+    if echo "$1" | grep -q '[;&]'; then
+        exit 1
+    fi
+    echo "$1" >> "$current_cron_file"
 }
 
 check_entry()
 {
-    output=`grep -c "$1" $current_cron_file`
+    output=`grep -cF "$1" "$current_cron_file"`
     echo "`/bin/timestamp` output=$output" >> $log_file
-    echo $output
+    echo "$output"
 }
 
 
@@ -77,14 +84,14 @@ if [ -f /etc/os-release ]; then
     touch /var/spool/cron/root
     pid=`pidof crond`
     echo "`/bin/timestamp` crond pid: $pid" >> $log_file
-    if [ -z $pid ]; then
+    if [ -z "$pid" ]; then
         crond -b -L /dev/null -c /var/spool/cron/
     fi
 fi
 
 
 current_cron_file="/tmp/cron_list"
-crontab -l -c /var/spool/cron/ > $current_cron_file
+crontab -l -c /var/spool/cron/ > "$current_cron_file"
 
 echo "`/bin/timestamp` :Arguments - 1st:$1, 2nd:$2, 3rd:$3" >> $log_file
 if [ "$1" = "remove" ]; then
@@ -110,7 +117,7 @@ fi
 
 
 # update the new cron entries to root cron
-crontab $current_cron_file -c /var/spool/cron/
+crontab "$current_cron_file" -c /var/spool/cron/
 
 # add flock -u to unlock the file descriptor before removing the file
 flock -u 8
