@@ -54,18 +54,18 @@ if [ -L "$LOCK" ]; then
     rm -f "$LOCK"
 fi
 exec 8>$LOCK
-flock -x -w 30 8
+flock -x -w 30 8 || exit 1
 
 remove()
 {
-    escaped=$(printf '%s\n' "$1" | sed 's/[\/&\]/\\&/g')
+    escaped=$(printf '%s\n' "$1" | sed 's/[][\\.^$*\/]/\\&/g')
     sed -i "/[A-Za-z0-9]*${escaped}[A-Za-z0-9]*/d" "$current_cron_file"
 }
 
 add()
 {
-    if echo "$1" | grep -q '[&|;]'; then
-        return 1
+    if echo "$1" | grep -q '[;&]'; then
+        exit 1
     fi
     echo "$1" >> "$current_cron_file"
 }

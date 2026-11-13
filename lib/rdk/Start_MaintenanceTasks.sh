@@ -143,13 +143,14 @@ runMaintenanceLogUploadTask()
     
     if [ -f "$LOG_UPLOAD_BIN_PATH" ]; then
         logUploadLog "Starting log upload"
-        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        [ -z "$upload_protocol" ] && upload_protocol='HTTPS'
-        logUploadLog "upload_protocol: $upload_protocol"
-
+        
         if [ -L "/tmp/DCMSettings.conf" ]; then
             logUploadLog "ERROR: DCMSettings.conf is a symlink"
         else
+            upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+            [ -z "$upload_protocol" ] && upload_protocol='HTTPS'
+            logUploadLog "upload_protocol: $upload_protocol"
+
             httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
             if [ -n "$httplink" ]; then
                 if echo "$httplink" | grep -qE '^https?://'; then
