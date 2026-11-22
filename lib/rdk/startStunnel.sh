@@ -49,7 +49,7 @@ echo_t "STUNNEL: Build type is $BUILD_TYPE"
 
 is_non_prod_build()
 {
-    [ -n "$BUILD_TYPE" ] && [ "$BUILD_TYPE" != "prod" ]
+    [ -n "$BUILD_TYPE" ] && rdk-secure-debug-check
 }
 
 if [ $# -lt 5 ]; then
