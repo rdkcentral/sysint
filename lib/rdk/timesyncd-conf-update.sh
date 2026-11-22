@@ -116,7 +116,14 @@ if [ -f /etc/systemd/timesyncd.conf ];then
                  defaultHostName2=''
            fi
            for host in $partnerHostnames; do
-               if grep -q "$host" /etc/systemd/timesyncd.conf; then
+               # Allowlist: hostnames are interpolated into a sed program below
+               case "$host" in
+                   *[!A-Za-z0-9.-]*)
+                       ntpLog "Ignoring invalid NTP hostname"
+                       continue
+                       ;;
+               esac
+               if grep -qF -- "$host" /etc/systemd/timesyncd.conf; then
                     updateHostnames+=" "
                else
                     updateHostnames+="$host "

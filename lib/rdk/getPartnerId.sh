@@ -55,7 +55,11 @@ getReceiverId()
 getPartnerId()
 {
     if [ "$WHOAMI_SUPPORT" == "true" ]; then
-        partnerName="$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1)"
+        partnerName="$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>/dev/null)"
+        # Allowlist: value is later embedded in a shell command line
+        case "$partnerName" in
+            *[!A-Za-z0-9._-]*) partnerName="" ;;
+        esac
         echo "$partnerName"
         return;
     fi
@@ -64,6 +68,9 @@ getPartnerId()
     sh /lib/rdk/getDeviceId.sh > /tmp/partnerid.txt
     output=`awk -F',' </tmp/partnerid.txt '{ for (i=1; i<=NF; i++) print $i}'| grep partnerId | cut -d ":" -f2 | tr -d " " |sed -e 's/[{,},/"]//g'`
     partnerName=`echo "$output" | tr '[A-Z]' '[a-z]'`
+    case "$partnerName" in
+        *[!A-Za-z0-9._-]*) partnerName="" ;;
+    esac
 
     if [ "$partnerName" != "" ]; then
        echo "$partnerName"
