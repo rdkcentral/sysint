@@ -55,7 +55,7 @@ getReceiverId()
 getPartnerId()
 {
     if [ "$WHOAMI_SUPPORT" == "true" ]; then
-        partnerName="$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>/dev/null)"
+        partnerName="$(tr181 -g Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName 2>&1 >/dev/null)"
         # Allowlist: value is later embedded in a shell command line
         case "$partnerName" in
             *[!A-Za-z0-9._-]*) partnerName="" ;;

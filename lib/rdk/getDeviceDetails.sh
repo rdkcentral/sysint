@@ -679,6 +679,7 @@ if [ "$command" != "" ]; then
                     $1==key {$2=val}
                     {print}
                 ' "$deviceDetailsCache" > "$tmpfile" &&
+                chmod 644 "$tmpfile" &&
                 mv "$tmpfile" "$deviceDetailsCache"
             fi
 
