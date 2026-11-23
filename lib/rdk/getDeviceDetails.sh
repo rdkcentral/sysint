@@ -536,21 +536,25 @@ executeServiceRequestOutput()
 {
 	logMsg "output"
 
+	# write to a private temp file and rename, so a planted symlink is replaced, never followed
+	tmpfile=$(mktemp) || return 1
+
 	if [ "$DEVICE_TYPE" != "mediaclient" ]; then
 		printf "estb_mac=%s\necm_mac=%s\nmoca_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\necm_ip=%s\nestb_ip=%s\nmoca_ip=%s\ncableCardVersion=%s\nDACInitTimestamp=%s\nserial_number=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-			"$MacAddress" "$EcmMac" "$MocaMac" "$WiFiMac" "$EtherMac" "$model" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$ecmIp" "$IPAddress" "$MocaIp" "$CableCardVersion" "$DACInitTimestamp" "$serialNumber" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+			"$MacAddress" "$EcmMac" "$MocaMac" "$WiFiMac" "$EtherMac" "$model" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$ecmIp" "$IPAddress" "$MocaIp" "$CableCardVersion" "$DACInitTimestamp" "$serialNumber" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
         elif [ "$WIFI_SUPPORT" == "true" ]; then
                 if [ "$RF4CE_CAPABLE" == "true" ]; then
                         printf "estb_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nboxIP=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
                 else
                         printf "estb_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nboxIP=%s\nbluetooth_mac=%s\n" \
-                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" | sort > $deviceDetailsCache
+                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" | sort > "$tmpfile"
                 fi
 	else
 		printf "estb_mac=%s\nmoca_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nmoca_ip=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-			"$MacAddress" "$MocaMac" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$MocaIp" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+			"$MacAddress" "$MocaMac" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$MocaIp" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
 	fi
+	mv -f "$tmpfile" "$deviceDetailsCache"
 }
 
 updateMissingParameters()
@@ -569,7 +573,12 @@ updateMissingParameters()
                     *) continue ;;
                 esac
                 file="/tmp/.$param"
-                if [ -f "$file" ] && [ ! -L "$file" ] && [ "$(head -n 1 "$file")" != "" ]; then
+                if [ -e "$file" ] || [ -L "$file" ]; then
+                    if [ -L "$file" ] || [ ! -f "$file" ] || [ ! -O "$file" ]; then
+                        rm -f "$file" || continue
+                    fi
+                fi
+                if [ -f "$file" ] && [ ! -L "$file" ] && [ -O "$file" ] && [ "$(head -n 1 "$file")" != "" ]; then
                     tmpfile=$(mktemp)
                     value=$(head -n 1 "$file")
                     awk -v key="$param" -v val="$value" -F= '
@@ -618,16 +627,18 @@ unlock()
 	logMsg "$1 lock released successfully"
 }
 
+# /tmp is world-writable: discard a cache that is a symlink or not a regular file owned by us
+if [ -e "$deviceDetailsCache" ] || [ -L "$deviceDetailsCache" ]; then
+    if [ -L "$deviceDetailsCache" ] || [ ! -f "$deviceDetailsCache" ] || [ ! -O "$deviceDetailsCache" ]; then
+        rm -f "$deviceDetailsCache"
+    fi
+fi
+
 # execute service request with arguments
 if [ "$command" != "" ]; then
 
      # /tmp is world-writable: discard any cache or /tmp/.<param> file that is a
      # symlink or not owned by the running user so it is regenerated, never trusted
-     if [ -e "$deviceDetailsCache" ] || [ -L "$deviceDetailsCache" ]; then
-         if [ -L "$deviceDetailsCache" ] || [ ! -O "$deviceDetailsCache" ]; then
-             rm -f "$deviceDetailsCache"
-         fi
-     fi
      if [ -n "$parameter" ] && [ "$parameter" != "all" ]; then
          if ! echo "$parameter" | grep -Eq '^[A-Za-z0-9:._-]+$'; then
              logMsg "Error: invalid parameter"

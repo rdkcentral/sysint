@@ -118,7 +118,7 @@ if [ -f /etc/systemd/timesyncd.conf ];then
            for host in $partnerHostnames; do
                # Allowlist: hostnames are interpolated into a sed program below
                case "$host" in
-                   *[!A-Za-z0-9.-]*)
+                   *[!A-Za-z0-9.:-]*)
                        ntpLog "Ignoring invalid NTP hostname"
                        continue
                        ;;

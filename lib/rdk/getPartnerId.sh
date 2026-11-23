@@ -75,8 +75,13 @@ getPartnerId()
     if [ "$partnerName" != "" ]; then
        echo "$partnerName"
     else
-        if [ -s $aspath/partnerId3.dat ]; then
-            cat $aspath/partnerId3.dat
+        filePartnerId=""
+        [ -s "$aspath/partnerId3.dat" ] && filePartnerId="$(cat "$aspath/partnerId3.dat")"
+        case "$filePartnerId" in
+            *[!A-Za-z0-9._-]*) filePartnerId="" ;;
+        esac
+        if [ "$filePartnerId" != "" ]; then
+            echo "$filePartnerId"
         else
 
             # Use default partnerId
