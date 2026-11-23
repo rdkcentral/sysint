@@ -554,7 +554,7 @@ executeServiceRequestOutput()
 		printf "estb_mac=%s\nmoca_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nmoca_ip=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
 			"$MacAddress" "$MocaMac" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$MocaIp" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
 	fi
-	mv -f "$tmpfile" "$deviceDetailsCache"
+	chmod 644 "$tmpfile" && mv -f "$tmpfile" "$deviceDetailsCache"
 }
 
 updateMissingParameters()
