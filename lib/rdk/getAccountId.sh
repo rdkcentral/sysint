@@ -37,7 +37,11 @@ getAccountId()
     echo "$$ : `cat /proc/$$/cmdline`" >> $ACCOUNT_ID_LOG
 
     if [ "$accountId" != "" ] ; then
-        if [ "$accountIdLen" -lt "$KEY_LEN" ] && [ `expr "$accountId" : ".*[a-zA-Z0-9_-].*"` -gt 0 ] &&  [ `expr "$accountId" : ".*[!@#\$%^\&*()_+].*"` -eq 0 ];  then
+        case "$accountId" in
+            *[!A-Za-z0-9_-]*) accountIdValid=0 ;;
+            *) accountIdValid=1 ;;
+        esac
+        if [ "$accountIdLen" -lt "$KEY_LEN" ] && [ "$accountIdValid" -eq 1 ];  then
             echo "`/bin/timestamp` : accountId is valid and value retrieved from tr181 param." >> $ACCOUNT_ID_LOG
             echo "$accountId"
         else

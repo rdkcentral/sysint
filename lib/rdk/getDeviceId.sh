@@ -21,7 +21,6 @@
 . /etc/include.properties
 . /etc/device.properties
 BSFILE='/opt/secure/RFC/bootstrap.ini'
-FILENAME='/tmp/.bootstrap.ini'
 
 deviceIdFile="/opt/www/authService/deviceid.dat"
 partnerIdFile="/opt/www/authService/partnerId3.dat"
@@ -44,8 +43,7 @@ getBootstrapPartnerId()
 {
     if [ -f "$BSFILE" ]; then
 
-        cp $BSFILE $FILENAME
-        value2=`grep -i 'X_RDKCENTRAL-COM_Syndication.PartnerId' $FILENAME | awk  'BEGIN{FS="=";};{print $2}' `
+        value2=$(grep -i 'X_RDKCENTRAL-COM_Syndication.PartnerId' "$BSFILE" | cut -d= -f2-)
         if [ "$value2" ]; then
                 echo "$value2";
                 return ;

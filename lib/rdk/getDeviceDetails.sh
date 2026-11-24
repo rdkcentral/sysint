@@ -217,7 +217,8 @@ getManufacturer(){
            output=$(mfr_util --Manufacturer 2>&1)
            if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
                output=$(echo $output | sed 's/ /_/g')
-               echo "$output" | tee /tmp/.manufacturer
+               echo "$output" | safeWrite /tmp/.manufacturer
+               echo "$output"
 	   else
                echo "UNKNOWN"
            fi
@@ -226,7 +227,7 @@ getManufacturer(){
 getBrandName(){
             output=$(mfr_util --Manufacturer 2>&1)
             if [ -n "$output" ] && ! echo "$output" | grep -iq "failed"; then
-                echo "$output" > /tmp/.brandname
+                echo "$output" | safeWrite /tmp/.brandname
             fi
 }
 
@@ -306,6 +307,22 @@ getRF4CEMac()
     fi
 }
 
+
+# Write stdin to a /tmp file atomically: build a fresh mktemp file (O_EXCL,
+# root-owned) and rename it over the target. rename() replaces a symlink
+# instead of following it, and readers never see a missing/partial file.
+safeWrite()
+{
+    file="$1"
+    [ -d "$file" ] && return 1
+    sw_tmp=$(mktemp "${file}.XXXXXX") || return 1
+    if cat > "$sw_tmp" && chmod 644 "$sw_tmp" && mv -f "$sw_tmp" "$file"; then
+        return 0
+    fi
+    rm -f "$sw_tmp"
+    logMsg "Error: unable to securely write $file"
+    return 1
+}
 
 executeServiceRequest()
 {
@@ -396,50 +413,50 @@ executeServiceRequest()
                 ;;
       "downloadIP" | "ecm_ip")
 		getEcmIp
- 		echo "$ecmIp" > /tmp/.downloadIP
- 		echo "$ecmIp" > /tmp/.ecm_ip
+ 		echo "$ecmIp" | safeWrite /tmp/.downloadIP
+ 		echo "$ecmIp" | safeWrite /tmp/.ecm_ip
                 ;;
       "boxIP" | "estb_ip")
 		getBoxIPAddress
-  		echo "$IPAddress" > /tmp/.boxIP
-  		echo "$IPAddress" > /tmp/.estb_ip
+  		echo "$IPAddress" | safeWrite /tmp/.boxIP
+  		echo "$IPAddress" | safeWrite /tmp/.estb_ip
                 ;;
       "macAddress" | "estb_mac")
 		MacAddress=`getEstbMacAddress`
-  		echo "$MacAddress" > /tmp/.macAddress
-  		echo "$MacAddress" > /tmp/.estb_mac
+  		echo "$MacAddress" | safeWrite /tmp/.macAddress
+  		echo "$MacAddress" | safeWrite /tmp/.estb_mac
                 ;;
       "ecm_mac")
 		getEcmMac
-  		echo "$EcmMac" > /tmp/.ecm_mac
-  		echo "$EcmMac" | tr ':' ' ' > /tmp/ecm_mac.txt
+  		echo "$EcmMac" | safeWrite /tmp/.ecm_mac
+  		echo "$EcmMac" | tr ':' ' ' | safeWrite /tmp/ecm_mac.txt
                 ;;
       "eth_mac")
 		getEthernetMacAddress
-  		echo "$EtherMac" > /tmp/.eth_mac
+  		echo "$EtherMac" | safeWrite /tmp/.eth_mac
                 ;;
       "moca_mac")
 		getMocaMac
-  		echo "$MocaMac" > /tmp/.moca_mac
+  		echo "$MocaMac" | safeWrite /tmp/.moca_mac
                 ;;
       "wifi_mac")
 		[ -f /proc/device-tree/wifi-mac-addr ] && WiFiMac=$(cat /proc/device-tree/wifi-mac-addr) || WiFiMac=
 		if [ "$WiFiMac" == "" ]; then
 			getWiFiMac
 		fi
-		echo "$WiFiMac" > /tmp/.wifi_mac
+		echo "$WiFiMac" | safeWrite /tmp/.wifi_mac
                 ;;
       "moca_ip")
 		getMocaIp
-  		echo "$MocaIp" > /tmp/.moca_ip
+  		echo "$MocaIp" | safeWrite /tmp/.moca_ip
                 ;;
       "model")
 		getModel
-		echo "$model" > /tmp/.model
+		echo "$model" | safeWrite /tmp/.model
                 ;;
       "model_number")
 		modelNum=`getModelNum`
-		echo "$modelNum" > /tmp/.model_number
+		echo "$modelNum" | safeWrite /tmp/.model_number
                 ;;
       "manufacturer")
 		getManufacturer
@@ -449,39 +466,39 @@ executeServiceRequest()
                 ;;
       "device_type")
                 deviceType=`getDeviceType`
-                echo "$deviceType" > /tmp/.device_type
+                echo "$deviceType" | safeWrite /tmp/.device_type
                 ;;
       "friendly_id")
 		friendlyId=`getFriendlyId`
-		echo "$friendlyId" > /tmp/.friendly_id
+		echo "$friendlyId" | safeWrite /tmp/.friendly_id
                 ;;
       "imageVersion")
                getFWVersion
-               echo "$Version" > /tmp/.imageVersion
+               echo "$Version" | safeWrite /tmp/.imageVersion
                 ;;
       "cableCardVersion")
 		getCableCardVersion
-  		echo "$CableCardVersion" > /tmp/.cableCardVersion
+  		echo "$CableCardVersion" | safeWrite /tmp/.cableCardVersion
                 ;;
       "build_type")
 		buildType=`getBuildType`
-  		echo "$buildType" > /tmp/.build_type
+  		echo "$buildType" | safeWrite /tmp/.build_type
                 ;;
       "DACInitTimestamp")
 		DACInitTimestamp=`getDACInitTimestamp`
-	        echo "$DACInitTimestamp" > /tmp/.DACInitTimestamp
+	        echo "$DACInitTimestamp" | safeWrite /tmp/.DACInitTimestamp
                 ;;
       "serial_number")
 		getDeviceSerialNumber
-	        echo "$serialNumber" > /tmp/.serial_number
+	        echo "$serialNumber" | safeWrite /tmp/.serial_number
                 ;;
       "bluetooth_mac")
                 BluetoothMac=`getBluetoothMac`
-                echo "$BluetoothMac" > /tmp/.bluetooth_mac
+                echo "$BluetoothMac" | safeWrite /tmp/.bluetooth_mac
                 ;;
       "rf4ce_mac")
                 RF4CEMac=`getRF4CEMac`
-                echo "$RF4CEMac" > /tmp/.rf4ce_mac
+                echo "$RF4CEMac" | safeWrite /tmp/.rf4ce_mac
                 ;;
       "top_labels")
                 echo
@@ -498,7 +515,19 @@ executeServiceRequest()
    esac
 
    if [ -n "$1" ] && [ "$1" != "all" ]; then
-        [ ! -f "$deviceDetailsCache" ] && executeServiceRequestOutput || sed -i 's/'"$1"'=.*/'"$1"'='"$(cat /tmp/."$1")"'/' "$deviceDetailsCache"
+        if [ ! -f "$deviceDetailsCache" ]; then
+            executeServiceRequestOutput
+        elif echo "$1" | grep -Eq '^[A-Za-z0-9:._-]+$' && [ -f "/tmp/.$1" ] && [ ! -L "/tmp/.$1" ]; then
+            tmpfile=$(mktemp)
+            value=$(head -n 1 "/tmp/.$1")
+            awk -v key="$1" -v val="$value" -F= '
+                BEGIN{OFS="="}
+                $1==key {$2=val}
+                {print}
+            ' "$deviceDetailsCache" > "$tmpfile" &&
+            chmod 644 "$tmpfile" &&
+            mv "$tmpfile" "$deviceDetailsCache"
+        fi
         unlock
    fi
 }
@@ -507,33 +536,60 @@ executeServiceRequestOutput()
 {
 	logMsg "output"
 
+	# write to a private temp file and rename, so a planted symlink is replaced, never followed
+	tmpfile=$(mktemp) || return 1
+
 	if [ "$DEVICE_TYPE" != "mediaclient" ]; then
 		printf "estb_mac=%s\necm_mac=%s\nmoca_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\necm_ip=%s\nestb_ip=%s\nmoca_ip=%s\ncableCardVersion=%s\nDACInitTimestamp=%s\nserial_number=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-			"$MacAddress" "$EcmMac" "$MocaMac" "$WiFiMac" "$EtherMac" "$model" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$ecmIp" "$IPAddress" "$MocaIp" "$CableCardVersion" "$DACInitTimestamp" "$serialNumber" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+			"$MacAddress" "$EcmMac" "$MocaMac" "$WiFiMac" "$EtherMac" "$model" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$ecmIp" "$IPAddress" "$MocaIp" "$CableCardVersion" "$DACInitTimestamp" "$serialNumber" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
         elif [ "$WIFI_SUPPORT" == "true" ]; then
                 if [ "$RF4CE_CAPABLE" == "true" ]; then
                         printf "estb_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nboxIP=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
                 else
                         printf "estb_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nboxIP=%s\nbluetooth_mac=%s\n" \
-                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" | sort > $deviceDetailsCache
+                                "$MacAddress" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$IPAddress" "$BluetoothMac" | sort > "$tmpfile"
                 fi
 	else
 		printf "estb_mac=%s\nmoca_mac=%s\nwifi_mac=%s\neth_mac=%s\nmodel_number=%s\ndevice_type=%s\nfriendly_id=%s\nbuild_type=%s\nimageVersion=%s\nmoca_ip=%s\nbluetooth_mac=%s\nrf4ce_mac=%s\n" \
-			"$MacAddress" "$MocaMac" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$MocaIp" "$BluetoothMac" "$RF4CEMac" | sort > $deviceDetailsCache
+			"$MacAddress" "$MocaMac" "$WiFiMac" "$EtherMac" "$modelNum" "$deviceType" "$friendlyId" "$buildType" "$FWVersion" "$MocaIp" "$BluetoothMac" "$RF4CEMac" | sort > "$tmpfile"
 	fi
+	chmod 644 "$tmpfile" && mv -f "$tmpfile" "$deviceDetailsCache"
 }
 
 updateMissingParameters()
 {
-        data=$(sed -n '/=$/p' /tmp/.deviceDetails.cache | tr "=" " ")
+        # /tmp is world-writable: ignore a cache that is a symlink or not owned by us
+        if [ -L "$deviceDetailsCache" ] || [ ! -f "$deviceDetailsCache" ] || [ ! -O "$deviceDetailsCache" ]; then
+            return 0
+        fi
+        data=$(sed -n '/=$/p' "$deviceDetailsCache" | tr "=" " ")
         if [ "$data" != "" ]; then
             echo "$data" | while read -r param
             do
-                if [ "$param" != "" ]; then
-                    file=/tmp/.$param
-                    [ -f $file ] && [ "$(cat $file)" != "" ] && sed -i 's/'$param=.*'/'$param="$(cat $file)"'/' "$deviceDetailsCache"
-                     [ ! -f $file ] || [ "$(cat $file)" == "" ] && executeServiceRequest $param
+                # only known parameter names are used to build paths and commands
+                case "$param" in
+                    estb_mac|ecm_mac|moca_mac|wifi_mac|eth_mac|model|model_number|device_type|friendly_id|build_type|imageVersion|ecm_ip|estb_ip|moca_ip|boxIP|cableCardVersion|DACInitTimestamp|serial_number|bluetooth_mac|rf4ce_mac) ;;
+                    *) continue ;;
+                esac
+                file="/tmp/.$param"
+                if [ -e "$file" ] || [ -L "$file" ]; then
+                    if [ -L "$file" ] || [ ! -f "$file" ] || [ ! -O "$file" ]; then
+                        rm -f "$file" || continue
+                    fi
+                fi
+                if [ -f "$file" ] && [ ! -L "$file" ] && [ -O "$file" ] && [ "$(head -n 1 "$file")" != "" ]; then
+                    tmpfile=$(mktemp)
+                    value=$(head -n 1 "$file")
+                    awk -v key="$param" -v val="$value" -F= '
+                        BEGIN{OFS="="}
+                        $1==key {$2=val}
+                        {print}
+                    ' "$deviceDetailsCache" > "$tmpfile" &&
+                    chmod 644 "$tmpfile" &&
+                    mv "$tmpfile" "$deviceDetailsCache"
+                else
+                    executeServiceRequest "$param"
                 fi
             done
         fi
@@ -571,8 +627,29 @@ unlock()
 	logMsg "$1 lock released successfully"
 }
 
+# /tmp is world-writable: discard a cache that is a symlink or not a regular file owned by us
+if [ -e "$deviceDetailsCache" ] || [ -L "$deviceDetailsCache" ]; then
+    if [ -L "$deviceDetailsCache" ] || [ ! -f "$deviceDetailsCache" ] || [ ! -O "$deviceDetailsCache" ]; then
+        rm -f "$deviceDetailsCache"
+    fi
+fi
+
 # execute service request with arguments
 if [ "$command" != "" ]; then
+
+     # /tmp is world-writable: discard any cache or /tmp/.<param> file that is a
+     # symlink or not owned by the running user so it is regenerated, never trusted
+     if [ -n "$parameter" ] && [ "$parameter" != "all" ]; then
+         if ! echo "$parameter" | grep -Eq '^[A-Za-z0-9:._-]+$'; then
+             logMsg "Error: invalid parameter"
+             exit 1
+         fi
+         if [ -e "/tmp/.$parameter" ] || [ -L "/tmp/.$parameter" ]; then
+             if [ -L "/tmp/.$parameter" ] || [ ! -f "/tmp/.$parameter" ] || [ ! -O "/tmp/.$parameter" ]; then
+                 rm -f "/tmp/.$parameter"
+             fi
+         fi
+     fi
 
      if [ ! -s "$deviceDetailsCache" ]; then
          executeServiceRequestOutput
@@ -594,7 +671,17 @@ if [ "$command" != "" ]; then
             file=/tmp/."$parameter"
             [ ! -f "$file" ] || [ "$(cat $file)" == "" ]  && executeServiceRequest "$parameter"
             [ -f "$deviceDetailsCache" ] && value=$(cat $deviceDetailsCache | grep $parameter | cut -d "=" -f2)
-            [ -f "$deviceDetailsCache" ] && [ "$value" == "" ] && sed -i 's/'$parameter=.*'/'$parameter="$(cat $file)"'/' $deviceDetailsCache
+            if [ -f "$deviceDetailsCache" ] && [ "$value" == "" ] && echo "$parameter" | grep -Eq '^[A-Za-z0-9:._-]+$'; then
+                tmpfile=$(mktemp)
+                fileValue=$(cat "$file")
+                awk -v key="$parameter" -v val="$fileValue" -F= '
+                    BEGIN{OFS="="}
+                    $1==key {$2=val}
+                    {print}
+                ' "$deviceDetailsCache" > "$tmpfile" &&
+                chmod 644 "$tmpfile" &&
+                mv "$tmpfile" "$deviceDetailsCache"
+            fi
 
             [ -f "$file" ] && cat $file
          else

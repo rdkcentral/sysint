@@ -540,8 +540,7 @@ sendXCONFCodebigRequest () {
             echo ADDITIONAL_FW_VER_INFO: $pdriFwVerInfo$remoteInfo
             t2ValNotify "RCU_FWver_split" "$pdriFwVerInfo$remoteInfo"
         fi
-        SIGN_CMD="GetServiceUrl $request_type \"$JSONSTR\""
-        eval $SIGN_CMD > /tmp/.signedRequest
+        GetServiceUrl $request_type "$JSONSTR" > /tmp/.signedRequest
         if [ -s /tmp/.signedRequest ]
         then
             echo "GetServiceUrl success"
