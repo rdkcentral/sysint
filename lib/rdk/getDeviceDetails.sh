@@ -562,7 +562,8 @@ lock()
 	done
 	echo "$$" > $lockPidFile
 	logMsg "lock acquired successfully"
-	trap 'unlock "active process"'  0 1 13 15 &>/dev/null
+	trap 'unlock "active process"'  0 1 13 &>/dev/null
+	trap 'exit 0'  15 &>/dev/null
 }
 
 unlock()
