@@ -57,20 +57,6 @@ if [ -f $RDKV_SUPP_CONF ]; then
   else
     PSK=""
   fi
-
-  #########################
-  # Key_Mgmt Extraction   #
-  #########################
-  KEY_MGMT_LINE=$(grep -m 1 '^[[:space:]]*key_mgmt=' "$RDKV_SUPP_CONF")                  
-  # Extract value after '=' and remove quotes                                            
-  KEY_MGMT_VALUE=$(printf '%s\n' "$KEY_MGMT_LINE" | sed 's/.*key_mgmt=//; s/"//g')       
-                                                                                         
-  if [ "$KEY_MGMT_VALUE" = "SAE" ] || [ "$KEY_MGMT_VALUE" = "SAE FT-SAE" ]; then
-      KEY_MGMT=sae                                                                
-  else                                        
-      KEY_MGMT=wpa-psk                                                       
-  fi 
-  echo "`/bin/timestamp`: key_mgmt is $KEY_MGMT" >> /opt/logs/NMMonitor.log   
     
   sed -i '/network={/,/}/d' "$RDKV_SUPP_CONF"
 fi
@@ -123,11 +109,9 @@ else
       fi
       if [ -z "$PSK" ]; then
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID"
-          nmcli conn reload
+          nmcli device wifi connect "$SSID"
       else
           #connect to wifi
-          nmcli conn add type wifi con-name "$SSID" autoconnect yes ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt "$KEY_MGMT"  wifi-sec.psk "$PSK"
-          nmcli conn reload
+          nmcli device wifi connect "$SSID" password "$PSK"
       fi
 fi
