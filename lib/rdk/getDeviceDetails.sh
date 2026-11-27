@@ -127,7 +127,11 @@ getEcmMac()
 
 getEthernetMacAddress()
 {
-    EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
+    #EtherMac=$(ifconfig $ETHERNET_INTERFACE  | awk '/HWaddr/ {print $5}')
+	EtherMac=""
+    if [ -n "$ETHERNET_INTERFACE" ] && [ -e "/sys/class/net/$ETHERNET_INTERFACE" ]; then
+        EtherMac=$(ifconfig "$ETHERNET_INTERFACE" | awk '/HWaddr/ {print $5}' | head -n1)
+    fi
 }
 
 getMocaMac()
