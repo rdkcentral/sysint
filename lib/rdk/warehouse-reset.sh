@@ -20,7 +20,7 @@
 
 . /etc/device.properties
 
-if [ -f /tmp/warehouse_reset_suppress_reboot_clear ]; then
+if [ -f /opt/secure/warehouse_reset_suppress_reboot_clear ]; then
    #sending CLEAR_STARTED event
    t=`/usr/bin/WPEFrameworkSecurityUtility`; t=${t%\",*}; t=${t#*:\"}
    result=$( curl -H "Content-Type: application/json"  -H "Authorization: Bearer $t" -X POST -d '{"jsonrpc":"2.0", "id":3, "method":"org.rdk.PersistentStore.1.setValue", "params":{"namespace":"FactoryTest", "key":"FTAClearStatus", "value":"CLEAR_STARTED"}}' http://127.0.0.1:9998/jsonrpc )
@@ -80,7 +80,7 @@ fi
 
 echo "Warehouse Reset:Starting file cleanUp"
 # /opt override cleanup
-ls /opt/*.conf | grep -v receiver.conf | xargs rm
+find /opt -maxdepth 1 -name "*.conf" ! -name "receiver.conf" -exec rm {} \;
 rm -rf /opt/*.ini
 if [ -f /opt/hosts ]; then rm -rf /opt/hosts; fi
 if [ -f /opt/dcm.properties ];then rm -rf /opt/dcm.properties ; fi
@@ -148,7 +148,7 @@ if [ -d /tmp/mnt/diska3/persistent ]; then
     find /tmp/mnt/diska3/persistent/ -mindepth 1 -maxdepth 1 ! -name 'store-mode-video' ! -name 'odm-data' -exec rm -rf {} \;
 fi
 rm -rf /opt/secure/persistent/System
-if [ ! -f /tmp/warehouse_reset_suppress_reboot_clear ]; then
+if [ ! -f /opt/secure/warehouse_reset_suppress_reboot_clear ]; then
     rm -rf /opt/secure/persistent/rdkservicestore
     rm -rf /opt/secure/persistent/rdkservicestore-journal
 fi

@@ -143,15 +143,24 @@ runMaintenanceLogUploadTask()
     
     if [ -f "$LOG_UPLOAD_BIN_PATH" ]; then
         logUploadLog "Starting log upload"
-        upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        [ -z "$upload_protocol" ] && upload_protocol='HTTP'
-        logUploadLog "upload_protocol: $upload_protocol"
-
-        httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
-        if [ -n "$httplink" ]; then
-            upload_httplink="$httplink"
+        
+        if [ -L "/tmp/DCMSettings.conf" ]; then
+            logUploadLog "ERROR: DCMSettings.conf is a symlink"
         else
-            logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
+            upload_protocol=$(grep 'LogUploadSettings:UploadRepository:uploadProtocol' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+            [ -z "$upload_protocol" ] && upload_protocol='HTTPS'
+            logUploadLog "upload_protocol: $upload_protocol"
+
+            httplink=$(grep 'LogUploadSettings:UploadRepository:URL' /tmp/DCMSettings.conf | cut -d '=' -f2 | sed 's/^"//; s/"$//')
+            if [ -n "$httplink" ]; then
+                if echo "$httplink" | grep -qE '^https?://'; then
+                    upload_httplink="$httplink"
+                else
+                    logUploadLog "ERROR: Invalid URL format in DCMSettings.conf"
+                fi
+            else
+                logUploadLog "'LogUploadSettings:UploadRepository:URL' is not found in DCMSettings.conf"
+            fi
         fi
 
         if [ "$BUILD_TYPE" != "prod" ] && [ -f /opt/dcm.properties ]; then

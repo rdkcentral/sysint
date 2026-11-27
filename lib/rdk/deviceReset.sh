@@ -33,7 +33,7 @@ case "$resetArg" in
   "warehouse")
      resetType="warehouse-reset.sh"
      if [ "$resetFlag" == "--suppressReboot" ]; then
-          touch /tmp/warehouse_reset_suppress_reboot
+          touch /opt/secure/warehouse_reset_suppress_reboot
      fi
      ;;
   "factory")
@@ -48,7 +48,7 @@ case "$resetArg" in
   "WAREHOUSE_CLEAR")
      resetType="warehouse-reset.sh"
      if [ "$resetFlag" == "--suppressReboot" ]; then
-          touch /tmp/warehouse_reset_suppress_reboot_clear
+          touch /opt/secureq/warehouse_reset_suppress_reboot_clear
      fi
      ;;
    *)
